@@ -1,4 +1,4 @@
-classdef Simulation
+classdef Simulator
     properties
         simulationModules = []
         startDate datetime

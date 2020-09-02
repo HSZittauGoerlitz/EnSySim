@@ -1,4 +1,4 @@
-classdef ElectricalConsumerSimulationElement
+classdef ElectricalConsumerSimulationElement < ElectricalSimulationElement
     properties
         Power
         deltaEnergy
