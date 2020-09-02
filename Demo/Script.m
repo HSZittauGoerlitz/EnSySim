@@ -1,7 +1,6 @@
 % initialize simulation object
-sim = Simulation
-esim = sim.electrical
-asim = sim.agent
+sim = Simulator;
+sim.registerSimulationModule(ElectricalSimulator)
 
 % define simulation times
 sim.timeStep = 60

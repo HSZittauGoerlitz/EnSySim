@@ -1,8 +1,4 @@
-classdef ExecutionManager
-  
-end
-
-classdef RealTimeExecutionManager < ExecutionManager
+classdef RealTimeExecutionManager < DefaultExecutionManager
     % hier soll mal das Zeitmanagement hin, damit wir online mit THERESA-Einbindung simulieren können.
     methods 
         function init(time)

@@ -1,6 +1,6 @@
 classdef Simulator
     properties
-        simulationModules = []
+        simulationModules = [];
         executionManager
         startDate datetime
         endDate datetime
@@ -15,19 +15,24 @@ classdef Simulator
                 obj.executionManager = executionManager
             end
 
-            obj._modules = []
-            for each=obj._simulationModules
+            modules = []
+            for each=obj.simulationModules
                 module = each()
                 module.simulator = obj
-                obj._modules
+                obj.modules
+            end
         end
 
-        function registerSimulationModule(moduleClass)
+        function obj = registerSimulationModule(obj, moduleClass)
             % gets called by each module holding the different elements
-            obj._simulationModules(1,obj.getModulesCount()+1) = moduleClass;
+            if ~isempty(obj.simulationModules)
+                obj.simulationModules(end+1) = moduleClass;
+            else
+                obj.simulationModules = moduleClass;
+            end
         end
 
-        function n = getModulesCount()
+        function n = getModulesCount(obj)
             % gets the number of registered modules
             n = size(obj.simulationModules)
         end
@@ -38,7 +43,6 @@ classdef Simulator
 
         function run()
             % runs the simulation according to choosen execution manager via calling step()
-            
         end
     end
 end

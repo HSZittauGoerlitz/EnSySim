@@ -1,0 +1,3 @@
+classdef AbstractAgent
+  
+end
