@@ -1,6 +1,7 @@
 classdef Simulator
     properties
-        _simulationModules = []
+        simulationModules = []
+        executionManager
         startDate datetime
         endDate datetime
         timeStep int32
@@ -9,9 +10,9 @@ classdef Simulator
         function obj = Simulator(executionManager)
             
             if nargin == 0
-                obj._executionManager = DefaultExecutionManager()
+                obj.executionManager = DefaultExecutionManager()
             else
-                obj._executionManager = executionManager
+                obj.executionManager = executionManager
             end
 
             obj._modules = []
