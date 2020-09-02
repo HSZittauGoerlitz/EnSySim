@@ -3,6 +3,7 @@ classdef ExecutionManager
 end
 
 classdef RealTimeExecutionManager < ExecutionManager
+    % hier soll mal das Zeitmanagement hin, damit wir online mit THERESA-Einbindung simulieren können.
     methods 
         function init(time)
             obj._time = time
