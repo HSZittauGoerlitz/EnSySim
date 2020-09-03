@@ -1,0 +1,1 @@
+Simulator.registerSimulationModule(AgentSimulator)

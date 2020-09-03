@@ -15,21 +15,23 @@ classdef Simulator
                 obj.executionManager = executionManager
             end
 
-            modules = []
-            for each=obj.simulationModules
-                module = each()
-                module.simulator = obj
-                obj.modules
-            end
+%             modules = []
+%             for each=obj.simulationModules
+%                 module = each()
+%                 module.simulator = obj
+%                 obj.modules
+%             end
         end
 
-        function obj = registerSimulationModule(obj, moduleClass)
+        function obj = registerSimulator(obj, moduleClass)
             % gets called by each module holding the different elements
             if ~isempty(obj.simulationModules)
                 obj.simulationModules(end+1) = moduleClass;
             else
                 obj.simulationModules = moduleClass;
             end
+            
+            obj = moduleClass()
         end
 
         function n = getModulesCount(obj)
