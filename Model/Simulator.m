@@ -23,15 +23,14 @@ classdef Simulator
 %             end
         end
 
-        function obj = registerSimulator(obj, moduleClass)
+        function module = registerSimulator(obj, moduleClass)
             % gets called by each module holding the different elements
             if ~isempty(obj.simulationModules)
                 obj.simulationModules(end+1) = moduleClass;
             else
-                obj.simulationModules = moduleClass;
+                module = moduleClass();
             end
             
-            obj = moduleClass()
         end
 
         function n = getModulesCount(obj)
