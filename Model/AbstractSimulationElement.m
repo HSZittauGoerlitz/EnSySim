@@ -1,4 +1,4 @@
-classdef AbstractSimulationElement
+classdef AbstractSimulationElement < handle
     % reset, calculate, update
     properties
         elementID

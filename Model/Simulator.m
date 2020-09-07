@@ -1,6 +1,6 @@
-classdef Simulator
+classdef Simulator < handle
     properties
-        simulationModules = [];
+        simulationModules AbstractSimulationModule
         executionManager
         startDate datetime
         endDate datetime
@@ -23,20 +23,22 @@ classdef Simulator
 %             end
         end
 
-        function obj = registerSimulator(obj, moduleClass)
+        function module = registerSimulator(obj, moduleClass)
             % gets called by each module holding the different elements
-            if ~isempty(obj.simulationModules)
-                obj.simulationModules(end+1) = moduleClass;
-            else
-                obj.simulationModules = moduleClass;
-            end
+%             if ~isempty(obj.simulationModules)
+%                 obj.simulationModules(end+1) = moduleClass;
+%             else
+%                 module = moduleClass();
+%             end
+
+            obj.simulationModules = [obj.simulationModules moduleClass];
+            module = moduleClass;
             
-            obj = moduleClass()
         end
 
         function n = getModulesCount(obj)
             % gets the number of registered modules
-            n = size(obj.simulationModules)
+            n = size(obj.simulationModules);
         end
 
         function reset()
