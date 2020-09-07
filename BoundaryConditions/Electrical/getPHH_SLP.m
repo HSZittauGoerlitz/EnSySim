@@ -31,9 +31,24 @@ function out = getPHH_SLP(startDate, endDate)
                  (time.Month == 5 & time.Day >= 15) | ...
                  (time.Month == 9 & time.Day <= 14);
     maskIntermediate = ~(maskWinter | maskSummer);
-        
+    % get masks for week days
+    % 1 Sunday; % 2 Monday; % 3 Tuesday; % 4 Wednesday;
+    % 5 Thursday; % 6 Friday; % 7 Saturday
+    days = weekday(time);
+    maskWeek = days > 1 & days < 7;
+    maskSat = days == 7;
+    maskSun = days == 1;
+    % add Christmas Eve and New Years Eve to Sat if Week
+    idxCE = find(time.Month == 12 & time.Day == 24);
+    idxNYE = find(time.Month == 12 & time.Day == 31);
+    if maskWeek(idxCE(1))
+        maskWeek(idxCE) = false;
+        maskSat(idxCE) = true;
+        % if CE is on week day NYE is also
+        maskWeek(idxNYE) = false;
+        maskSat(idxNYE) = true;
+    end
     
-    
-    out = 12;
+
 end
 
