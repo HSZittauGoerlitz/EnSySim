@@ -1,4 +1,5 @@
 classdef Simulator < handle
+    
     properties
         simulationModules AbstractSimulationModule
         executionManager
@@ -6,21 +7,14 @@ classdef Simulator < handle
         endDate datetime
         timeStep int32
     end
+    
     methods
         function obj = Simulator(executionManager)
-            
             if nargin == 0
-                obj.executionManager = DefaultExecutionManager()
+                obj.executionManager = DefaultExecutionManager();
             else
-                obj.executionManager = executionManager
+                obj.executionManager = executionManager;
             end
-
-%             modules = []
-%             for each=obj.simulationModules
-%                 module = each()
-%                 module.simulator = obj
-%                 obj.modules
-%             end
         end
 
         function module = registerSimulator(obj, moduleClass)
@@ -40,5 +34,7 @@ classdef Simulator < handle
         function run()
             % runs the simulation according to choosen execution manager via calling step()
         end
+        
     end
+    
 end
