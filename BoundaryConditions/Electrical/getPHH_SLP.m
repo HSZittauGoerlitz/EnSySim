@@ -62,6 +62,6 @@ function PHH_SLP = getPHH_SLP(startDate, endDate)
     % Create Laod Profile %
     %%%%%%%%%%%%%%%%%%%%%%%
     PHHload = zeros([length(time), 1]);
-    PHH_SLP = timetable(time', PHHload, 'VariableNames', ["load"]);
+    PHH_SLP = timetable(time', PHHload, 'VariableNames', "load");
 end
 
