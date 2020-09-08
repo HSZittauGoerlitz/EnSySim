@@ -52,7 +52,7 @@ function PHH_SLP = getPHH_SLP(startDate, endDate)
         maskSat(idxNYE) = true;
     end
     % find public holydays and set them to sunday
-    load('BoundaryConditions.mat', 'holydaysSN');
+    load('BoundaryConditions.mat', 'holydaysSN', 'SLP_PHH');
     pubHD = ismember(time, holydaysSN.date);
     maskWeek(pubHD) = false;
     maskSat(pubHD) = false;
@@ -61,7 +61,7 @@ function PHH_SLP = getPHH_SLP(startDate, endDate)
     %%%%%%%%%%%%%%%%%%%%%%%
     % Create Laod Profile %
     %%%%%%%%%%%%%%%%%%%%%%%
-    PHHload = zeros([length(time), 1]);
-    PHH_SLP = timetable(time', PHHload, 'VariableNames', "load");
+    PHH_SLP = timetable(time', zeros([length(time), 1]), 'VariableNames', "load");
+    
 end
 
