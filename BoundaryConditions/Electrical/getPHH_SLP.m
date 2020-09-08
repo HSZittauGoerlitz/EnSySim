@@ -1,4 +1,4 @@
-function out = getPHH_SLP(startDate, endDate)
+function PHH_SLP = getPHH_SLP(startDate, endDate)
 %GETPHH_SLP Provide standard load profile for PHH agent
 %   The SLP is calculatet for the time frame beginning at startDate and
 %   ending at endDate (inclusive). For each day a curve with 15min steps is
@@ -16,7 +16,7 @@ function out = getPHH_SLP(startDate, endDate)
     p = inputParser;
     addRequired(p, 'startDate', @isdatetime);
     addRequired(p, 'endDate', @isdatetime);
-    
+
     % Validate inputs
     if startDate >= endDate
        error("endDate must be after startDate"); 
@@ -61,7 +61,7 @@ function out = getPHH_SLP(startDate, endDate)
     %%%%%%%%%%%%%%%%%%%%%%%
     % Create Laod Profile %
     %%%%%%%%%%%%%%%%%%%%%%%
-    
-
+    PHHload = zeros([length(time), 1]);
+    PHH_SLP = timetable(time', PHHload, 'VariableNames', ["load"]);
 end
 
