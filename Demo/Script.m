@@ -1,11 +1,7 @@
 % initialize simulation object
 sim = Simulator();
-sim.getModulesCount()
 esim = sim.registerSimulator(ElectricalSimulator);
-%sim.simulationModules = esim
-sim.getModulesCount()
 asim = sim.registerSimulator(AgentSimulator);
-sim.getModulesCount()
 
 % add agents
 for each = COCarray

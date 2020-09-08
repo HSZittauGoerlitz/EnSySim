@@ -1,11 +1,18 @@
 classdef Simulator < handle
-    
+    %% Set up a simulation with ensysim.
+    % Provides the main simulation class where modules are registered
+    % and progression of time is managed.
     properties
-        simulationModules AbstractSimulationModule
-        executionManager
+        % Array holding the simulation modules
+        simulationModules AbstractSimulationModule 
+        % pre- and postprocessing defined here
+        executionManager 
+        % simulations can run over specific datetime intervalls for
+        % utilization of standardized load profiles 
         startDate datetime
         endDate datetime
-        timeStep int32
+        % time step in which the simulation progresses
+        timeStep int32 % in seconds
     end
     
     methods
@@ -33,6 +40,24 @@ classdef Simulator < handle
 
         function run()
             % runs the simulation according to choosen execution manager via calling step()
+        end
+        
+        function elements = findElements(varargin)
+            % test https://de.mathworks.com/help/matlab/ref/inputparser.html
+            
+            defaultModule = AbstractSimulationModule
+            defaultName = ''
+            defaultClass = AbstractSimulationElement
+            defaultProperty = ''
+            
+            p = inputParser;
+            addOptional(p,'simulationModule', defaultModule);
+            addOptional(p,'friendlyName', defaultName, @isstring);
+            addOptional(p,'elementClass', defaultClass);
+            addOptional(p,'elementProperty', defaultProperty, @isstring);
+            parse(p,varargin{:});
+            
+            % do actual search of relevant elements
         end
         
     end
