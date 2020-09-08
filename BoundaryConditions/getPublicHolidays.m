@@ -19,7 +19,7 @@ for year = 1990:2100
     snPublicHolidays = snPublicHolidays(:,2);
     snPublicHolidays = split(snPublicHolidays.string, ' - ');
     holydaysSN.date(idxStart:idxStop) = datetime(snPublicHolidays(:,1));
-    holydaysSN.description(idxStart:idxStop) = datetime(snPublicHolidays(:,2));
+    holydaysSN.description(idxStart:idxStop) = snPublicHolidays(:,2);
     idxStart = idxStop + 1;
     idxStop = idxStop + nFreeDays;
 end
