@@ -22,6 +22,9 @@ function out = getPHH_SLP(startDate, endDate)
        error("endDate must be after startDate"); 
     end
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Prepare Time data and selection %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % get time values
     time = startDate:minutes(15):endDate;
     % masks for selection of characteristic periods
@@ -54,6 +57,10 @@ function out = getPHH_SLP(startDate, endDate)
     maskWeek(pubHD) = false;
     maskSat(pubHD) = false;
     maskSun(pubHD) = true;
+    
+    %%%%%%%%%%%%%%%%%%%%%%%
+    % Create Laod Profile %
+    %%%%%%%%%%%%%%%%%%%%%%%
     
 
 end
