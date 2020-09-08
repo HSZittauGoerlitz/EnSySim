@@ -48,6 +48,12 @@ function out = getPHH_SLP(startDate, endDate)
         maskWeek(idxNYE) = false;
         maskSat(idxNYE) = true;
     end
+    % find public holydays and set them to sunday
+    load('BoundaryConditions.mat', 'holydaysSN');
+    pubHD = ismember(time, holydaysSN.date);
+    maskWeek(pubHD) = false;
+    maskSat(pubHD) = false;
+    maskSun(pubHD) = true;
     
 
 end
