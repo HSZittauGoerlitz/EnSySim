@@ -13,6 +13,9 @@ classdef SlpAgent < AbstractSimulationAgent
     end
     
     methods
+        function obj = SlpAgent(agentType) 
+            obj.agentType = agentType;
+        end
         function calculate(obj, time, timeStep)
             % calculate next time step load
             % obj.internalDeltaEnergy = load * timeStep
