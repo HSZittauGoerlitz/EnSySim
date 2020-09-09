@@ -1,9 +1,16 @@
-classdef AbstractSimulationAgent < AbstractSimulationElement
+classdef (Abstract) AbstractSimulationAgent < AbstractSimulationElement
     properties 
         hasElements bool
         elementArray AbstractSimulationElement
+        internalDeltaEnergy
+        deltaEnergy
+        
     end
-
+    methods (Abstract)
+        calculate(obj)
+        update(obj)
+    end
+    
     methods 
         function obj = AbstractAgent(friendlyName)
           obj.friendlyName = friendlyName
@@ -13,8 +20,5 @@ classdef AbstractSimulationAgent < AbstractSimulationElement
 
         end
 
-        function calculate(time, timeStep)
-            % gets current standard load from parent obejct (profiles Array) und scales with COC
-        end
     end
 end
