@@ -73,6 +73,40 @@ function PHH_SLP = getPHH_SLP(startDate, endDate)
     % Create Laod Profile %
     %%%%%%%%%%%%%%%%%%%%%%%
     PHH_SLP = timetable(time', zeros([length(time), 1]), 'VariableNames', "load");
+    % winter
+    tempMask = maskWinter & maskWeek;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Winter.WorkDay, [nDays, 1]);
+    tempMask = maskWinter & maskSat;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Winter.Saturday, [nDays, 1]);
+    tempMask = maskWinter & maskSun;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Winter.Sunday, [nDays, 1]);
+    % intermediate
+    tempMask = maskIntermediate & maskWeek;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.InterimPeriod.WorkDay, [nDays, 1]);
+    tempMask = maskIntermediate & maskSat;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.InterimPeriod.Saturday, [nDays, 1]);
+    tempMask = maskIntermediate & maskSun;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.InterimPeriod.Sunday, [nDays, 1]);    
+    % summer
+    tempMask = maskSummer & maskWeek;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Summer.WorkDay, [nDays, 1]);
+    tempMask = maskSummer & maskSat;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Summer.Saturday, [nDays, 1]);
+    tempMask = maskSummer & maskSun;
+    nDays = sum(tempMask) / 96;
+    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Summer.Sunday, [nDays, 1]);
     
+    % Dynamic sampling of profile
+    doy = day(PHH_SLP.Time, 'dayofyear');
+    PHH_SLP.load = (- 3.92*1e-10*doy.^4 + 3.2*1e-7*doy.^3 - 7.02*1e-5*doy.^2 ...
+                    + 2.1*1e-3*doy + 1.24) .* PHH_SLP.load; 
 end
 
