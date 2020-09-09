@@ -1,6 +1,6 @@
 classdef (Abstract) AbstractSimulationAgent < AbstractSimulationElement
     properties 
-        hasElements bool
+        hasElements logical
         elementArray AbstractSimulationElement
         internalDeltaEnergy
         deltaEnergy
