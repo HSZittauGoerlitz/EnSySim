@@ -103,5 +103,10 @@ function PHH_SLP = getPHH_SLP(startDate, endDate)
     tempMask = maskSummer & maskSun;
     nDays = sum(tempMask) / 96;
     PHH_SLP.load(tempMask) = repmat(SLP_PHH.Summer.Sunday, [nDays, 1]);
+    
+    % Dynamic sampling of profile
+    doy = day(PHH_SLP.Time, 'dayofyear');
+    PHH_SLP.load = (- 3.92*1e-10*doy.^4 + 3.2*1e-7*doy.^3 - 7.02*1e-5*doy.^2 ...
+                    + 2.1*1e-3*doy + 1.24) .* PHH_SLP.load; 
 end
 
