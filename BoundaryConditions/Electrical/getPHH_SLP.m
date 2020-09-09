@@ -1,5 +1,5 @@
 function PHH_SLP = getPHH_SLP(startDate, endDate)
-%GETPHH_SLP Provide standard load profile for PHH agent
+%getPHH_SLP Provide standard load profile for PHH agent
 %   The SLP is calculatet for the time frame beginning at startDate and
 %   ending at endDate (inclusive). For each day a curve with 15min steps is
 %   calculated, based on the SLP PHH data from BDEW. The SLP differes
@@ -34,76 +34,17 @@ function PHH_SLP = getPHH_SLP(startDate, endDate)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Prepare Time data and selection %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % get time values
-    time = startDate:minutes(15):endDate;
-    % masks for selection of characteristic periods
-    maskWinter = time.Month >= 11 | time.Month < 3 | ...
-                 (time.Month == 3 & time.Day <= 20);
-    maskSummer = time.Month > 5 & time.Month < 9 | ...
-                 (time.Month == 5 & time.Day >= 15) | ...
-                 (time.Month == 9 & time.Day <= 14);
-    maskIntermediate = ~(maskWinter | maskSummer);
-    % get masks for week days
-    % 1 Sunday; % 2 Monday; % 3 Tuesday; % 4 Wednesday;
-    % 5 Thursday; % 6 Friday; % 7 Saturday
-    days = weekday(time);
-    maskWeek = days > 1 & days < 7;
-    maskSat = days == 7;
-    maskSun = days == 1;
-    % add Christmas Eve and New Years Eve to Sat if Week
-    idxCE = find(time.Month == 12 & time.Day == 24);
-    idxNYE = find(time.Month == 12 & time.Day == 31);
-    if maskWeek(idxCE(1))
-        maskWeek(idxCE) = false;
-        maskSat(idxCE) = true;
-        % if CE is on week day NYE is also
-        maskWeek(idxNYE) = false;
-        maskSat(idxNYE) = true;
-    end
-    % find public holydays and set them to sunday
-    load('BoundaryConditions.mat', 'holydaysSN', 'SLP_PHH');
-    dates = datevec(time);
-    dates = datetime(dates(:, 1:3));
-    pubHD = ismember(dates, holydaysSN.date);
-    maskWeek(pubHD) = false;
-    maskSat(pubHD) = false;
-    maskSun(pubHD) = true;
+    [time, ...
+     maskWinter, maskIntermediate, maskSummer, ...
+     maskWeek, maskSat, maskSun] = getTimeAndMasks(startDate, endDate);
     
     %%%%%%%%%%%%%%%%%%%%%%%
     % Create Laod Profile %
     %%%%%%%%%%%%%%%%%%%%%%%
-    PHH_SLP = timetable(time', zeros([length(time), 1]), 'VariableNames', "load");
-    % winter
-    tempMask = maskWinter & maskWeek;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Winter.WorkDay, [nDays, 1]);
-    tempMask = maskWinter & maskSat;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Winter.Saturday, [nDays, 1]);
-    tempMask = maskWinter & maskSun;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Winter.Sunday, [nDays, 1]);
-    % intermediate
-    tempMask = maskIntermediate & maskWeek;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.InterimPeriod.WorkDay, [nDays, 1]);
-    tempMask = maskIntermediate & maskSat;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.InterimPeriod.Saturday, [nDays, 1]);
-    tempMask = maskIntermediate & maskSun;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.InterimPeriod.Sunday, [nDays, 1]);    
-    % summer
-    tempMask = maskSummer & maskWeek;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Summer.WorkDay, [nDays, 1]);
-    tempMask = maskSummer & maskSat;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Summer.Saturday, [nDays, 1]);
-    tempMask = maskSummer & maskSun;
-    nDays = sum(tempMask) / 96;
-    PHH_SLP.load(tempMask) = repmat(SLP_PHH.Summer.Sunday, [nDays, 1]);
-    
+    load('BoundaryConditions.mat', 'SLP_PHH');
+    PHH_SLP = getSLP(SLP_PHH, time, ...
+                     maskWinter, maskIntermediate, maskSummer, ...
+                     maskWeek, maskSat, maskSun);
     % Dynamic sampling of profile
     doy = day(PHH_SLP.Time, 'dayofyear');
     PHH_SLP.load = (- 3.92*1e-10*doy.^4 + 3.2*1e-7*doy.^3 - 7.02*1e-5*doy.^2 ...
