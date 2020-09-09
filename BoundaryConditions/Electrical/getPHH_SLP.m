@@ -3,7 +3,7 @@ function PHH_SLP = getPHH_SLP(startDate, endDate)
 %   The SLP is calculatet for the time frame beginning at startDate and
 %   ending at endDate (inclusive). For each day a curve with 15min steps is
 %   calculated, based on the SLP PHH data from BDEW. The SLP differes
-%   betwenn Summer, Winter, intermediate periods and Weekdays, Weekend,
+%   between Summer, Winter, intermediate periods and Weekdays, Weekend,
 %   Holydays as well.
 %
 % Inputs:
