@@ -1,3 +1,0 @@
-classdef HouseholdAgent < AbstractSimulationAgent
-  
-end

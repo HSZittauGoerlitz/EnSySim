@@ -1,4 +1,4 @@
-classdef Simulator < handle
+classdef Simulator < matlab.mixin.SetGet
     %% Set up a simulation with ensysim.
     % Provides the main simulation class where modules are registered
     % and progression of time is managed.
@@ -33,7 +33,15 @@ classdef Simulator < handle
             % gets the number of registered modules
             n = size(obj.simulationModules);
         end
-
+        
+        function set.startDate(obj, startDate)
+            obj.startDate = startDate;
+        end
+            
+        function set.endDate(obj, endDate)
+            obj.endDate = endDate;
+        end
+        
         function reset()
           
         end
