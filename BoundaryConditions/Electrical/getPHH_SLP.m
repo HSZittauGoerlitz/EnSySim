@@ -1,11 +1,10 @@
 function PHH_SLP = getPHH_SLP(startDate, endDate)
-%getPHH_SLP Provide standard load profile for PHH agent
+%getPHH_SLP Provide standard load profile for PHH agents
 %   The SLP is calculatet for the time frame beginning at startDate and
 %   ending at endDate (inclusive). For each day a curve with 15min steps is
 %   calculated, based on the SLP PHH data from BDEW. The SLP differes
 %   betwenn Summer, Winter, intermediate periods and Weekdays, Weekend,
-%   Holydays as well. Additionally the BDEW dynamisation function is used
-%   and each quarter of an hour value is ranomised in range of 0.8 to 1.2.
+%   Holydays as well.
 %
 % Inputs:
 %   startDate - First date of SLP curve, complete day is considered (datetime)
