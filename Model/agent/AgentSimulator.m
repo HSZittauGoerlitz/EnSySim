@@ -8,7 +8,7 @@ classdef AgentSimulator < AbstractSimulationModule
 
         end
 
-        function addAgent(agent)
+        function addAgent(obj, agent)
             % adds agent to agentArray
             obj.agentArray = [obj.agentArray agent];
         end
@@ -21,7 +21,7 @@ classdef AgentSimulator < AbstractSimulationModule
             % updates all agents
         end
 
-        function createLoadProfiles(startDate, endDate, timeStep)
+        function createLoadProfiles(startDate, endDate)
             % for each agent type present a load profile is calculated once
             % ist es möglich auf Basis des Typs der agentArray-Objekte zu 
             % arbeiten, etwa
