@@ -1,0 +1,3 @@
+classdef SlpAgent < AbstractSimulationAgent
+    
+end
