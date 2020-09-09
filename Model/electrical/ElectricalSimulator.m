@@ -1,6 +1,7 @@
 classdef ElectricalSimulator < AbstractSimulationModule
     properties
-        elements = []
+        % Array holding all electrical elements
+        electricalElements AbstractSimulationElement
     end
     methods 
         function obj = ElectricalSimulator()
@@ -18,6 +19,14 @@ classdef ElectricalSimulator < AbstractSimulationModule
         function update(time, deltaTime)
             % soll die Daten in jeden Element aktualisieren
         end
+        
+        function createSolarInput(startDate, endDate, timeStep)
+            % PV needs solar input for each timeStep. If present,
+            % this gets calculated upfront.
+            % Vielleicht kommt hier auch noch die Ortsabhängigkeit 
+            % der PV ins Spiel.
+        end
+        
     end
   
 end

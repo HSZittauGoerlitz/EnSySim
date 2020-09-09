@@ -1,7 +1,7 @@
 classdef AbstractSimulationAgent < AbstractSimulationElement
     properties 
         hasElements bool
-        elements AbstractSimulationElement
+        elementArray AbstractSimulationElement
     end
 
     methods 
@@ -11,6 +11,10 @@ classdef AbstractSimulationAgent < AbstractSimulationElement
 
         function addElement(element)
 
+        end
+
+        function calculate(time, timeStep)
+            % gets current standard load from parent obejct (profiles Array) und scales with COC
         end
     end
 end

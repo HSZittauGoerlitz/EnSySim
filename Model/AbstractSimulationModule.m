@@ -1,4 +1,4 @@
-classdef AbstractSimulationModule < handle & matlab.mixin.Heterogeneous
+classdef AbstractSimulationModule < matlab.mixin.Heterogeneous
     % find, reset, update, calculate, end
 end
 
