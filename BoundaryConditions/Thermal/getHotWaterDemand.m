@@ -4,8 +4,7 @@ function E_HWD = getHotWaterDemand(COC)
 %   For the calculation a regression model, deviated off destatis data, is
 %   used.
 % Inputs:
-%   startDate - First date of SLP curve, complete day is considered (datetime)
-%   endDate   - Last date of SLP curve, complete day is considered (datetime)
+%   COC - Agents electrical COC factor (double)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Input paramter handling %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
