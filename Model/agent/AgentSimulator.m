@@ -1,7 +1,7 @@
 classdef AgentSimulator < AbstractSimulationModule
     properties 
         agentArray AbstractSimulationAgent
-        profilesArray % data type timetable https://de.mathworks.com/help/matlab/ref/timetable.html
+        tblLoadProfiles % data type timetable https://de.mathworks.com/help/matlab/ref/timetable.html
     end
     methods 
         function obj = AgentSimulator()
@@ -21,7 +21,7 @@ classdef AgentSimulator < AbstractSimulationModule
             % updates all agents
         end
 
-        function createLoadProfiles(startDate, endDate)
+        function obj = createLoadProfiles(obj, startDate, endDate)
             % for each agent type present a load profile is calculated once
             % ist es möglich auf Basis des Typs der agentArray-Objekte zu 
             % arbeiten, etwa
@@ -31,6 +31,7 @@ classdef AgentSimulator < AbstractSimulationModule
             %   slp.loadProfileData(startDate, endDate)
             %   slp.createSimulationProfile(timeStep)
             %   profilesArray(agentType) = slp
+            obj.tblLoadProfiles = getNormSLPs(startDate, endDate);
         end
 
     end
