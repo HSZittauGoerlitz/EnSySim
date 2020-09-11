@@ -13,8 +13,10 @@ classdef Simulator < matlab.mixin.SetGet
         endDate datetime
         % time step in which the simulation progresses
         timeStep int32 % in seconds
-        % Array holding all timesteps
+        % array holding all simulation steps, maybe better suited for running?
         simulationSteps
+        % actual simulation time
+        time
     end
     
     methods
@@ -52,10 +54,15 @@ classdef Simulator < matlab.mixin.SetGet
           
         end
 
-        function run(obj)
+        function run(obj, startDate, endDate, timeStep)
             % runs the simulation according to choosen execution manager via calling step()
-            for each=obj.simulationSteps
-                
+            time = startDate;
+
+            while time < endDate
+                for each=obj.simulationModules
+                    each.calculate();
+                    time = time + timeStep;
+                end
             end
         end
         
