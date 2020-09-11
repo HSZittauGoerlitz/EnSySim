@@ -13,8 +13,11 @@ classdef AgentSimulator < AbstractSimulationModule
             obj.agentArray = [obj.agentArray agent];
         end
 
-        function calculate(time, deltaTime)
+        function calculate(obj, time, deltaTime)
             % calls all agents
+            for each=obj.agentArray
+                each.calculate()
+            end
         end
 
         function update(time, deltaTime)
