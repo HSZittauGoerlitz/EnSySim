@@ -19,22 +19,26 @@ timeStep = minutes(15);
 noPhhAgents = 100;
 % generate COC values from scaled distribution
 load('BoundaryConditions.mat',  'PHH_COC_distribution')
-upperLimit = 5;
-lowerLimit = 1;
+upperLimit = 5; % upper coc limit
+lowerLimit = 1; % lower coc limit
 coc = PHH_COC_distribution.random([noPhhAgents, 1])*upperLimit;
+
+% rerandom all values below 1
 idx = 0;
 while idx < 10
     coc(coc<lowerLimit) = PHH_COC_distribution.random([sum(coc<lowerLimit), 1])*upperLimit;
     idx = idx + 1;
 end
+
 % generate load profiles
 asim.createLoadProfiles(startDate, endDate);
 
+% create and add all agents
 for i=1:noPhhAgents
     agent = SlpAgent('PHH', asim.tblLoadProfiles.PHH, coc);
     asim.addAgent(agent)
-    
 end
 
+% initialize and run simulation
 sim.initialize(startDate, endDate, timeStep)
 sim.run();
