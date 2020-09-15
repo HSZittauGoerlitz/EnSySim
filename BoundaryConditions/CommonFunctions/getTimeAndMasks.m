@@ -28,12 +28,16 @@ function [time, maskWinter, maskIntermediate, maskSummer, ...
     % add Christmas Eve and New Years Eve to Sat if Week
     idxCE = find(time.Month == 12 & time.Day == 24);
     idxNYE = find(time.Month == 12 & time.Day == 31);
-    if maskWeek(idxCE(1))
-        maskWeek(idxCE) = false;
-        maskSat(idxCE) = true;
-        % if CE is on week day NYE is also
-        maskWeek(idxNYE) = false;
-        maskSat(idxNYE) = true;
+    if idxCE
+        if maskWeek(idxCE(1))
+            maskWeek(idxCE) = false;
+            maskSat(idxCE) = true;
+            if idxNYE
+                % if CE is on week day NYE is also
+                maskWeek(idxNYE) = false;
+                maskSat(idxNYE) = true;
+            end
+        end
     end
     % find public holydays and set them to sunday
     load('BoundaryConditions.mat', 'holydaysSN');
