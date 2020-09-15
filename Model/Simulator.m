@@ -60,8 +60,9 @@ classdef Simulator < matlab.mixin.SetGet
 
             while time < endDate
                 for each=obj.simulationModules
-                    each.calculate();
-                    time = time + timeStep;
+                    each.calculate(time, timeStep);
+                    each.update();
+                    time = time + timeStep
                 end
             end
         end

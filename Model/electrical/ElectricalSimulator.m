@@ -1,22 +1,26 @@
 classdef ElectricalSimulator < AbstractSimulationModule
     properties
         % Array holding all electrical elements
-        electricalElements AbstractSimulationElement
+        arrayElements AbstractSimulationElement
     end
     methods 
         function obj = ElectricalSimulator()
 
         end
 
-        function add(element)
+        function addElement(obj, element)
             % soll Elemente hinzufügen
+            obj.arrayElements = [obj.arrayElements element];
         end
 
-        function calculate(time, deltaTime)
+        function calculate(obj, time, timeStep)
             % soll alle Elemente aufrufen und berechnen
+            for each=obj.arrayElements
+                each.calculate(time, timeStep);
+            end
         end
 
-        function update(time, deltaTime)
+        function update(time, timeStep)
             % soll die Daten in jeden Element aktualisieren
         end
         
