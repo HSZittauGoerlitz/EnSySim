@@ -49,3 +49,22 @@ buildingAge(NewData == 5) = randi([2010, 2018], ...
                                      
 figure
 histogram(buildingAge, 'Normalization', 'pdf');
+
+% generate building thermal categorie data
+buildingThermalCat = zeros([nExamples, 1]);
+buildingThermalCat(buildingAge < 1978) = 1;
+buildingThermalCat(buildingAge >= 1978 & buildingAge < 1984) = 2;
+buildingThermalCat(buildingAge >= 1984 & buildingAge < 1995) = 3;
+buildingThermalCat(buildingAge >= 1995 & buildingAge < 2002) = 4;
+buildingThermalCat(buildingAge >= 2002 & buildingAge < 2009) = 5;
+buildingThermalCat(buildingAge >= 2009) = 6;
+
+figure
+histogram(buildingThermalCat, 'Normalization', 'pdf', ...
+          'FaceColor', [0.8, 0.1, 0.1]);
+      
+% show probabilities for model
+for cat = 1:6
+    fprintf("Probability of Cat %i: %2.2f %%\n", cat, ...
+            sum(buildingThermalCat == cat) / nExamples * 100)
+end
