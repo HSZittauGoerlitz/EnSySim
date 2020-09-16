@@ -20,7 +20,7 @@ classdef ElectricalSimulator < AbstractSimulationModule
             end
         end
 
-        function update(time, timeStep)
+        function update(obj, time, timeStep)
             % soll die Daten in jeden Element aktualisieren
         end
         

@@ -7,6 +7,8 @@ classdef GenericAgent < AbstractSimulationAgent
         coc
         % array of elements
         agentElements
+        % balance
+        power
        
     end
     
@@ -18,12 +20,17 @@ classdef GenericAgent < AbstractSimulationAgent
             obj.agentType = agentType;
         end
         function calculate(obj, time, timeStep)
-            % calculate next time step load
-            % obj.internalDeltaEnergy = load * timeStep
+            % for whatever there is to calculate
+
         end
         
         function update(obj)
-            % write resulting load to 
+            % balance all calculated elements
+            electricalPower = 0;
+            for each=obj.agentElements
+                electricalPower = electricalPower + each.internalLoad;
+            end
+            obj.power = electricalPower;
         end
            
         function addElement(obj, element)
