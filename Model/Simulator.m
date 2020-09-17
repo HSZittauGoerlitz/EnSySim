@@ -70,10 +70,10 @@ classdef Simulator < matlab.mixin.SetGet
         function elements = findElements(varargin)
             % test https://de.mathworks.com/help/matlab/ref/inputparser.html
             
-            defaultModule = AbstractSimulationModule
-            defaultName = ''
-            defaultClass = AbstractSimulationElement
-            defaultProperty = ''
+            defaultModule = AbstractSimulationModule;
+            defaultName = '';
+            defaultClass = AbstractSimulationElement;
+            defaultProperty = '';
             
             p = inputParser;
             addOptional(p,'simulationModule', defaultModule);
