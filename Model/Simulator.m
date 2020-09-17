@@ -56,13 +56,13 @@ classdef Simulator < matlab.mixin.SetGet
 
         function run(obj, startDate, endDate, timeStep)
             % runs the simulation according to choosen execution manager via calling step()
-            time = startDate;
+            SimTime = startDate;
 
-            while time < endDate
+            while SimTime < endDate
                 for each=obj.simulationModules
-                    each.calculate(time, timeStep);
-                    each.update(time, timeStep);
-                    time = time + timeStep
+                    each.calculate(SimTime, timeStep);
+                    each.update(SimTime, timeStep);
+                    SimTime = SimTime + timeStep;
                 end
             end
         end
