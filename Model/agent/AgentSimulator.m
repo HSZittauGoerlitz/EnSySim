@@ -2,6 +2,7 @@ classdef AgentSimulator < AbstractSimulationModule
     properties 
         agentArray AbstractSimulationAgent
         tblLoadProfiles % data type timetable https://de.mathworks.com/help/matlab/ref/timetable.html
+        tblPhhProfile
     end
     methods 
         function obj = AgentSimulator()
@@ -14,14 +15,14 @@ classdef AgentSimulator < AbstractSimulationModule
         end
 
         function calculate(obj, time, deltaTime)
-            % calls all agents
-            for each=obj.agentArray
-                each.calculate()
-            end
+            % nothing to calculate yet
+
         end
 
-        function update(time, deltaTime)
-            % updates all agents
+        function update(obj, time, deltaTime)
+            for each=obj.agentArray
+                each.update()
+            end
         end
 
         function obj = createLoadProfiles(obj, startDate, endDate)
@@ -36,7 +37,13 @@ classdef AgentSimulator < AbstractSimulationModule
             %   profilesArray(agentType) = slp
             obj.tblLoadProfiles = getNormSLPs(startDate, endDate);
         end
-
+        function obj = getPHH(obj)
+            if isempty(obj.tblPhhProfile)
+                obj = timetable(obj.tblLoadProfiles.Time,obj.tblLoadProfiles.PHH, 'VariableNames',["PHH"]);
+            else
+                obj = obj.tblPhhProfile;
+            end
+        end
     end
   
 end

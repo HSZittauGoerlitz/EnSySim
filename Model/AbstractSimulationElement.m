@@ -1,4 +1,4 @@
- classdef (Abstract) AbstractSimulationElement < matlab.mixin.Heterogeneous
+ classdef (Abstract) AbstractSimulationElement < matlab.mixin.Heterogeneous & handle
     % reset, calculate, update
     properties
         elementID

@@ -56,23 +56,24 @@ classdef Simulator < matlab.mixin.SetGet
 
         function run(obj, startDate, endDate, timeStep)
             % runs the simulation according to choosen execution manager via calling step()
-            time = startDate;
+            SimTime = startDate;
 
-            while time < endDate
+            while SimTime < endDate
                 for each=obj.simulationModules
-                    each.calculate();
-                    time = time + timeStep;
+                    each.calculate(SimTime, timeStep);
+                    each.update(SimTime, timeStep);
                 end
+                SimTime = SimTime + timeStep;
             end
         end
         
         function elements = findElements(varargin)
             % test https://de.mathworks.com/help/matlab/ref/inputparser.html
             
-            defaultModule = AbstractSimulationModule
-            defaultName = ''
-            defaultClass = AbstractSimulationElement
-            defaultProperty = ''
+            defaultModule = AbstractSimulationModule;
+            defaultName = '';
+            defaultClass = AbstractSimulationElement;
+            defaultProperty = '';
             
             p = inputParser;
             addOptional(p,'simulationModule', defaultModule);
