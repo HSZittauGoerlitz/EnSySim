@@ -28,7 +28,7 @@ classdef GenericAgent < AbstractSimulationAgent
             % balance all calculated elements
             electricalPower = 0;
             for each=obj.agentElements
-                electricalPower = electricalPower + each.internalLoad;
+                electricalPower = electricalPower + each.currentLoad;
             end
             obj.power = electricalPower;
         end
