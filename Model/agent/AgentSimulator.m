@@ -2,7 +2,7 @@ classdef AgentSimulator < AbstractSimulationModule
     properties 
         agentArray AbstractSimulationAgent
         tblLoadProfiles % data type timetable https://de.mathworks.com/help/matlab/ref/timetable.html
-        tblPhhProfile
+        tblPhhProfile % only the PHH profile
     end
     methods 
         function obj = AgentSimulator()
@@ -20,6 +20,7 @@ classdef AgentSimulator < AbstractSimulationModule
         end
 
         function update(obj, time, deltaTime)
+            % agents use update step to do their balancing
             for each=obj.agentArray
                 each.update()
             end
@@ -27,19 +28,14 @@ classdef AgentSimulator < AbstractSimulationModule
 
         function obj = createLoadProfiles(obj, startDate, endDate)
             % for each agent type present a load profile is calculated once
-            % ist es möglich auf Basis des Typs der agentArray-Objekte zu 
-            % arbeiten, etwa
-            %
-            % for type in agentArray:
-            %   slp = profileData(type)
-            %   slp.loadProfileData(startDate, endDate)
-            %   slp.createSimulationProfile(timeStep)
-            %   profilesArray(agentType) = slp
             obj.tblLoadProfiles = getNormSLPs(startDate, endDate);
         end
+        
         function obj = getPHH(obj)
+            % create PHH profile if not yet seperated, helper for
+            % ElectricalSlpSimulationElement initialization
             if isempty(obj.tblPhhProfile)
-                obj = timetable(obj.tblLoadProfiles.Time,obj.tblLoadProfiles.PHH, 'VariableNames',["PHH"]);
+                obj = timetable(obj.tblLoadProfiles.Time,obj.tblLoadProfiles.PHH, 'VariableNames',["Data"]);
             else
                 obj = obj.tblPhhProfile;
             end
