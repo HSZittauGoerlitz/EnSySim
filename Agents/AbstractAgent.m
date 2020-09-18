@@ -3,7 +3,6 @@ classdef (Abstract) AbstractAgent
     
     properties (Abstract)
         % Common Parameter
-        timeStep
         COCfactor
         % Load
         LoadProfile_e
