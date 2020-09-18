@@ -10,28 +10,28 @@ classdef PHHconsumer_e < AbstractAgent
         Generation_t
         Storage_e
         Storage_t
-        currentLoad_e
-        cuurentLoad_t
+        currentEnergyBilance_e
+        currentEnergyBilance_t
     end
 
     methods
-        function self = PHHconsumer_e()
-            getCOC();
-            self.LoadProfile_e = SLP.PHH * COC .* ...
-                                 (0.8 + rand(1, lenght(SLP.PHH)));
+        function self = PHHconsumer_e(normSLP, PHH_COC_dist)
+            self.getCOC(PHH_COC_dist);
+            self.LoadProfile_e = normSLP .* self.COCfactor .* ...
+                                 (0.8 + rand(1, lenght(normSLP)));
             % deactivate unused properties
             self.LoadProfile_t = [];
             self.Generation_e = [];
             self.Generation_t = [];
             self.Storage_e = [];
             self.Storage_t = [];
-            self.currentLoad_t = [];
+            self.currentEnergyBilance_t = [];
         end
 
-        function getCOC(self)
+        function self = getCOC(self, PHH_COC_dist)
             iter = 0;
             while iter < 10
-                COC = PHH_COC_distribution.random();
+                COC = PHH_COC_dist.random() * 5;
                 if COC >= 1
                     break;
                 end
@@ -44,8 +44,8 @@ classdef PHHconsumer_e < AbstractAgent
             end
         end
         
-        function update(self, timeStep)
-           self.currentLoad_e = self.LoadProfile_e(timeStep) * 0.25;
+        function self = update(self, timeStep)
+           self.currentEnergyBilance_e = self.LoadProfile_e(timeStep) * 0.25;
         end
     end
 end
