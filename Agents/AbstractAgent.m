@@ -18,7 +18,7 @@ classdef (Abstract) AbstractAgent
         % positive: Energy is consumed
         % negative: Energy is generated
         currentEnergyBilance_e  % [Wh]
-        cuurentEnergyBilance  % [Wh]
+        cuurentEnergyBilance_t  % [Wh]
     end
     
     methods (Abstract)
