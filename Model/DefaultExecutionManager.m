@@ -1,4 +1,0 @@
-classdef DefaultExecutionManager < AbstractExecutionManager
-  
-end
-
