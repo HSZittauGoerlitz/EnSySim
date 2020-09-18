@@ -5,20 +5,20 @@ classdef (Abstract) AbstractAgent
         % Common Parameter
         COCfactor
         % Load
-        LoadProfile_e
-        LoadProfile_t
+        LoadProfile_e  % [W]
+        LoadProfile_t  % [W]
         % Generation
-        Generation_e
-        Generation_t
+        Generation_e  % [W]
+        Generation_t  % [W]
         % Storage
-        Storage_e
-        Storage_t
+        Storage_e  % [W]
+        Storage_t  % [W]
         % Bilance
-        % resulting Load at given time step
+        % resulting Energy bilance at given time step
         % positive: Energy is consumed
         % negative: Energy is generated
-        currentLoad_e  
-        cuurentLoad_t
+        currentEnergyBilance_e  % [Wh]
+        cuurentEnergyBilance  % [Wh]
     end
     
     methods (Abstract)
