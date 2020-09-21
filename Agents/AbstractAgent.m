@@ -4,6 +4,7 @@ classdef (Abstract) AbstractAgent < handle
     properties (Abstract)
         % Common Parameter
         COCfactor
+        nAgents
         % Load
         LoadProfile_e  % [W]
         LoadProfile_t  % [W]
