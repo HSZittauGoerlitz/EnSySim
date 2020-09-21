@@ -55,7 +55,7 @@ classdef PHHconsumer_e < AbstractAgent
         end
 
         function self = update(self, timeIdx)
-           self.currentEnergyBalance_e = self.LoadProfile_e(timeIdx);
+           self.currentEnergyBalance_e = self.staticEnergyBalance_e(timeIdx);
         end
     end
 end
