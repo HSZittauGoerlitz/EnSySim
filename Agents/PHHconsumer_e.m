@@ -11,15 +11,16 @@ classdef PHHconsumer_e < AbstractAgent
         Generation_t
         Storage_e
         Storage_t
-        currentEnergyBilance_e
-        currentEnergyBilance_t
+        currentEnergyBalance_e
+        currentEnergyBalance_t
         % Agent specific properties
-        staticEnergyBilance_e
+        staticEnergyBalance_e
     end
 
     methods
         function self = PHHconsumer_e(nAgents, normSLP, PHH_COC_dist)
             self.nAgents = nAgents;
+            % get random coc from given distribution
             self.getCOC(PHH_COC_dist);
             self.LoadProfile_e = normSLP.PHH .* self.COCfactor .* ...
                                  (0.8 + rand(length(normSLP.PHH), 1));
@@ -32,8 +33,8 @@ classdef PHHconsumer_e < AbstractAgent
             % set thermal Balance to 0
             self.currentEnergyBilance_t = 0;
             % get static electrical bilance
-            self.staticEnergyBilance_e = sum(self.LoadProfile_e * 0.25, 2);
-            self.currentEnergyBilance_e = 0;
+            self.staticEnergyBalance_e = sum(self.LoadProfile_e * 0.25, 2);
+            self.currentEnergyBalance_e = 0;
         end
 
         function self = getCOC(self, PHH_COC_dist)
@@ -52,9 +53,9 @@ classdef PHHconsumer_e < AbstractAgent
             mask = self.COCfactor < 1;
             self.COCfactor(mask) = 1;
         end
-        
+
         function self = update(self, timeIdx)
-           self.currentEnergyBilance_e = self.LoadProfile_e(timeIdx);
+           self.currentEnergyBalance_e = self.LoadProfile_e(timeIdx);
         end
     end
 end
