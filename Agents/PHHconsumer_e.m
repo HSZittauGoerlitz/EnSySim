@@ -25,7 +25,7 @@ classdef PHHconsumer_e < AbstractAgent
             self.Generation_t = [];
             self.Storage_e = [];
             self.Storage_t = [];
-            self.currentEnergyBilance_t = [];
+            self.currentEnergyBilance_t = 0;
         end
 
         function self = getCOC(self, PHH_COC_dist)
