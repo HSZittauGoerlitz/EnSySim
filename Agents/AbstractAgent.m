@@ -1,4 +1,4 @@
-classdef (Abstract) AbstractAgent
+classdef (Abstract) AbstractAgent < handle
     %ABSTRACTAGENT Definition of the Basic Agent structure
     
     properties (Abstract)

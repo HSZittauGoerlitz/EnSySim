@@ -6,4 +6,4 @@ endTime = datetime("31.01.2020 23:45:00");
 time = startTime:minutes(15):endTime;
 normSLP = getNormSLPs(startTime, endTime);
 
-agent = PHHconsumer_e(normSLP.PHH, PHH_COC_distribution);
+agent = PHHconsumer_e(normSLP, PHH_COC_distribution);
