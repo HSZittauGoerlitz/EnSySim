@@ -8,15 +8,15 @@ load BoundaryConditions.mat
 time = startTime:minutes(15):endTime;
 normSLP = getNormSLPs(startTime, endTime);
 
-agents = PHHconsumer_e(5000, normSLP, PHH_COC_distribution);
+TestCell = cellManager(5000, normSLP, PHH_COC_distribution);
 
 %% Simulate
 idx = 0;
 resBilance_e = zeros(1, 5000);
 for t = time
     idx = idx + 1;
-    agents.update(idx);
-    resBilance_e(idx) = agents.currentEnergyBalance_e;
+    TestCell.update(idx);
+    resBilance_e(idx) = TestCell.currentEnergyBalance_e;
 end
 
 %% show results
