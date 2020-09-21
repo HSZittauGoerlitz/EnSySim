@@ -16,7 +16,7 @@ resBilance_e = zeros(1, 5000);
 for t = time
     idx = idx + 1;
     agents.update(idx);
-    resBilance_e(idx) = agents.currentEnergyBilance_e;
+    resBilance_e(idx) = agents.currentEnergyBalance_e;
 end
 
 %% show results

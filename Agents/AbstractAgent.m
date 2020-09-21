@@ -18,8 +18,8 @@ classdef (Abstract) AbstractAgent < handle
         % resulting Energy bilance at given time step
         % positive: Energy is consumed
         % negative: Energy is generated
-        currentEnergyBilance_e  % [Wh]
-        currentEnergyBilance_t  % [Wh]
+        currentEnergyBalance_e  % [Wh]
+        currentEnergyBalance_t  % [Wh]
     end
     
     methods (Abstract)

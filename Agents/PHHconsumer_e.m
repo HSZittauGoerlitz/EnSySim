@@ -31,7 +31,7 @@ classdef PHHconsumer_e < AbstractAgent
             self.Storage_e = [];
             self.Storage_t = [];
             % set thermal Balance to 0
-            self.currentEnergyBilance_t = 0;
+            self.currentEnergyBalance_t = 0;
             % get static electrical bilance
             self.staticEnergyBalance_e = sum(self.LoadProfile_e * 0.25, 2);
             self.currentEnergyBalance_e = 0;
