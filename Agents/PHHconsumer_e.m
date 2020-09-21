@@ -10,12 +10,13 @@ classdef PHHconsumer_e < AbstractAgent
         Generation_t
         Storage_e
         Storage_t
-        currentEnergyBilance_e
-        currentEnergyBilance_t
+        currentEnergyBalance_e
+        currentEnergyBalance_t
     end
 
     methods
         function self = PHHconsumer_e(normSLP, PHH_COC_dist)
+            % get random coc from given distribution
             self.getCOC(PHH_COC_dist);
             self.LoadProfile_e = normSLP .* self.COCfactor .* ...
                                  (0.8 + rand(1, lenght(normSLP)));
@@ -45,7 +46,7 @@ classdef PHHconsumer_e < AbstractAgent
         end
         
         function self = update(self, timeStep)
-           self.currentEnergyBilance_e = self.LoadProfile_e(timeStep) * 0.25;
+           self.currentEnergyBalance_e = self.LoadProfile_e(timeStep) * 0.25;
         end
     end
 end
