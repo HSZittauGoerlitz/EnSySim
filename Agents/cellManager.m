@@ -7,8 +7,10 @@ classdef cellManager < handle
 
     properties
         % number of specific agents
+        nBSLconsumer_e
         nPHHconsumer_e
         % agent objects
+        BSLconsumer_e
         PHHconsumer_e
         % resulting balance
         currentEnergyBalance_e  % Wh
@@ -16,16 +18,24 @@ classdef cellManager < handle
     end
 
     methods
-        function self = cellManager(nPHHconsumer_e,...
-                                    normSLP, PHH_COC_distribution)
-            self.PHHconsumer_e = PHHconsumer_e(nPHHconsumer_e, ...
+        function self = cellManager(nBSLconsumer_e, nPHHconsumer_e, ...
+                                    pAgriculture, ...
+                                    normSLP, ...
+                                    BSL_COC_distribution, PHH_COC_distribution)
+            self.nBSLconsumer_e = nBSLconsumer_e;
+            self.nPHHconsumer_e = nPHHconsumer_e;
+            self.BSLconsumer_e = BSLconsumer_e(self.nBSLconsumer_e, pAgriculture, ...
+                                               normSLP, BSL_COC_distribution);
+            self.PHHconsumer_e = PHHconsumer_e(self.nPHHconsumer_e, ...
                                                normSLP, PHH_COC_distribution);
             self.currentEnergyBalance_e = 0;
         end
 
         function self = update(self, timeIdx)
+            self.BSLconsumer_e.update(timeIdx);
             self.PHHconsumer_e.update(timeIdx);
-            self.currentEnergyBalance_e = self.PHHconsumer_e.currentEnergyBalance_e;
+            self.currentEnergyBalance_e = self.BSLconsumer_e.currentEnergyBalance_e + ...
+                                          self.PHHconsumer_e.currentEnergyBalance_e;
         end
     end
 end

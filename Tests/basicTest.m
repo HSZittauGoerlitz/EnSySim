@@ -8,7 +8,8 @@ load BoundaryConditions.mat
 time = startTime:minutes(15):endTime;
 normSLP = getNormSLPs(startTime, endTime);
 
-TestCell = cellManager(5000, normSLP, PHH_COC_distribution);
+TestCell = cellManager(1000, 5000, 0.2, normSLP, ...
+                       BSL_COC_distribution, PHH_COC_distribution);
 
 %% Simulate
 idx = 0;
