@@ -25,5 +25,25 @@ classdef (Abstract) AbstractAgent < handle
     methods (Abstract)
         update(self)
     end
+    
+    methods
+        function self = getCOC(self, COC_dist, minCOC, scaleCOC)
+            iter = 0;
+            self.COCfactor = zeros(1, self.nAgents);
+            while iter < 10
+                mask = self.COCfactor < minCOC;
+                sumNew = sum(mask);
+                if sumNew > 0
+                    self.COCfactor(mask) = COC_dist.random([1, sumNew]) * ...
+                                           scaleCOC;
+                    iter = iter + 1;
+                else
+                    break;
+                end
+            end
+            mask = self.COCfactor < minCOC;
+            self.COCfactor(mask) = minCOC;
+        end
+    end
 end
 
