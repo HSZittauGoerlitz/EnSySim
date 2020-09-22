@@ -23,8 +23,7 @@ classdef PHHconsumer_e < AbstractAgent
             % get random coc from given distribution
             self.getCOC(PHH_COC_dist, 1, 5);
             self.LoadProfile_e = normSLP.PHH .* self.COCfactor .* ...
-                                 (0.8 + rand(length(normSLP.PHH), ...
-                                             self.nAgents));
+                                 (0.8 + rand(height(normSLP), self.nAgents));
             % deactivate unused properties
             self.LoadProfile_t = [];
             self.Generation_e = [];
