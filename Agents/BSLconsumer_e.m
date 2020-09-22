@@ -32,10 +32,6 @@ classdef BSLconsumer_e < AbstractAgent
             %   normSLP - timetable with all normalised load profiles
             %   BSL_COC_dist - Distribution function for generating 
             %                  COC values of BSL agents
-            if pAgriculture < 0 || pAgriculture > 1
-               error("pAgriculture must be a number between 0 and 1!");
-            end
-            
             self.nAgents = nAgents;
             self.nL0Agents = round(self.nAgents * pAgriculture);
             self.nG0Agents = nAgents - self.nL0Agents;

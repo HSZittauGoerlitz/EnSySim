@@ -22,6 +22,11 @@ classdef cellManager < handle
                                     pAgriculture, ...
                                     normSLP, ...
                                     BSL_COC_distribution, PHH_COC_distribution)
+            % check input parameter
+            if pAgriculture < 0 || pAgriculture > 1
+               error("pAgriculture must be a number between 0 and 1!");
+            end
+                                
             self.nBSLconsumer_e = nBSLconsumer_e;
             self.nPHHconsumer_e = nPHHconsumer_e;
             self.BSLconsumer_e = BSLconsumer_e(self.nBSLconsumer_e, pAgriculture, ...
