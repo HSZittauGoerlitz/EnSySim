@@ -13,7 +13,7 @@ TestCell = cellManager(5000, 0.25, 0.75, 0.2, normSLP, ...
 
 %% Simulate
 idx = 0;
-resBilance_e = zeros(1, 5000);
+resBilance_e = zeros(1, length(time));
 for t = time
     idx = idx + 1;
     TestCell.update(idx);
