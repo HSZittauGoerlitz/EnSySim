@@ -38,14 +38,14 @@ classdef PHHconsumer_e < AbstractAgent
             self.currentEnergyBalance_e = 0;
         end
 
-        function self = getCOC(self, PHH_COC_dist)
+        function self = getCOC(self, COC_dist)
             iter = 0;
             self.COCfactor = zeros(1, self.nAgents);
             while iter < 10
                 mask = self.COCfactor < 1;
                 sumNew = sum(mask);
                 if sumNew > 0
-                    self.COCfactor(mask) = PHH_COC_dist.random([1, sumNew]) * 5;
+                    self.COCfactor(mask) = COC_dist.random([1, sumNew]) * 5;
                     iter = iter + 1;
                 else
                     break;
