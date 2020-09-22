@@ -40,7 +40,7 @@ classdef BSLconsumer_e < AbstractAgent
             self.nL0Agents = round(self.nAgents * pAgriculture);
             self.nG0Agents = nAgents - self.nL0Agents;
             % get random coc from given distribution
-            self.getCOC(BSL_COC_dist, 0, 1);
+            self.getCOC(BSL_COC_dist, 1, 1);
             self.LoadProfile_e = zeros(height(normSLP), self.nAgents);
             self.LoadProfile_e(:, 1:self.nG0Agents) = normSLP.G0 .* ...
                 self.COCfactor(1:self.nG0Agents) .* ...
