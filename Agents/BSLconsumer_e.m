@@ -1,6 +1,6 @@
 classdef BSLconsumer_e < AbstractAgent
-    %BSLCONSUMER_E Agent simulationg an business with standard load profile
-    %   This agent has only an electrical consumption
+    %BSLCONSUMER_E Agents simulationg business with standard load profile
+    %   This agents have only an electrical consumption
 
     properties
         COCfactor

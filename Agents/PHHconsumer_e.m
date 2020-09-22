@@ -1,6 +1,6 @@
 classdef PHHconsumer_e < AbstractAgent
-    %PHHCONSUMER_E Agent simulationg an private househould
-    %   This agent has only an electrical consumption
+    %PHHCONSUMER_E Agents simulationg private househoulds
+    %   This agents have only an electrical consumption
 
     properties
         COCfactor
