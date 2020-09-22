@@ -29,7 +29,7 @@ classdef (Abstract) AbstractAgent < handle
     methods
         function self = getCOC(self, COC_dist, minCOC, scaleCOC)
             iter = 0;
-            self.COCfactor = zeros(1, self.nAgents);
+            self.COCfactor = -ones(1, self.nAgents);
             while iter < 10
                 mask = self.COCfactor < minCOC;
                 sumNew = sum(mask);
