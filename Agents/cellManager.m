@@ -27,7 +27,7 @@ classdef cellManager < handle
 
     methods
         function self = cellManager(nAgents, pBSLagents, pPHHagents, ...
-                                    pAgriculture, ...
+                                    pProsumer, pAgriculture, ...
                                     normSLP, ...
                                     BSL_COC_distribution, PHH_COC_distribution)
             %cellManager Create manager for agents in a specific area (cell)
@@ -39,6 +39,7 @@ classdef cellManager < handle
             %                standard load profile (0 to 1)
             %   pPHHagents - Proportion factor of private household agents
             %                (0 to 1)
+            %   pProsumer - Propotion of Prosumer agents (0 to 1)
             %   pAgriculture - Factor for propotion of agriculture agents on
             %                  BSL agents (0 to 1)
             %   normSLP - timetable with all normalised load profiles
@@ -55,6 +56,9 @@ classdef cellManager < handle
             end
             if pBSLagents + pPHHagents ~= 1
                 error("Sum of propotions for PHH and BSL agents must be equal to 1!");
+            end
+            if pProsumer < 0 || pProsumer > 1
+                error("pProsumer must be a number between 0 and 1!");
             end
             if pAgriculture < 0 || pAgriculture > 1
                error("pAgriculture must be a number between 0 and 1!");
