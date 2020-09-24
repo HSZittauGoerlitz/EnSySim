@@ -1,6 +1,5 @@
-classdef PHHconsumer_e < AbstractAgent
+classdef PHHagents < AbstractAgent
     %PHHCONSUMER_E Agents simulationg private househoulds
-    %   This agents have only an electrical consumption
 
     properties
         COCfactor
@@ -18,7 +17,7 @@ classdef PHHconsumer_e < AbstractAgent
     end
 
     methods
-        function self = PHHconsumer_e(nAgents, normSLP, PHH_COC_dist)
+        function self = PHHconsumer_e(nAgents, pProsumer, normSLP, PHH_COC_dist)
             self.nAgents = nAgents;
             % get random coc from given distribution
             self.getCOC(PHH_COC_dist, 1, 5);
