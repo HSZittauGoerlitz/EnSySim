@@ -15,7 +15,7 @@ classdef (Abstract) AbstractAgent < handle
         Storage_e  % [W]
         Storage_t  % [W]
         % Bilance
-        % resulting Energy bilance at given time step
+        % resulting Energy load bilance at given time step
         % positive: Energy is consumed
         % negative: Energy is generated
         currentEnergyBalance_e  % [Wh]
