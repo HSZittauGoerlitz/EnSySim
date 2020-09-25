@@ -9,14 +9,14 @@ classdef cellManager < handle
         % number of specific agents
         % -------------------------
         
-        nBSLconsumer_e % number of busines agents with SLP with electric consumption
-        nPHHconsumer_e % number of private household agents with electric consumption
+        nBSLagents % number of busines agents with SLP
+        nPHHagents % number of private household agents
         
         % agent objects
         % -------------
         
-        BSLconsumer_e % object managing BSL angents with electric consumption
-        PHHconsumer_e % object managing PHH angents with electric consumption
+        BSLagents % object managing BSL angents
+        PHHagents % object managing PHH angents
         
         % resulting balance
         % -----------------
@@ -30,6 +30,7 @@ classdef cellManager < handle
                                     pAgriculture, ...
                                     pPVplants, ...
                                     normSLP, ...
+                                    Eg, ...
                                     BSL_COC_distribution, PHH_COC_distribution)
             %cellManager Create manager for agents in a specific area (cell)
             %
@@ -44,6 +45,8 @@ classdef cellManager < handle
             %                  BSL agents (0 to 1)
             %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
             %   normSLP - timetable with all normalised load profiles
+            %   Eg - Mean annual global irradiation for simulated region
+            %        [kWh/m^2]
             %   BSL_COC_dist - Distribution function for generating 
             % check input parameter
             if nAgents <= 0
@@ -65,21 +68,21 @@ classdef cellManager < handle
                error("pAgriculture must be a number between 0 and 1!");
             end
             % calculate agent numbers                    
-            self.nBSLconsumer_e = round(nAgents * pBSLagents);
-            self.nPHHconsumer_e = round(nAgents * pPHHagents);
+            self.nBSLagents= round(nAgents * pBSLagents);
+            self.nPHHagents = round(nAgents * pPHHagents);
             % initialise agent managers
-            self.BSLconsumer_e = BSLconsumer_e(self.nBSLconsumer_e, pAgriculture, ...
-                                               normSLP, BSL_COC_distribution);
-            self.PHHconsumer_e = PHHconsumer_e(self.nPHHconsumer_e, ...
-                                               normSLP, PHH_COC_distribution);
+            self.BSLagents = BSLagents(self.nBSLagents, pAgriculture, ...
+                                       normSLP, BSL_COC_distribution);
+            self.PHHagents = PHHagents(self.nPHHagents, pPVplants,...
+                                       normSLP, Eg, PHH_COC_distribution);
             self.currentEnergyBalance_e = 0;
         end
 
         function self = update(self, timeIdx)
-            self.BSLconsumer_e.update(timeIdx);
-            self.PHHconsumer_e.update(timeIdx);
-            self.currentEnergyBalance_e = self.BSLconsumer_e.currentEnergyBalance_e + ...
-                                          self.PHHconsumer_e.currentEnergyBalance_e;
+            self.BSLagents.update(timeIdx);
+            self.PHHagents.update(timeIdx);
+            self.currentEnergyBalance_e = self.BSLagents.currentEnergyBalance_e + ...
+                                          self.PHHagents.currentEnergyBalance_e;
         end
     end
 end

@@ -20,8 +20,8 @@ classdef BSLagents < AbstractAgent
     end
 
     methods
-        function self = BSLconsumer_e(nAgents, pAgriculture, ...
-                                      normSLP, BSL_COC_dist)
+        function self = BSLagents(nAgents, pAgriculture, ...
+                                  normSLP, BSL_COC_dist)
             %BSLconsumer_e Create manager for business agents with standard
             %   load profiles
             %
