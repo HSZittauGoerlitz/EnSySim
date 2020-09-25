@@ -31,7 +31,8 @@ classdef cellManager < handle
                                     pPVplants, ...
                                     normSLP, ...
                                     Eg, ...
-                                    BSL_COC_distribution, PHH_COC_distribution)
+                                    BSL_COC_distribution, PHH_COC_distribution, ...
+                                    BSL_PV_APDdist, PHH_PV_APDdist)
             %cellManager Create manager for agents in a specific area (cell)
             %
             % Inputs:
@@ -48,6 +49,10 @@ classdef cellManager < handle
             %   Eg - Mean annual global irradiation for simulated region
             %        [kWh/m^2]
             %   BSL_COC_dist - Distribution function for generating 
+            %   BSL_PV_APDdist - Distribution for generating PV auxilary
+            %                    demand factors of BSL agents
+            %   PHH_PV_APDdist - Distribution for generating PV auxilary
+            %                    demand factors of PHH agents
             % check input parameter
             if nAgents <= 0
                 error("Number of agents must be a positive integer value");
@@ -74,7 +79,8 @@ classdef cellManager < handle
             self.BSLagents = BSLagents(self.nBSLagents, pAgriculture, ...
                                        normSLP, BSL_COC_distribution);
             self.PHHagents = PHHagents(self.nPHHagents, pPVplants,...
-                                       normSLP, Eg, PHH_COC_distribution);
+                                       normSLP, Eg, PHH_COC_distribution, ...
+                                       PHH_PV_APDdist, BSL_PV_APDdist);
             self.currentEnergyBalance_e = 0;
         end
 
