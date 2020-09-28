@@ -5,7 +5,7 @@ endTime = datetime("31.12.2020 23:45:00");
 load BoundaryConditions.mat
 
 %% Init
-time = startTime:minutes(15):endTime;
+time = getTime(startTime, endTime);
 normSLP = getNormSLPs(startTime, endTime);
 
 TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.2, normSLP, 1000., ...
