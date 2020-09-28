@@ -10,7 +10,7 @@ function [time, maskWinter, maskIntermediate, maskSummer, ...
 %   startDate - First date of SLP curve, complete day is considered (datetime)
 %   endDate   - Last date of SLP curve, complete day is considered (datetime)
     % get time values
-    time = startDate:minutes(15):endDate;
+    time = getTime(startDate, endDate);
     % masks for selection of characteristic periods
     maskWinter = time.Month >= 11 | time.Month < 3 | ...
                  (time.Month == 3 & time.Day <= 20);
