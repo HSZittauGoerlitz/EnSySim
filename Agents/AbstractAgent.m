@@ -5,7 +5,7 @@ classdef (Abstract) AbstractAgent < handle
         % Common Parameter
         
         COCfactor  % Coefficient of Consumer
-        nAgents  % number of Agents in manager
+        nAgents  % Number of Agents in manager
         
         % Load
         
@@ -16,7 +16,7 @@ classdef (Abstract) AbstractAgent < handle
         
         Generation_e  % Electrical generation [W]
         Generation_t  % Thermal generation [W]
-        nPV  % Nimber of angents with PV-Plants
+        nPV  % Number of angents with PV-Plants
         APV  % PV area [m^2]
         
         % Storage
