@@ -1,33 +1,51 @@
 classdef (Abstract) AbstractAgent < handle
-    %ABSTRACTAGENT Definition of the Basic Agent structure
+    %ABSTRACTAGENT Definition of the Basic Agent Manager
     
-    properties (Abstract)
+    properties
         % Common Parameter
-        COCfactor
-        nAgents
+        
+        COCfactor  % Coefficient of Consumer
+        nAgents  % number of Agents in manager
+        
         % Load
-        LoadProfile_e  % [W]
-        LoadProfile_t  % [W]
+        
+        LoadProfile_e  % Electrical load profile [W]
+        LoadProfile_t  % Thermal load profile [W]
+        
         % Generation
-        Generation_e  % [W]
-        Generation_t  % [W]
+        
+        Generation_e  % Electrical generation [W]
+        Generation_t  % Thermal generation [W]
+        nPV  % Nimber of angents with PV-Plants
+        APV  % PV area [m^2]
+        
         % Storage
-        Storage_e  % [W]
-        Storage_t  % [W]
+        
+        Storage_e  % Electrical power from or to storages [W]
+        Storage_t  % Thermal power from or to storages [W]
+        
         % Bilance
         % resulting Energy load bilance at given time step
         % positive: Energy is consumed
         % negative: Energy is generated
-        currentEnergyBalance_e  % [Wh]
-        currentEnergyBalance_t  % [Wh]
-    end
-    
-    methods (Abstract)
-        update(self)
+        
+        staticEnergyBalance_e  % Electric energy bilance from load
+        currentEnergyBalance_e  % Resulting electrical energy bilance in current time step [Wh]
+        currentEnergyBalance_t  % Resulting thermal energy bilance in current time step [Wh]
+        
+        % selection masks
+        
+        maskPV  % Mask for selecting all agents with PV-Plants
     end
     
     methods
         function self = getCOC(self, COC_dist, minCOC, scaleCOC)
+            %getCOC Generate COC factors for all agents
+            %
+            % Inputs:
+            %   COC_dist - Distribution used for random numer generation
+            %   minCOC - Min. possible COC factor
+            %   scaleCOC - Max. possible COC factor
             iter = 0;
             self.COCfactor = -ones(1, self.nAgents);
             while iter < 10
@@ -44,6 +62,13 @@ classdef (Abstract) AbstractAgent < handle
             mask = self.COCfactor < minCOC;
             self.COCfactor(mask) = minCOC;
         end
+        
+        function self = update(self, timeIdx, Eg)
+            self.Generation_e(self.maskPV) = self.APV * Eg * 0.25;
+            self.currentEnergyBalance_e = sum(self.staticEnergyBalance_e(timeIdx, :) - ...
+                                              self.Generation_e);
+        end
+        
     end
 end
 

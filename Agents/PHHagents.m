@@ -1,34 +1,25 @@
 classdef PHHagents < AbstractAgent
     %PHHCONSUMER_E Agents simulationg private househoulds
-
     properties
-        % Common
-        COCfactor
-        nAgents
-        % Load
-        LoadProfile_e
-        LoadProfile_t
-        % Generation
-        Generation_e
-        Generation_t
-        nPV
-        APV  % PV area in m^2
-        % Storage
-        Storage_e
-        Storage_t
-        % Results
-        staticEnergyBalance_e
-        currentEnergyBalance_e
-        currentEnergyBalance_t
-        % selection masks
-        maskPV
-        
     end
-
+    
     methods
-        function self = PHHagents(nAgents, pPVplants, normSLP, ...
-                                  Eg, ...
+        function self = PHHagents(nAgents, pPVplants, Eg, normSLP, ...
                                   PHH_COC_dist, PHH_PV_dist, BSL_PV_dist)
+            %PHHagents Create manager for private household agents
+            %
+            % Inputs:
+            %   nAgents - Number of Agents
+            %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
+            %   Eg - Mean annual global irradiation for simulated region
+            %        [kWh/m^2]
+            %   normSLP - timetable with all normalised load profiles
+            %   PHH_COC_dist - Distribution function for generating 
+            %                  COC values of PHH agents
+            %   PHH_PV_dist - Distribution for generating PV auxilary
+            %                 demand factors of PHH agents
+            %   BSL_PV_dist - Distribution for generating PV auxilary
+            %                 demand factors of BSL agents
             self.nAgents = nAgents;
             % get random coc from given distribution
             self.getCOC(PHH_COC_dist, 1, 5);
@@ -63,12 +54,6 @@ classdef PHHagents < AbstractAgent
             % get static electrical bilance
             self.staticEnergyBalance_e = self.LoadProfile_e * 0.25;
             self.currentEnergyBalance_e = 0;
-        end
-
-        function self = update(self, timeIdx, Eg)
-            self.Generation_e(self.maskPV) = self.APV * Eg * 0.25;
-            self.currentEnergyBalance_e = sum(self.staticEnergyBalance_e(timeIdx, :) - ...
-                                              self.Generation_e);
         end
     end
 end

@@ -2,39 +2,18 @@ classdef BSLagents < AbstractAgent
     %BSLCONSUMER_E Agents simulationg business with standard load profile
 
     properties
-        % Common
-        COCfactor
-        nAgents
+        % Additional Common
         nG0Agents
         nL0Agents
         startIdxAgri
-        % Load
-        LoadProfile_e
-        LoadProfile_t
-        % Generation
-        Generation_e
-        Generation_t
-        nPV
-        APV  % PV area in m^2
-        % Storage
-        Storage_e
-        Storage_t
-        % Results
-        staticEnergyBalance_e
-        currentEnergyBalance_e
-        currentEnergyBalance_t
-        % selection masks
-        maskPV
-
-
     end
 
     methods
         function self = BSLagents(nAgents, pAgriculture, pPVplants, ...
                                   Eg, normSLP, ...
                                   BSL_COC_dist, BSL_PV_dist)
-            %BSLconsumer_e Create manager for business agents with standard
-            %   load profiles
+            %BSLagents Create manager for business agents with 
+            %          standard load profiles
             %
             % Inputs:
             %   nAgents - Number of Agents
@@ -78,12 +57,6 @@ classdef BSLagents < AbstractAgent
             % get static electrical bilance
             self.staticEnergyBalance_e = self.LoadProfile_e * 0.25;
             self.currentEnergyBalance_e = 0;
-        end
-
-        function self = update(self, timeIdx, Eg)
-            self.Generation_e(self.maskPV) = self.APV * Eg * 0.25;
-            self.currentEnergyBalance_e = sum(self.staticEnergyBalance_e(timeIdx, :) - ...
-                                              self.Generation_e);
         end
     end
 end
