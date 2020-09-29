@@ -8,6 +8,8 @@ load BoundaryConditions.mat
 time = getTime(startTime, endTime);
 normSLP = getNormSLPs(startTime, endTime);
 
+globalRad = getGlobalRadiation(startTime, endTime, Weather.East);
+
 TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.2, normSLP, 1000., ...
                        BSL_COC_distribution, PHH_COC_distribution, ...
                        BSL_PV_AuxPowDemand_dist, PHH_PV_AuxPowDemand_dist);
@@ -15,10 +17,12 @@ TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.2, normSLP, 1000., ...
 %% Simulate
 idx = 0;
 resBilance_e = zeros(1, length(time));
+PHH_gen = zeros(1, length(time));
 for t = time
     idx = idx + 1;
-    TestCell.update(idx);
+    TestCell.update(idx, globalRad.Eg(idx));
     resBilance_e(idx) = TestCell.currentEnergyBalance_e;
+    PHH_gen(idx) = sum(TestCell.PHHagents.Generation_e);
 end
 
 %% show results

@@ -84,9 +84,9 @@ classdef cellManager < handle
             self.currentEnergyBalance_e = 0;
         end
 
-        function self = update(self, timeIdx)
+        function self = update(self, timeIdx, Eg)
             self.BSLagents.update(timeIdx);
-            self.PHHagents.update(timeIdx);
+            self.PHHagents.update(timeIdx, Eg);
             self.currentEnergyBalance_e = self.BSLagents.currentEnergyBalance_e + ...
                                           self.PHHagents.currentEnergyBalance_e;
         end

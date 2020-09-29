@@ -65,9 +65,9 @@ classdef PHHagents < AbstractAgent
             self.currentEnergyBalance_e = 0;
         end
 
-        function self = update(self, timeIdx)
-            self.Generation_e(self.maskPV) = self.APV * 12;
-            self.currentEnergyBalance_e = sum(self.staticEnergyBalance_e(timeIdx, :) + ...
+        function self = update(self, timeIdx, Eg)
+            self.Generation_e(self.maskPV) = self.APV * Eg * 0.25;
+            self.currentEnergyBalance_e = sum(self.staticEnergyBalance_e(timeIdx, :) - ...
                                               self.Generation_e);
         end
     end
