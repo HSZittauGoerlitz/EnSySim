@@ -10,7 +10,9 @@ normSLP = getNormSLPs(startTime, endTime);
 
 globalRad = getGlobalRadiation(startTime, endTime, Weather.East);
 
-TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.2, normSLP, 1000., ...
+meanEG = sum(Weather.East.Eg)*0.25*1e-3;
+
+TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.2, normSLP, meanEG, ...
                        BSL_COC_distribution, PHH_COC_distribution, ...
                        BSL_PV_AuxPowDemand_dist, PHH_PV_AuxPowDemand_dist);
 
@@ -18,11 +20,13 @@ TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.2, normSLP, 1000., ...
 idx = 0;
 resBilance_e = zeros(1, length(time));
 PHH_gen = zeros(1, length(time));
+BSL_gen = zeros(1, length(time));
 for t = time
     idx = idx + 1;
     TestCell.update(idx, globalRad.Eg(idx));
     resBilance_e(idx) = TestCell.currentEnergyBalance_e;
     PHH_gen(idx) = sum(TestCell.PHHagents.Generation_e);
+    BSL_gen(idx) = sum(TestCell.BSLagents.Generation_e);
 end
 
 %% show results
