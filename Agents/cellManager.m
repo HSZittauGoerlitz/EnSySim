@@ -91,6 +91,7 @@ classdef cellManager < handle
                                        PHH_COC_distribution, ...
                                        PHH_PV_APDdist, BSL_PV_APDdist);
             self.currentEnergyBalance_e = 0;
+            self.currentEnergyBalance_t = 0;
         end
 
         function self = update(self, timeIdx, Eg)
@@ -98,6 +99,7 @@ classdef cellManager < handle
             self.PHHagents.update(timeIdx, Eg);
             self.currentEnergyBalance_e = self.BSLagents.currentEnergyBalance_e + ...
                                           self.PHHagents.currentEnergyBalance_e;
+            self.currentEnergyBalance_t = self.PHHagents.currentEnergyBalance_t;
         end
     end
 end

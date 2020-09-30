@@ -39,8 +39,6 @@ classdef PHHagents < AbstractAgent
             %%%%%%
             self.LoadProfile_e = normSLP.PHH .* self.COCfactor .* ...
                                  (0.8 + rand(height(normSLP), self.nAgents));
-            % get static electrical bilance
-            self.staticEnergyBalance_e = self.LoadProfile_e * 0.25;
             % Generation
             %%%%%%%%%%%%
             % init generation array 
@@ -64,12 +62,27 @@ classdef PHHagents < AbstractAgent
             self.APV(maskAD) = self.APV(maskAD) .* ...
                                BSL_PV_dist.random(n_maskAD) .* ...
                                (rand(1, n_maskAD) .* 0.4 + 0.8);
-
+            %%%%%%%%%%%%%%%%%
+            % Thermal Model %
+            %%%%%%%%%%%%%%%%%
+            self.maskThermal = rand(1, self.nAgents) <= pThermal;
+            self.nThermal = sum(self.maskThermal);            
+            % static load profile -> hot water demand
+            self.LoadProfile_t = getHotWaterDemand(self.COCfactor(...
+                                     self.maskThermal)) ;
+             
             % deactivate unused properties
-            self.LoadProfile_t = [];
             self.Generation_t = [];
             self.Storage_e = [];
             self.Storage_t = [];        
+        end
+        
+        function self = update(self, timeIdx, Eg)
+            self = update@AbstractAgent(self, timeIdx, Eg);
+            self.currentEnergyBalance_t = ...
+                sum(self.LoadProfile_t .* (rand(1, self.nThermal) .* ...
+                                           0.4 + 0.8) .* ...
+                    0.25);
         end
     end
 end
