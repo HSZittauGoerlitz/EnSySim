@@ -18,27 +18,29 @@ TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.2, normSLP, meanEG, ...
 
 %% Simulate
 idx = 0;
-resBilance_e = zeros(1, length(time));
-PHH_gen = zeros(1, length(time));
-BSL_gen = zeros(1, length(time));
+Consumption_e = zeros(1, length(time));
+Generation_e = zeros(1, length(time));
 for t = time
     idx = idx + 1;
     TestCell.update(idx, globalRad.Eg(idx));
-    resBilance_e(idx) = TestCell.currentEnergyBalance_e;
-    PHH_gen(idx) = sum(TestCell.PHHagents.Generation_e);
-    BSL_gen(idx) = sum(TestCell.BSLagents.Generation_e);
+    Consumption_e(idx) = TestCell.currentEnergyBalance_e;
+    Generation_e(idx) = sum(TestCell.PHHagents.Generation_e) + ...
+                        sum(TestCell.BSLagents.Generation_e);
 end
 
 %% show results
-figure;
+figure('Position', [500, 200, 1000, 800])
+
 subplot(2, 1, 1)
-plot(time, resBilance_e*1e-3)
+plot(time, Generation_e*1e-3, time, Consumption_e*1e-3)
 grid on
-xlabel("Time")
-ylabel("Electrical Energy consumption in kWh")
+ylabel("Electrical Energy in kWh")
+
+legend("Generation", "Consumption", 'Location', 'northoutside', ...
+       'Orientation', 'horizontal')
 
 subplot(2, 1, 2)
-plot(time, cumsum(resBilance_e*1e-6))
+plot(time, cumsum(Generation_e*1e-6), time, cumsum(Consumption_e*1e-6))
 grid on
 xlabel("Time")
-ylabel("Cumulative Electrical Energy consumption in MWh")
+ylabel("Cumulative Electrical Energy in MWh")
