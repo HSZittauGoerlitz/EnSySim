@@ -1,11 +1,16 @@
 classdef (Abstract) AbstractAgent < handle
     %ABSTRACTAGENT Definition of the Basic Agent Manager
+    %
+    % eeb: electrical energy bilance
+    % dhn: district heating network
+    % teb: thermal energy bilance
     
     properties
         % Common Parameter
         
         COCfactor  % Coefficient of Consumer
         nAgents  % Number of Agents in manager
+        nThermal  % Number of Agents with connection to dhn
         
         % Load
         
@@ -29,13 +34,14 @@ classdef (Abstract) AbstractAgent < handle
         % positive: Energy is consumed
         % negative: Energy is generated
         
-        staticEnergyBalance_e  % Electric energy bilance from load
-        currentEnergyBalance_e  % Resulting electrical energy bilance in current time step [Wh]
-        currentEnergyBalance_t  % Resulting thermal energy bilance in current time step [Wh]
+        staticEnergyBalance_e  % Eeb from load
+        currentEnergyBalance_e  % Resulting eeb in current time step [Wh]
+        currentEnergyBalance_t  % Resulting teb in current time step [Wh]
         
         % selection masks
         
         maskPV  % Mask for selecting all agents with PV-Plants
+        maskThermal  % Mask for selecting all agents with connection to dhn
     end
     
     methods
