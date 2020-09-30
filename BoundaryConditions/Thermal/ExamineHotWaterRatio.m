@@ -13,7 +13,7 @@ figure
 hold on
 yyaxis left
 ylabel('Heat in 10^9 kWh')
-plot(year, SpaceHeatingDemand, year, HotWaterDemand, year, ratio)
+plot(year, SpaceHeatingDemand, year, HotWaterDemand)
 yyaxis right
 ylabel('ratio')
 plot(year, ratio, year, r_mean, year, r_mean_15_18)
