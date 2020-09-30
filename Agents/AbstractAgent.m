@@ -34,7 +34,6 @@ classdef (Abstract) AbstractAgent < handle
         % positive: Energy is consumed
         % negative: Energy is generated
         
-        staticEnergyBalance_e  % Eeb from load
         currentEnergyBalance_e  % Resulting eeb in current time step [Wh]
         currentEnergyBalance_t  % Resulting teb in current time step [Wh]
         
@@ -71,8 +70,8 @@ classdef (Abstract) AbstractAgent < handle
         
         function self = update(self, timeIdx, Eg)
             self.Generation_e(self.maskPV) = self.APV * Eg * 0.25;
-            self.currentEnergyBalance_e = sum(self.staticEnergyBalance_e(timeIdx, :) - ...
-                                              self.Generation_e);
+            self.currentEnergyBalance_e = sum(self.LoadProfile_e(timeIdx, :) .* ...
+                                              0.25 - self.Generation_e);
         end
         
     end

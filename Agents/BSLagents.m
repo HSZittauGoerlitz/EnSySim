@@ -54,8 +54,6 @@ classdef BSLagents < AbstractAgent
             self.Storage_t = [];
             % set thermal Balance to 0
             self.currentEnergyBalance_t = 0;
-            % get static electrical bilance
-            self.staticEnergyBalance_e = self.LoadProfile_e * 0.25;
             self.currentEnergyBalance_e = 0;
         end
     end
