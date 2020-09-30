@@ -1,5 +1,5 @@
-function E_HWD = getHotWaterDemand(COC)
-%getHotWaterDemand Calculate hot water demand in kWh
+function P_HWD = getHotWaterDemand(COC)
+%getHotWaterDemand Calculate hot water demand in W
 %   The hot water demand is calculated in relation to the Agents COC value.
 %   For the calculation a regression model, deviated off destatis data, is
 %   used.
@@ -19,6 +19,6 @@ function E_HWD = getHotWaterDemand(COC)
         COC = 5;
     end
 
-    E_HWD = 684.7 * COC + 314.4;
+    P_HWD = (684.7 * COC + 314.4) * 1e3 / 8760;  % kW -> W; 8760h = 1year
 end
 
