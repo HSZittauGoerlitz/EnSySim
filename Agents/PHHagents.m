@@ -4,13 +4,16 @@ classdef PHHagents < AbstractAgent
     end
     
     methods
-        function self = PHHagents(nAgents, pPVplants, Eg, normSLP, ...
+        function self = PHHagents(nAgents, pPVplants, pThermal, ...
+                                  Eg, normSLP, ...
                                   PHH_COC_dist, PHH_PV_dist, BSL_PV_dist)
             %PHHagents Create manager for private household agents
             %
             % Inputs:
             %   nAgents - Number of Agents
             %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
+            %   pThermal - Propotion of agents with connection to the
+            %              district heating network (0 to 1)
             %   Eg - Mean annual global irradiation for simulated region
             %        [kWh/m^2]
             %   normSLP - timetable with all normalised load profiles
