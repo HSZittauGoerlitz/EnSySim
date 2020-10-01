@@ -1,4 +1,4 @@
-function E_SHD = getSpaceHeatingDemand(QsHL, Tout)
+function E_SHD = getSpaceHeatingDemand(QsHL, ToutN, Tout)
 %getSpaceHeatingDemand> Calculate space heating demand in kW
 %   The space heating demand is calculated in relation to outside
 %   temperature and a building specific heating load.
@@ -7,12 +7,14 @@ function E_SHD = getSpaceHeatingDemand(QsHL, Tout)
 %   multiplicating this power with 24h.
 % Inputs:
 %   QsHL - specific heat load of building in kW (double)
-%   Tout - daily mean outside temperature in °C (double)
+%   ToutN - Normed outside temperature for specific region in °C (double)
+%   Tout - Current (daily mean) outside temperature in °C (double or vector)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Input paramter handling %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     p = inputParser;
     addRequired(p, 'QsHL', @isnumeric);
+    addRequired(p, 'ToutN', @isnumeric);
     addRequired(p, 'Tout', @isnumeric);
 
     if QsHL <= 0
@@ -20,7 +22,7 @@ function E_SHD = getSpaceHeatingDemand(QsHL, Tout)
     end
 
     if Tout < 15
-        E_SHD = -QsHL/25 * Tout + 0.6*QsHL;
+        E_SHD = -QsHL/(15-ToutN) * (Tout-ToutN) + QsHL;
     else
         E_SHD = 0;
     end
