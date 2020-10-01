@@ -20,7 +20,7 @@ function E_SHD = getSpaceHeatingDemand(QsHL, Tout)
     end
 
     if Tout < 15
-        E_SHD = QsHL/25 * Tout + 0.6*QsHL;
+        E_SHD = -QsHL/25 * Tout + 0.6*QsHL;
     else
         E_SHD = 0;
     end
