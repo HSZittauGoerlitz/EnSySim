@@ -20,11 +20,18 @@ function E_SHD = getSpaceHeatingDemand(QsHL, ToutN, Tout)
     if QsHL <= 0
         error('Specific building heat load must be greater than 0.');
     end
-
-    if Tout < 15
-        E_SHD = -QsHL/(15-ToutN) * (Tout-ToutN) + QsHL;
+    
+    nTout = length(Tout);
+    if nTout > 1
+        E_SHD = zeros(1, nTout);
+        mask = Tout < 15;
+        E_SHD(mask) = -QsHL/(15-ToutN) * (Tout(mask)-ToutN) + QsHL;
     else
-        E_SHD = 0;
+        if Tout < 15
+            E_SHD = -QsHL/(15-ToutN) * (Tout-ToutN) + QsHL;
+        else
+            E_SHD = 0;
+        end
     end
 end
 
