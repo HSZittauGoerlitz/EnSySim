@@ -1,11 +1,13 @@
 classdef PHHagents < AbstractAgent
     %PHHCONSUMER_E Agents simulationg private househoulds
     properties
+        HotWaterProfile  % Hourly day Profile of hot water demand (factors)
     end
     
     methods
         function self = PHHagents(nAgents, pPVplants, pThermal, ...
                                   Eg, normSLP, ...
+                                  HotWaterProfile, ...
                                   PHH_COC_dist, PHH_PV_dist, BSL_PV_dist)
             %PHHagents Create manager for private household agents
             %
@@ -17,6 +19,8 @@ classdef PHHagents < AbstractAgent
             %   Eg - Mean annual global irradiation for simulated region
             %        [kWh/m^2]
             %   normSLP - timetable with all normalised load profiles
+            %   HotWaterProfile - Hourly day Profile of hot water demand
+            %                     (array of factors - 0 to 1)
             %   PHH_COC_dist - Distribution function for generating 
             %                  COC values of PHH agents
             %   PHH_PV_dist - Distribution for generating PV auxilary
@@ -65,6 +69,7 @@ classdef PHHagents < AbstractAgent
             %%%%%%%%%%%%%%%%%
             % Thermal Model %
             %%%%%%%%%%%%%%%%%
+            self.HotWaterProfile = HotWaterProfile;
             self.maskThermal = rand(1, self.nAgents) <= pThermal;
             self.nThermal = sum(self.maskThermal);            
             % static load profile -> hot water demand
@@ -77,11 +82,12 @@ classdef PHHagents < AbstractAgent
             self.Storage_t = [];        
         end
         
-        function self = update(self, timeIdx, Eg)
+        function self = update(self, timeIdx, hour, Eg)
             self = update@AbstractAgent(self, timeIdx, Eg);
             self.currentEnergyBalance_t = ...
                 sum(self.LoadProfile_t .* (rand(1, self.nThermal) .* ...
                                            0.4 + 0.8) .* ...
+                    self.HotWaterProfile(hour+1) .* ...
                     0.25);
         end
     end

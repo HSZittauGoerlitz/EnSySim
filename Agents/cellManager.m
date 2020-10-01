@@ -30,7 +30,7 @@ classdef cellManager < handle
                                     pAgriculture, pThermal, ...
                                     pPVplants, ...
                                     normSLP, ...
-                                    Eg, ...
+                                    Eg, HotWaterProfilePHH, ...
                                     BSL_COC_distribution, PHH_COC_distribution, ...
                                     BSL_PV_APDdist, PHH_PV_APDdist)
             %cellManager Create manager for agents in a specific area (cell)
@@ -50,6 +50,8 @@ classdef cellManager < handle
             %   normSLP - timetable with all normalised load profiles
             %   Eg - Mean annual global irradiation for simulated region
             %        [kWh/m^2]
+            %   HotWaterProfilePHH - Hourly day Profile of hot water demand
+            %                        for PHH agents (array of factors - 0 to 1)
             %   BSL_COC_dist - Distribution function for generating 
             %   BSL_PV_APDdist - Distribution for generating PV auxilary
             %                    demand factors of BSL agents
@@ -60,23 +62,33 @@ classdef cellManager < handle
                 error("Number of agents must be a positive integer value");
             end
             if pBSLagents < 0 || pBSLagents > 1
-                error("pBSLagents must be a number between 0 and 1!");
+                error("pBSLagents must be a number between 0 and 1");
             end
             if pPHHagents < 0 || pPHHagents > 1
-                error("pPHHagents must be a number between 0 and 1!");
+                error("pPHHagents must be a number between 0 and 1");
             end
             if pBSLagents + pPHHagents ~= 1
-                error("Sum of propotions for PHH and BSL agents must be equal to 1!");
+                error("Sum of propotions for PHH and BSL agents must be equal to 1");
             end
             if pPVplants < 0 || pPVplants > 1
-                error("pProsumer must be a number between 0 and 1!");
+                error("pProsumer must be a number between 0 and 1");
             end
             if pAgriculture < 0 || pAgriculture > 1
-               error("pAgriculture must be a number between 0 and 1!");
+               error("pAgriculture must be a number between 0 and 1");
             end
             if pThermal < 0 || pThermal > 1
-               error("pThermal must be a number between 0 and 1!");
+               error("pThermal must be a number between 0 and 1");
             end
+            if length(HotWaterProfilePHH) ~= 24
+                error("The Hot Water profile must have 24 values (Hourly)")
+            end
+            if min(HotWaterProfilePHH) < 0 || max(HotWaterProfilePHH) > 1
+                error("The Hot Water profile factors must be in range from 0 to 1")
+            end
+            if sum(HotWaterProfilePHH) < 0.995 || sum(HotWaterProfilePHH) > 1.005
+                error("The sum of Hot Water profile factors must be 1")
+            end
+            
             
             % calculate agent numbers                    
             self.nBSLagents= round(nAgents * pBSLagents);
@@ -87,16 +99,16 @@ classdef cellManager < handle
                                        Eg, normSLP, ...
                                        BSL_COC_distribution, BSL_PV_APDdist);
             self.PHHagents = PHHagents(self.nPHHagents, pPVplants, pThermal, ...
-                                       Eg, normSLP, ...
+                                       Eg, normSLP, HotWaterProfilePHH, ...
                                        PHH_COC_distribution, ...
                                        PHH_PV_APDdist, BSL_PV_APDdist);
             self.currentEnergyBalance_e = 0;
             self.currentEnergyBalance_t = 0;
         end
 
-        function self = update(self, timeIdx, Eg)
+        function self = update(self, timeIdx, hour, Eg)
             self.BSLagents.update(timeIdx, Eg);
-            self.PHHagents.update(timeIdx, Eg);
+            self.PHHagents.update(timeIdx, hour, Eg);
             self.currentEnergyBalance_e = self.BSLagents.currentEnergyBalance_e + ...
                                           self.PHHagents.currentEnergyBalance_e;
             self.currentEnergyBalance_t = self.PHHagents.currentEnergyBalance_t;

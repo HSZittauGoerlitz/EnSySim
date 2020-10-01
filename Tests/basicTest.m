@@ -13,6 +13,7 @@ globalRad = getGlobalRadiation(startTime, endTime, Weather.East);
 meanEG = sum(Weather.East.Eg)*0.25*1e-3;
 
 TestCell = cellManager(5000, 0.25, 0.75, 0.2, 0.186, 0.2, normSLP, meanEG, ...
+                       HotWaterDayProfile.fProportion, ...
                        BSL_COC_distribution, PHH_COC_distribution, ...
                        BSL_PV_AuxPowDemand_dist, PHH_PV_AuxPowDemand_dist);
 
@@ -24,7 +25,7 @@ Consumption_t = zeros(1, length(time));
 Generation_t = zeros(1, length(time));
 for t = time
     idx = idx + 1;
-    TestCell.update(idx, globalRad.Eg(idx));
+    TestCell.update(idx, t.Hour, globalRad.Eg(idx));
     Consumption_e(idx) = TestCell.currentEnergyBalance_e;
     Generation_e(idx) = sum(TestCell.PHHagents.Generation_e) + ...
                         sum(TestCell.BSLagents.Generation_e);
