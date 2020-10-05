@@ -17,6 +17,20 @@ classdef PHHagents < AbstractAgent
             %   pThermal - Propotion of agents with connection to the
             %              district heating network (0 to 1)
             %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
+            %   pBClass - Proportions of building age classes
+            %             (0 to 1 each, 
+            %              the sum of all proportions must be equal 1)
+            %             Class 0: Before 1948
+            %             Class 1: 1948 - 1978
+            %             Class 2: 1979 - 1994
+            %             Class 3: 1995 - 2009
+            %             Class 4: new building
+            %   pBModern - Proportions of modernised buildings in each class
+            %              Each position in PBModern corresponds to the
+            %              class in PBClass
+            %              Modernised in Class4 means new building with
+            %              higher energy standard
+            %              (0 to 1 each) 
             %   Eg - Mean annual global irradiation for simulated region
             %        [kWh/m^2]
             %   normSLP - timetable with all normalised load profiles
