@@ -6,7 +6,7 @@ classdef PHHagents < AbstractAgent
     
     methods
         function self = PHHagents(nAgents, pThermal, pPVplants, ...
-                                  pBClass, pBModern, ...
+                                  pBType, pBClass, pBModern, ...
                                   Eg, normSLP, ...
                                   HotWaterProfile, ...
                                   PHH_COC_dist, PHH_PV_dist, BSL_PV_dist)
@@ -17,6 +17,8 @@ classdef PHHagents < AbstractAgent
             %   pThermal - Propotion of agents with connection to the
             %              district heating network (0 to 1)
             %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
+            %   pBType - Proportions of building types (0 to 1)
+            %            [SFH, REH, SAH, BAH]
             %   pBClass - Proportions of building age classes
             %             (0 to 1 each, 
             %              the sum of all proportions must be equal 1)

@@ -28,7 +28,7 @@ classdef cellManager < handle
     methods
         function self = cellManager(nAgents, pBSLagents, pPHHagents, ...
                                     pAgriculture, pThermal, ...
-                                    pPVplants, pBClass, pBModern, ...
+                                    pPVplants, pBType, pBClass, pBModern, ...
                                     normSLP, ...
                                     Eg, HotWaterProfilePHH, ...
                                     BSL_COC_distribution, PHH_COC_distribution, ...
@@ -47,6 +47,8 @@ classdef cellManager < handle
             %   pThermal - Propotion of agents with connection to the
             %              district heating network (0 to 1)
             %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
+            %   pBType - Proportions of building types (0 to 1)
+            %            [SFH, REH, SAH, BAH]
             %   pBClass - Proportions of building age classes
             %             (0 to 1 each, 
             %              the sum of all proportions must be equal 1)
@@ -102,6 +104,15 @@ classdef cellManager < handle
             if sum(HotWaterProfilePHH) < 0.995 || sum(HotWaterProfilePHH) > 1.005
                 error("The sum of Hot Water profile factors must be 1")
             end
+            if length(pBType) ~= 4
+                error("The building type proportions must have 4 values")
+            end
+            if min(pBType) < 0 || max(pBType) > 1
+                error("Each building type proportion must be in range from 0 to 1")
+            end
+            if sum(pBType) < 0.995 || sum(pBType) > 1.005
+                error("The sum of building type proportions must be 1")
+            end            
             if length(pBClass) ~= 5
                 error("The building class proportions must have 5 values")
             end
@@ -127,6 +138,7 @@ classdef cellManager < handle
                                        Eg, normSLP, ...
                                        BSL_COC_distribution, BSL_PV_APDdist);
             self.PHHagents = PHHagents(self.nPHHagents, pThermal, pPVplants, ...
+                                       pBType, pBClass, pBModern, ...
                                        Eg, normSLP, HotWaterProfilePHH, ...
                                        PHH_COC_distribution, ...
                                        PHH_PV_APDdist, BSL_PV_APDdist);
