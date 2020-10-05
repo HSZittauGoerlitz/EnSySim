@@ -58,7 +58,9 @@ classdef cellManager < handle
             %   pBModern - Proportions of modernised buildings in each class
             %              Each position in PBModern corresponds to the
             %              class in PBClass
-            %             (0 to 1 each)         
+            %              Modernised in Class4 means new building with
+            %              higher energy standard
+            %              (0 to 1 each)         
             %   normSLP - timetable with all normalised load profiles
             %   Eg - Mean annual global irradiation for simulated region
             %        [kWh/m^2]
@@ -124,7 +126,7 @@ classdef cellManager < handle
                                        pAgriculture, pPVplants, ...
                                        Eg, normSLP, ...
                                        BSL_COC_distribution, BSL_PV_APDdist);
-            self.PHHagents = PHHagents(self.nPHHagents, pPVplants, pThermal, ...
+            self.PHHagents = PHHagents(self.nPHHagents, pThermal, pPVplants, ...
                                        Eg, normSLP, HotWaterProfilePHH, ...
                                        PHH_COC_distribution, ...
                                        PHH_PV_APDdist, BSL_PV_APDdist);
