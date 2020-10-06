@@ -68,6 +68,15 @@ classdef (Abstract) AbstractAgent < handle
             self.COCfactor(mask) = minCOC;
         end
         
+        function self = getHotWaterDemand(self)
+            %getHotWaterDemand Calculate hot water demand in W
+            %   The hot water demand is calculated in relation to the Agents 
+            %   COC value. For the calculation a regression model, 
+            %   deviated off destatis data, is used.
+            self.LoadProfile_t = (684.7 * self.COCfactor + 314.4) * ...
+                                 1e3 / 8760;  % kW -> W; 8760h = 1 year
+        end
+
         function self = update(self, timeIdx, Eg)
             self.Generation_e(self.maskPV) = self.APV * Eg * 0.25;
             self.currentEnergyBalance_e = sum(self.LoadProfile_e(timeIdx, :) .* ...
