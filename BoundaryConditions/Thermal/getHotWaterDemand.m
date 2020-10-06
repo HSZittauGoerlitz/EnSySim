@@ -19,6 +19,6 @@ function P_HWD = getHotWaterDemand(COC)
         COC = 5;
     end
 
-    P_HWD = (684.7 * COC + 314.4) * 1e3 / 8760;  % kW -> W; 8760h = 1year
+    P_HWD = (684.7 * COC + 314.4) * 1e3 / 8760;  % kW -> W; 8760h = 1 year
 end
 
