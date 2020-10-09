@@ -15,8 +15,9 @@ classdef AgentManager < handle
     end
     
     methods
-        function self = AgentManager(time, nAgents, COC_dist, minCOC, scaleCOC, ...
-                                      SLP, HotWaterProfile)
+        function self = AgentManager(time, nAgents, ...
+                                     COC_dist, minCOC, scaleCOC, ...
+                                     SLP, HotWaterProfile)
             %AgentManager Create object to manage basic agents
             %   The specific agent type is defined by the parameters of the
             %   agent managers constructor.
