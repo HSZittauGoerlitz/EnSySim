@@ -8,12 +8,14 @@ classdef (Abstract) AbstractBuildingManager < handle
         
     properties
         % Common Parameter
+        %-----------------
         
         nBuildings  % Number of buildings represented of manager
         nThermal  % Number of builings with connection to dhn
         Q_HLN  % Normed heat load of each building [W]
         
         % Bilance
+        %--------
         % resulting Energy load bilance at given time step
         % positive: Energy is consumed
         % negative: Energy is generated
@@ -22,18 +24,21 @@ classdef (Abstract) AbstractBuildingManager < handle
         currentEnergyBalance_t  % Resulting teb in current time step [Wh]
 
         % Generation
+        %-----------
         
         Generation_e  % Electrical generation [W]
         Generation_t  % Thermal generation [W]
         nPV  % Number of buildings with PV-Plants
         
         % Storage
+        %--------
         
         Storage_e  % Electrical power from or to storages [W]
         Storage_t  % Thermal power from or to storages [W]
 
 
         % selection masks
+        %----------------
         
         maskPV  % Mask for selecting all buildings with PV-Plants
         maskThermal  % Mask for selecting all buildings with connection to dhn
