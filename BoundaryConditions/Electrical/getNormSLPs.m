@@ -10,7 +10,8 @@ function SLP = getNormSLPs(startDate, endDate)
 %
 % Inputs:
 %   startDate - First date of SLP curve, complete day is considered (datetime)
-%   endDate   - Last date of SLP curve, complete day is considered (datetime)  
+%   endDate   - Last date of SLP curve, complete day is considered (datetime)
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Prepare Time data and selection %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

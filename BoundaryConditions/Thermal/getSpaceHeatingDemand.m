@@ -9,6 +9,7 @@ function E_SHD = getSpaceHeatingDemand(Q_HLN, ToutN, Tout)
 %   Q_HLN - Normed heat load of building in kW (double)
 %   ToutN - Normed outside temperature for specific region in °C (double)
 %   Tout - Current (daily mean) outside temperature in °C (double or vector)
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Input paramter handling %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%

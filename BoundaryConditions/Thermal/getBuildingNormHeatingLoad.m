@@ -30,6 +30,7 @@ function Q_HLN = getBuildingNormHeatingLoad(Ubasement, Uwall, Uroof, ...
 %   nInfiltration - Air renewal rate due infiltration [1/h]
 %   nVentilation - Air renewal rate due ventilation [1/h]
 %   ToutN - Normed outside temperature for specific region in °C (double)
+
     % Temperature Difference
     dT = (20 - ToutN);
     % Transmission losses

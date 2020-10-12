@@ -34,6 +34,7 @@ classdef AgentManager < handle
             %   HotWaterProfile - Hourly day Profile of hot water demand,
             %                     starting at hour 0 and ending at hour 23
             %                     (array of factors - 0 to 1)
+            
             %%%%%%%%%%%%%%%%%%%%%
             % Common Parameters %
             %%%%%%%%%%%%%%%%%%%%%

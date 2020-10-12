@@ -83,6 +83,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %              example)
             %   ToutN - Normed outside temperature for specific region
             %           in °C (double)
+            
             %%%%%%%%%%%%%%%%%%%%%
             % Common Parameters %
             %%%%%%%%%%%%%%%%%%%%%

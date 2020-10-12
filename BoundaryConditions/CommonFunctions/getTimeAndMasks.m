@@ -9,6 +9,7 @@ function [time, maskWinter, maskIntermediate, maskSummer, ...
 % Inputs:
 %   startDate - First date of SLP curve, complete day is considered (datetime)
 %   endDate   - Last date of SLP curve, complete day is considered (datetime)
+
     % get time values
     time = getTime(startDate, endDate);
     % masks for selection of characteristic periods

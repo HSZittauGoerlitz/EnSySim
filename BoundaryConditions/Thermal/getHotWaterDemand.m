@@ -5,6 +5,7 @@ function P_HWD = getHotWaterDemand(COC)
 %   used.
 % Inputs:
 %   COC - Agents electrical COC factor (double)
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Input paramter handling %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%

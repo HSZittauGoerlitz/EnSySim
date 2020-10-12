@@ -12,6 +12,7 @@ function globRad = getGlobalRadiation(startDate, endDate, regionProfile)
 %                   yearless time information (columns: doy, hour, minute).
 %                   Leap day data is stored in doy=0 rows, doy=1 is equal
 %                   to first january and doy=365 to last december of a year.
+
     %%%%%%%%%%%%%%%%%%%%%%%%%
     % Create glob rad curve %
     %%%%%%%%%%%%%%%%%%%%%%%%%

@@ -73,6 +73,7 @@ classdef cellManager < handle
             %                    demand factors of BSL agents
             %   PHH_PV_APDdist - Distribution for generating PV auxilary
             %                    demand factors of PHH agents
+            
             % check input parameter
             if nAgents <= 0
                 error("Number of agents must be a positive integer value");

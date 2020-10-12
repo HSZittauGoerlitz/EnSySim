@@ -44,6 +44,7 @@ classdef PHHagents < AbstractAgent
             %                 demand factors of PHH agents
             %   BSL_PV_dist - Distribution for generating PV auxilary
             %                 demand factors of BSL agents
+            
             %%%%%%%%%%%%%%%%%%%%%
             % Common Parameters %
             %%%%%%%%%%%%%%%%%%%%%
