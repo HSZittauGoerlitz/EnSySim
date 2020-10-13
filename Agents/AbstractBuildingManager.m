@@ -29,6 +29,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         Generation_e  % Electrical generation [W]
         Generation_t  % Thermal generation [W]
         nPV  % Number of buildings with PV-Plants
+        APV  % PV area [m^2]
         
         % Storage
         %--------
@@ -47,7 +48,7 @@ classdef (Abstract) AbstractBuildingManager < handle
     
     methods
         function self = AbstractBuildingManager(nBuildings, pThermal, ...
-                                                pPVplants, ...
+                                                pPVplants, Eg, ...
                                                 pBClass, pBModern, ...
                                                 pBAirMech, refData, ...
                                                 ToutN)
@@ -58,6 +59,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             %   pThermal - Propotion of buildings with connection to the
             %              district heating network (0 to 1)
             %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
+            %   Eg - Mean annual global irradiation for 
+            %        simulated region [kWh/m^2]
             %   pBClass - Proportions of building age classes
             %             (0 to 1 each, 
             %              the sum of all proportions must be equal 1)
@@ -76,7 +79,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %               renewal. Each position in pBAirMech corresponds 
             %               to the class in PBClass.
             %               (0 to 1 each)
-            %   refDate - Data of reference Building as Struct
+            %   refData - Data of reference Building as Struct
             %             Contents: Geometry, U-Values for each age class
             %                       and modernisation status, air renewal rates
             %             (See ReferenceBuilding of BoundaryConditions for
@@ -98,6 +101,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             % generate selection mask for PV generation
             self.maskPV = rand(1, self.nBuildings) <= pPVplants;
             self.nPV = sum(self.maskPV);
+            % init PV areas -> final managers have to scale it by agents COC
+            self.APV = ones(1, self.nPV) * 1e3 / Eg;
             
             %%%%%%%%%%%%%%%%%
             % Thermal Model %
@@ -116,8 +121,8 @@ classdef (Abstract) AbstractBuildingManager < handle
                 pEnd = pStart + pClass;
                 maskC = CA >= pStart & CA < pEnd;
                 % get modernisation status and air renewal method
-                maskM = rand(1, sum(maskC)) <= pBModern(idx);
-                maskAMech = rand(1, sum(maskC)) <= pBAirMech(idx);
+                maskM = maskC & (rand(1, length(maskC)) <= pBModern(idx));
+                maskAMech = maskC & (rand(1, length(maskC)) <= pBAirMech(idx));
                 % get normed heat loads
                 % not modernised
                 % free air renewal
@@ -160,8 +165,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             pEnd = pStart + pBClass(idx);
             maskC = CA >= pStart & CA < pEnd;
             % get modernisation status and air renewal method
-            maskM = rand(1, sum(maskC)) <= pBModern(idx);
-            maskAMech = rand(1, sum(maskC)) <= pBAirMech(idx);
+            maskM = maskC & (rand(1, length(maskC)) <= pBModern(idx));
+            maskAMech = maskC & (rand(1, length(maskC)) <= pBAirMech(idx));
             % get normed heat loads
             % not modernised
             % free air renewal
@@ -193,16 +198,20 @@ classdef (Abstract) AbstractBuildingManager < handle
                     refData.GeometryParameters, ...
                     refData.n.new.Infiltration, ...
                     refData.n.new.VentilationMech, ToutN);
+           % add slight randomisation to heating load
+           self.Q_HLN = self.Q_HLN .* ...
+                       (0.8 + rand(1, self.nBuildings));
+                
            % dhn
            %%%%%
            self.maskThermal = rand(1, self.nBuildings) <= pThermal;
            self.nThermal = sum(self.maskThermal);    
         end
         
-        function self = getBuildingNormHeatingLoad(self, U, Geo, ...
-                                                   nInfiltration, ...
-                                                   nVentilation, ...
-                                                   ToutN)
+        function Q_HLN = getBuildingNormHeatingLoad(~, U, Geo, ...
+                                                    nInfiltration, ...
+                                                    nVentilation, ...
+                                                    ToutN)
         %getBuildingNormHeatingLoad Calculate normed heating load of a building
         %                           
         %   The calculation is done in reference to the simplified method 
@@ -221,6 +230,9 @@ classdef (Abstract) AbstractBuildingManager < handle
         %   nInfiltration - Air renewal rate due infiltration [1/h]
         %   nVentilation - Air renewal rate due ventilation [1/h]
         %   ToutN - Normed outside temperature for specific region in °C (double)
+        % Returns:
+        %   Q_HLN - Normed heating load [W]
+        
             % Temperature Difference
             dT = (20 - ToutN);
             % Transmission losses
@@ -232,7 +244,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             % Air renewal losses
             PhiA = Geo.V * (nInfiltration + nVentilation) * 0.3378 * dT;
 
-            self.Q_HLN = PhiT + PhiA;
+            Q_HLN = PhiT + PhiA;
         end
     end
 end
