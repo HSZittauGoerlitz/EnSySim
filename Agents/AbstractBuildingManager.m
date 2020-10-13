@@ -247,5 +247,9 @@ classdef (Abstract) AbstractBuildingManager < handle
             Q_HLN = PhiT + PhiA;
         end
     end
+    
+    methods (Abstract)
+        update(self) 
+    end
 end
 
