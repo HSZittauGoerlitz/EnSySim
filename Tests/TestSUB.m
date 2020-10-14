@@ -1,0 +1,19 @@
+startTime = datetime("01.01.2020 00:00:00");
+endTime = datetime("31.12.2020 23:45:00");
+load BoundaryConditions.mat
+%% Init
+time = getTime(startTime, endTime);
+normSLP = getNormSLPs(startTime, endTime);
+globalRad = getGlobalRadiation(startTime, endTime, Weather.East);
+meanEG = sum(Weather.East.Eg)*0.25*1e-3;
+PHHs = AgentManager(time, 100, PHH_COC_distribution, 1, 5, ...
+                    normSLP.PHH, HotWaterDayProfile.fProportion);
+BSLcs = AgentManager(time, 50, BSL_COC_distribution, 1, 1, ...
+                     normSLP.G0, HotWaterDayProfile.fProportion);
+BSLas = AgentManager(time, 25, BSL_COC_distribution, 1, 1, ...
+                     normSLP.L0, HotWaterDayProfile.fProportion);
+
+SUBs = SUBmanager(180, 0.2, 0.3, meanEG, PHH_PV_AuxPowDemand_dist, ...
+                  BSL_PV_AuxPowDemand_dist, [0.4, 0.2, 0.1, 0.1, 0.2], ...
+                  [0.5, 0.5, 0.6, 0.6, 0.2], [0.2, 0.2, 0.2, 0.4, 0.5], ...
+                  ReferenceBuilding.SAH, -10, PHHs, BSLcs, BSLas);
