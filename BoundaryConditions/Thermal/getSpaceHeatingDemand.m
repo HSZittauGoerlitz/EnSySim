@@ -35,4 +35,3 @@ function E_SHD = getSpaceHeatingDemand(Q_HLN, ToutN, Tout)
         end
     end
 end
-
