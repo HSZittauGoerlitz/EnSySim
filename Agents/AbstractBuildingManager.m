@@ -23,6 +23,13 @@ classdef (Abstract) AbstractBuildingManager < handle
         currentEnergyBalance_e  % Resulting eeb in current time step [Wh]
         currentEnergyBalance_t  % Resulting teb in current time step [Wh]
 
+        % Load
+        %-----
+        
+        % Heating load of buildings with connection to dhn or to other
+        % energy sector
+        currentHeatingLoad  % [W]
+        
         % Generation
         %-----------
         
@@ -205,7 +212,9 @@ classdef (Abstract) AbstractBuildingManager < handle
            % dhn
            %%%%%
            self.maskThermal = rand(1, self.nBuildings) <= pThermal;
-           self.nThermal = sum(self.maskThermal);    
+           self.nThermal = sum(self.maskThermal);
+           
+           self.currentHeatingLoad = zeros(1, self.nThermal);
         end
         
         function Q_HLN = getBuildingNormHeatingLoad(~, U, Geo, ...
