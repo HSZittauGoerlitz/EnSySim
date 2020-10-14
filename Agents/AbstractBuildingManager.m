@@ -13,6 +13,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         nBuildings  % Number of buildings represented of manager
         nThermal  % Number of builings with connection to dhn
         Q_HLN  % Normed heat load of each building [W]
+        ToutN  % Normed outside temperature for region of building [°C]
         
         % Bilance
         %--------
@@ -59,40 +60,40 @@ classdef (Abstract) AbstractBuildingManager < handle
                                                 pBClass, pBModern, ...
                                                 pBAirMech, refData, ...
                                                 ToutN)
-            %AbstractBuildingManager Create manager for buildings
-            %
-            % Inputs:
-            %   nBuildings - Number of buildings represented by manager
-            %   pThermal - Propotion of buildings with connection to the
-            %              district heating network (0 to 1)
-            %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
-            %   Eg - Mean annual global irradiation for 
-            %        simulated region [kWh/m^2]
-            %   pBClass - Proportions of building age classes
-            %             (0 to 1 each, 
-            %              the sum of all proportions must be equal 1)
-            %             Class 0: Before 1948
-            %             Class 1: 1948 - 1978
-            %             Class 2: 1979 - 1994
-            %             Class 3: 1995 - 2009
-            %             Class 4: new building
-            %   pBModern - Proportions of modernised buildings in each class.
-            %              Each position in PBModern corresponds to the
-            %              class in PBClass
-            %              Modernised in Class4 means new building with
-            %              higher energy standard
-            %              (0 to 1 each)
-            %   pBAirMech - Proportions of buildings with enforced air
-            %               renewal. Each position in pBAirMech corresponds 
-            %               to the class in PBClass.
-            %               (0 to 1 each)
-            %   refData - Data of reference Building as Struct
-            %             Contents: Geometry, U-Values for each age class
-            %                       and modernisation status, air renewal rates
-            %             (See ReferenceBuilding of BoundaryConditions for
-            %              example)
-            %   ToutN - Normed outside temperature for specific region
-            %           in °C (double)
+        %AbstractBuildingManager Create manager for buildings
+        %
+        % Inputs:
+        %   nBuildings - Number of buildings represented by manager
+        %   pThermal - Propotion of buildings with connection to the
+        %              district heating network (0 to 1)
+        %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
+        %   Eg - Mean annual global irradiation for 
+        %        simulated region [kWh/m^2]
+        %   pBClass - Proportions of building age classes
+        %             (0 to 1 each, 
+        %              the sum of all proportions must be equal 1)
+        %             Class 0: Before 1948
+        %             Class 1: 1948 - 1978
+        %             Class 2: 1979 - 1994
+        %             Class 3: 1995 - 2009
+        %             Class 4: new building
+        %   pBModern - Proportions of modernised buildings in each class.
+        %              Each position in PBModern corresponds to the
+        %              class in PBClass
+        %              Modernised in Class4 means new building with
+        %              higher energy standard
+        %              (0 to 1 each)
+        %   pBAirMech - Proportions of buildings with enforced air
+        %               renewal. Each position in pBAirMech corresponds 
+        %               to the class in PBClass.
+        %               (0 to 1 each)
+        %   refData - Data of reference Building as Struct
+        %             Contents: Geometry, U-Values for each age class
+        %                       and modernisation status, air renewal rates
+        %             (See ReferenceBuilding of BoundaryConditions for
+        %              example)
+        %   ToutN - Normed outside temperature for specific region
+        %           in °C (double)
             
             %%%%%%%%%%%%%%%%%%%%%
             % Common Parameters %
@@ -118,6 +119,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             % Normed heating load
             %%%%%%%%%%%%%%%%%%%%%
             self.Q_HLN = zeros(1, nBuildings);
+            self.ToutN = ToutN;
             % get and init specific buildings
             CA = rand(1, nBuildings); % class arrangement
             pStart = 0.0; % offset of proportions
@@ -138,14 +140,14 @@ classdef (Abstract) AbstractBuildingManager < handle
                         refData.Uvalues.("class" + classNr).original, ...
                         refData.GeometryParameters, ...
                         refData.n.original.Infiltration, ...
-                        refData.n.original.VentilationFree, ToutN);
+                        refData.n.original.VentilationFree);
                 % enforced air renewal
                 self.Q_HLN(maskC & ~maskM & maskAMech) = ...
                     self.getBuildingNormHeatingLoad(...
                         refData.Uvalues.("class" + classNr).original, ...
                         refData.GeometryParameters, ...
                         refData.n.original.Infiltration, ...
-                        refData.n.original.VentilationMech, ToutN);
+                        refData.n.original.VentilationMech);
                 % modernised
                 % free air renewal
                 self.Q_HLN(maskC & maskM & ~maskAMech) = ...
@@ -153,14 +155,14 @@ classdef (Abstract) AbstractBuildingManager < handle
                         refData.Uvalues.("class" + classNr).modernised, ...
                         refData.GeometryParameters, ...
                         refData.n.modernised.Infiltration, ...
-                        refData.n.modernised.VentilationFree, ToutN);
+                        refData.n.modernised.VentilationFree);
                 % enforced air renewal
                 self.Q_HLN(maskC & maskM & maskAMech) = ...
                     self.getBuildingNormHeatingLoad(...
                         refData.Uvalues.("class" + classNr).modernised, ...
                         refData.GeometryParameters, ...
                         refData.n.modernised.Infiltration, ...
-                        refData.n.modernised.VentilationMech, ToutN);
+                        refData.n.modernised.VentilationMech);
                 
                 % update pStart, index and classNr
                 pStart = pEnd;
@@ -182,14 +184,14 @@ classdef (Abstract) AbstractBuildingManager < handle
                     refData.Uvalues.("class" + classNr).Eff1, ...
                     refData.GeometryParameters, ...
                     refData.n.new.Infiltration, ...
-                    refData.n.new.VentilationFree, ToutN);
+                    refData.n.new.VentilationFree);
             % enforced air renewal
             self.Q_HLN(maskC & ~maskM & maskAMech) = ...
                 self.getBuildingNormHeatingLoad(...
                     refData.Uvalues.("class" + classNr).Eff1, ...
                     refData.GeometryParameters, ...
                     refData.n.new.Infiltration, ...
-                    refData.n.new.VentilationMech, ToutN);
+                    refData.n.new.VentilationMech);
             % modernised
             % free air renewal
             self.Q_HLN(maskC & maskM & ~maskAMech) = ...
@@ -197,14 +199,14 @@ classdef (Abstract) AbstractBuildingManager < handle
                     refData.Uvalues.("class" + classNr).Eff2, ...
                     refData.GeometryParameters, ...
                     refData.n.new.Infiltration, ...
-                    refData.n.new.VentilationFree, ToutN);
+                    refData.n.new.VentilationFree);
             % enforced air renewal
             self.Q_HLN(maskC & maskM & maskAMech) = ...
                 self.getBuildingNormHeatingLoad(...
                     refData.Uvalues.("class" + classNr).Eff2, ...
                     refData.GeometryParameters, ...
                     refData.n.new.Infiltration, ...
-                    refData.n.new.VentilationMech, ToutN);
+                    refData.n.new.VentilationMech);
            % add slight randomisation to heating load
            self.Q_HLN = self.Q_HLN .* ...
                        (0.8 + rand(1, self.nBuildings));
@@ -217,10 +219,9 @@ classdef (Abstract) AbstractBuildingManager < handle
            self.currentHeatingLoad = zeros(1, self.nThermal);
         end
         
-        function Q_HLN = getBuildingNormHeatingLoad(~, U, Geo, ...
+        function Q_HLN = getBuildingNormHeatingLoad(self, U, Geo, ...
                                                     nInfiltration, ...
-                                                    nVentilation, ...
-                                                    ToutN)
+                                                    nVentilation)
         %getBuildingNormHeatingLoad Calculate normed heating load of a building
         %                           
         %   The calculation is done in reference to the simplified method 
@@ -243,7 +244,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         %   Q_HLN - Normed heating load [W]
         
             % Temperature Difference
-            dT = (20 - ToutN);
+            dT = (20 - self.ToutN);
             % Transmission losses
             PhiT = (Geo.Abasement * (U.Basement + U.Delta) + ...
                     Geo.Awall * (U.Wall + U.Delta) + ...
@@ -254,6 +255,30 @@ classdef (Abstract) AbstractBuildingManager < handle
             PhiA = Geo.V * (nInfiltration + nVentilation) * 0.3378 * dT;
 
             Q_HLN = PhiT + PhiA;
+        end
+    
+        function self = getSpaceHeatingDemand(self, Tout)
+        %getSpaceHeatingDemand Calculate space heating demand in W
+        %   The space heating demand is calculated in relation to outside
+        %   temperature and a building specific heating load.
+        %   Based on a linear regression model the mean daily heating power is
+        %   calculated. The space heating energy demand is determined by
+        %   multiplicating this power with 24h.
+        % Inputs:
+        %   Tout - Current (daily mean) outside temperature in °C (double or vector)
+
+            if min(self.Q_HLN(self.maskThermal)) <= 0
+                error('Specific building heat load must be greater than 0.');
+            end
+
+            if Tout < 15
+                self.currentHeatingLoad = -self.Q_HLN(self.nThermal) /...
+                                          (15-self.ToutN) * ...
+                                          (Tout-self.ToutN) + ...
+                                          self.Q_HLN(self.nThermal);
+            else
+                self.currentHeatingLoad = self.currentHeatingLoad .* 0;
+            end
         end
     end
     
