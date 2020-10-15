@@ -26,12 +26,14 @@ Balance_e = zeros(1, length(time));
 Generation_e = zeros(1, length(time));
 Balance_t = zeros(1, length(time));
 Generation_t = zeros(1, length(time));
+HeatingLoad = zeros(1, length(time));
 for t = time
     idx = idx + 1;
     SUBs.update(idx, weatherBC.Eg(idx), weatherBC.T(idx));
     Balance_e(idx) = SUBs.currentEnergyBalance_e;
     Generation_e(idx) = sum(SUBs.Generation_e) * 0.25;
     Balance_t(idx) = SUBs.currentEnergyBalance_t;
+    HeatingLoad(idx) = SUBs.currentHeatingLoad;
 end
 
 %% show results
