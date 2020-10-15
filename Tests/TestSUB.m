@@ -4,7 +4,7 @@ load BoundaryConditions.mat
 %% Init
 time = getTime(startTime, endTime);
 normSLP = getNormSLPs(startTime, endTime);
-globalRad = getGlobalRadiation(startTime, endTime, Weather.East);
+weatherBC = getWeatherBCcurves(startTime, endTime, Weather.East);
 
 PHHs = AgentManager(time, 100, PHH_COC_distribution, 1, 5, ...
                     normSLP.PHH, HotWaterDayProfile.fProportion);
@@ -28,7 +28,7 @@ Balance_t = zeros(1, length(time));
 Generation_t = zeros(1, length(time));
 for t = time
     idx = idx + 1;
-    SUBs.update(idx, globalRad.Eg(idx), 12);
+    SUBs.update(idx, weatherBC.Eg(idx), weatherBC.T(idx));
     Balance_e(idx) = SUBs.currentEnergyBalance_e;
     Generation_e(idx) = sum(SUBs.Generation_e) * 0.25;
     Balance_t(idx) = SUBs.currentEnergyBalance_t;
