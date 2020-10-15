@@ -22,42 +22,42 @@ SUBs = SUBmanager(180, 0.2, 0.3, Weather.dimensioning.East.Eg, ...
               
 %% Simulate
 idx = 0;
-Consumption_e = zeros(1, length(time));
+Balance_e = zeros(1, length(time));
 Generation_e = zeros(1, length(time));
-Consumption_t = zeros(1, length(time));
+Balance_t = zeros(1, length(time));
 Generation_t = zeros(1, length(time));
 for t = time
     idx = idx + 1;
     SUBs.update(idx, globalRad.Eg(idx), 12);
-    Consumption_e(idx) = SUBs.currentEnergyBalance_e;
+    Balance_e(idx) = SUBs.currentEnergyBalance_e;
     Generation_e(idx) = sum(SUBs.Generation_e) * 0.25;
-    Consumption_t(idx) = SUBs.currentEnergyBalance_t;
+    Balance_t(idx) = SUBs.currentEnergyBalance_t;
 end
 
 %% show results
 figure('Position', [500, 200, 1500, 800])
 
 subplot(2, 2, 1)
-plot(time, Generation_e*1e-3, time, Consumption_e*1e-3)
+plot(time, Generation_e*1e-3, time, Balance_e*1e-3)
 grid on
 ylabel("Electrical Energy in kWh")
 
-legend("Generation", "Consumption", 'Orientation', 'horizontal', ...
+legend("Generation", "Balance", 'Orientation', 'horizontal', ...
        'Position', [0.4, 0.95, 0.2, 0.025])
 
 subplot(2, 2, 3)
-plot(time, cumsum(Generation_e*1e-6), time, cumsum(Consumption_e*1e-6))
+plot(time, cumsum(Generation_e*1e-6), time, cumsum(Balance_e*1e-6))
 grid on
 xlabel("Time")
 ylabel("Cumulative Electrical Energy in MWh")
 
 subplot(2, 2, 2)
-plot(time, Generation_t*1e-3, time, Consumption_t*1e-3)
+plot(time, Generation_t*1e-3, time, Balance_t*1e-3)
 grid on
 ylabel("Thermal Energy in kWh")
 
 subplot(2, 2, 4)
-plot(time, cumsum(Generation_t*1e-6), time, cumsum(Consumption_t*1e-6))
+plot(time, cumsum(Generation_t*1e-6), time, cumsum(Balance_t*1e-6))
 grid on
 xlabel("Time")
 ylabel("Cumulative Thermal Energy in MWh")
