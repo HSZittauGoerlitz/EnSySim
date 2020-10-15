@@ -90,8 +90,7 @@ classdef AgentManager < handle
             %                     starting at hour 0 and ending at hour 23
             %                     (array of factors - 0 to 1)
             self.LoadProfile_t = (684.7 * self.COCfactor + 314.4) * ...
-                                 1e3 / 8760 ...  % kW -> W; 8760h = 1 year
-                                 .* length(time) .* ...
+                                 1e3 / 8760 .* ...  % kW -> W; 8760h = 1 year
                                  (0.8 + rand(length(time), self.nAgents) * 0.4) .* ...
                                  HotWaterProfile(time.Hour+1);
         end
