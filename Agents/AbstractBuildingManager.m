@@ -60,41 +60,75 @@ classdef (Abstract) AbstractBuildingManager < handle
                                                 pBClass, pBModern, ...
                                                 pBAirMech, refData, ...
                                                 ToutN)
-        %AbstractBuildingManager Create manager for buildings
-        %
-        % Inputs:
-        %   nBuildings - Number of buildings represented by manager
-        %   pThermal - Propotion of buildings with connection to the
-        %              district heating network (0 to 1)
-        %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
-        %   Eg - Mean annual global irradiation for 
-        %        simulated region [kWh/m^2]
-        %   pBClass - Proportions of building age classes
-        %             (0 to 1 each, 
-        %              the sum of all proportions must be equal 1)
-        %             Class 0: Before 1948
-        %             Class 1: 1948 - 1978
-        %             Class 2: 1979 - 1994
-        %             Class 3: 1995 - 2009
-        %             Class 4: new building
-        %   pBModern - Proportions of modernised buildings in each class.
-        %              Each position in PBModern corresponds to the
-        %              class in PBClass
-        %              Modernised in Class4 means new building with
-        %              higher energy standard
-        %              (0 to 1 each)
-        %   pBAirMech - Proportions of buildings with enforced air
-        %               renewal. Each position in pBAirMech corresponds 
-        %               to the class in PBClass.
-        %               (0 to 1 each)
-        %   refData - Data of reference Building as Struct
-        %             Contents: Geometry, U-Values for each age class
-        %                       and modernisation status, air renewal rates
-        %             (See ReferenceBuilding of BoundaryConditions for
-        %              example)
-        %   ToutN - Normed outside temperature for specific region
-        %           in °C (double)
+            %AbstractBuildingManager Create manager for buildings
+            %
+            % Inputs:
+            %   nBuildings - Number of buildings represented by manager
+            %   pThermal - Propotion of buildings with connection to the
+            %              district heating network (0 to 1)
+            %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
+            %   Eg - Mean annual global irradiation for 
+            %        simulated region [kWh/m^2]
+            %   pBClass - Proportions of building age classes
+            %             (0 to 1 each, 
+            %              the sum of all proportions must be equal 1)
+            %             Class 0: Before 1948
+            %             Class 1: 1948 - 1978
+            %             Class 2: 1979 - 1994
+            %             Class 3: 1995 - 2009
+            %             Class 4: new building
+            %   pBModern - Proportions of modernised buildings in each class.
+            %              Each position in PBModern corresponds to the
+            %              class in PBClass
+            %              Modernised in Class4 means new building with
+            %              higher energy standard
+            %              (0 to 1 each)
+            %   pBAirMech - Proportions of buildings with enforced air
+            %               renewal. Each position in pBAirMech corresponds 
+            %               to the class in PBClass.
+            %               (0 to 1 each)
+            %   refData - Data of reference Building as Struct
+            %             Contents: Geometry, U-Values for each age class
+            %                       and modernisation status, air renewal rates
+            %             (See ReferenceBuilding of BoundaryConditions for
+            %              example)
+            %   ToutN - Normed outside temperature for specific region
+            %           in °C (double)
             
+            %%%%%%%%%%%%%%%%%%%%%%%%%
+            % check input parameter %
+            %%%%%%%%%%%%%%%%%%%%%%%%%
+            if nBuildings <= 0
+                error("Number of buildings must be a positive integer value");
+            end
+            if pThermal < 0 || pThermal > 1
+               error("pThermal must be a number between 0 and 1");
+            end
+            if Eg < 0
+               error("Mean annual global irradiation must be a number greater 0"); 
+            end         
+            if length(pBClass) ~= 5
+                error("The building class proportions must have 5 values")
+            end
+            if min(pBClass) < 0 || max(pBClass) > 1
+                error("Each building class proportion must be in range from 0 to 1")
+            end
+            if sum(pBClass) < 0.995 || sum(pBClass) > 1.005 % allow slight deviation
+                error("The sum of building class proportions must be 1")
+            end
+            if length(pBModern) ~= 5
+                error("The building modernisation proportions must have 5 values")
+            end
+            if min(pBModern) < 0 || max(pBModern) > 1
+                error("Each building modernisation proportion must be in range from 0 to 1")
+            end
+            if length(pBAirMech) ~= 5
+                error("The building air renewing proportions must have 5 values")
+            end
+            if min(pBAirMech) < 0 || max(pBAirMech) > 1
+                error("Each building air renewal proportion must be in range from 0 to 1")
+            end
+        
             %%%%%%%%%%%%%%%%%%%%%
             % Common Parameters %
             %%%%%%%%%%%%%%%%%%%%%
