@@ -56,6 +56,13 @@ classdef BSLseperateManager < AgentManager
                                      COC_dist, minCOC, scaleCOC, ...
                                      SLP);
             
+            if pPVplants < 0 || pPVplants > 1
+                error("pPVplants must be a number between 0 and 1");
+            end
+            if Eg < 0
+               error("Mean annual global irradiation must be a number greater 0"); 
+            end    
+                                 
             %%%%%%%%%%%%%%%%%%%%
             % Electrical Model %
             %%%%%%%%%%%%%%%%%%%%
