@@ -156,8 +156,6 @@ classdef SUBmanager < AbstractBuildingManager
                  sum(self.currentHeatingLoad) - ...
                  sum(self.Generation_t)) * 0.25;  % 1/4 hour steps
         end
-
-        
     end
 end
 
