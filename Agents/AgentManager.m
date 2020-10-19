@@ -15,9 +15,7 @@ classdef AgentManager < handle
     end
     
     methods
-        function self = AgentManager(time, nAgents, ...
-                                     COC_dist, minCOC, scaleCOC, ...
-                                     SLP, HotWaterProfile)
+        function self = AgentManager(varargin)
             %AgentManager Create object to manage basic agents
             %   The specific agent type is defined by the parameters of the
             %   agent managers constructor.
@@ -35,21 +33,44 @@ classdef AgentManager < handle
             %                     starting at hour 0 and ending at hour 23
             %                     (array of factors - 0 to 1)
             
+            %%%%%%%%%%%%%%%%%%
+            % Input Handling %
+            %%%%%%%%%%%%%%%%%%
+            p = inputParser;
+            
+            addRequired(p, 'time', @isdatetime);
+            addRequired(p, 'nAgents', @isnumeric);
+            addRequired(p, 'COC_dist');
+            addRequired(p, 'minCOC', @isnumeric);
+            addRequired(p, 'scaleCOC', @isnumeric);
+            addRequired(p, 'SLP', @isnumeric);
+            addOptional(p, 'HotWaterProfile', [], @isnumeric);
+            
+            parse(p, varargin{:});
+            
             %%%%%%%%%%%%%%%%%%%%%
             % Common Parameters %
             %%%%%%%%%%%%%%%%%%%%%
-            self.nAgents = nAgents;
+            self.nAgents = p.Results.nAgents;
             % get random coc from given distribution
-            self.getCOC(COC_dist, minCOC, scaleCOC);
+            self.getCOC(p.Results.COC_dist, p.Results.minCOC, ...
+                        p.Results.scaleCOC);
             %%%%%%%%%%%%%%%%%%%
             % Electrical Load %
             %%%%%%%%%%%%%%%%%%%
-            self.LoadProfile_e = SLP .* self.COCfactor .* ...
-                                 (0.8 + rand(length(time), self.nAgents));
+            self.LoadProfile_e = p.Results.SLP .* self.COCfactor .* ...
+                                 (0.8 + rand(length(p.Results.time), ... 
+                                             self.nAgents));
             %%%%%%%%%%%%%%%%
             % Thermal Load %
-            %%%%%%%%%%%%%%%%                            
-            self.getHotWaterDemand(time, HotWaterProfile);
+            %%%%%%%%%%%%%%%%
+            if isempty(p.Results.HotWaterProfile)
+                % disable thermal model
+                self.LoadProfile_t = [];
+            else
+                self.getHotWaterDemand(p.Results.time, ...
+                                       p.Results.HotWaterProfile);
+            end
         end
                              
         function self = getCOC(self, COC_dist, minCOC, scaleCOC)
