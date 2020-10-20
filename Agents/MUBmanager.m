@@ -115,7 +115,7 @@ classdef MUBmanager < AbstractBuildingManager
             BuildingsCOC = reshape(BuildingsCOC, [nUnits, self.nBuildings]);
             BuildingsCOC = sum(BuildingsCOC, 1);
             % get APV
-            self.APV = self.APV .* BuildingsCOC .* PV_dist.random(self.nPV);
+            self.APV = self.APV .* BuildingsCOC(self.maskPV) .* PV_dist.random(self.nPV);
         end
         
         function self = update(self, timeIdx, Eg, Tout)
