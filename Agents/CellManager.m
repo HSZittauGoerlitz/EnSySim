@@ -37,56 +37,6 @@ classdef CellManager < handle
             self.BSLsepAgents = BSLsepAgents;
         end
         
-        function self = initDefaultCell(nAgents, pBSLagents, pPHHagents, ...
-                                    pAgriculture, pThermal, ...
-                                    pPVplants, pBType, pBClass, pBModern, ...
-                                    normSLP, ...
-                                    Eg, HotWaterProfilePHH, ...
-                                    BSL_COC_distribution, PHH_COC_distribution, ...
-                                    BSL_PV_APDdist, PHH_PV_APDdist)
-            %cellManager Create manager for default cell
-            %
-            % Inputs:
-            %   nAgents - Number of all Agents (resulting number can differ
-            %             slightly due rounding)
-            %   pBSLagents - Proportion factor of busines agents with
-            %                standard load profile (0 to 1)
-            %   pPHHagents - Proportion factor of private household agents
-            %                (0 to 1)
-            %   pAgriculture - Factor for propotion of agriculture agents on
-            %                  BSL agents (0 to 1)
-            %   pThermal - Propotion of agents with connection to the
-            %              district heating network (0 to 1)
-            %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
-            %   pBType - Proportions of building types (0 to 1)
-            %            [SFH, REH, SAH, BAH]
-            %   pBClass - Proportions of building age classes
-            %             (0 to 1 each, 
-            %              the sum of all proportions must be equal 1)
-            %             Class 0: Before 1948
-            %             Class 1: 1948 - 1978
-            %             Class 2: 1979 - 1994
-            %             Class 3: 1995 - 2009
-            %             Class 4: new building
-            %   pBModern - Proportions of modernised buildings in each class
-            %              Each position in PBModern corresponds to the
-            %              class in PBClass
-            %              Modernised in Class4 means new building with
-            %              higher energy standard
-            %              (0 to 1 each)         
-            %   normSLP - timetable with all normalised load profiles
-            %   Eg - Mean annual global irradiation for simulated region
-            %        [kWh/m^2]
-            %   HotWaterProfilePHH - Hourly day Profile of hot water demand
-            %                        for PHH agents (array of factors - 0 to 1)
-            %   BSL_COC_dist - Distribution function for generating 
-            %   BSL_PV_APDdist - Distribution for generating PV auxilary
-            %                    demand factors of BSL agents
-            %   PHH_PV_APDdist - Distribution for generating PV auxilary
-            %                    demand factors of PHH agents
-
-        end
-
         function self = update(self, timeIdx, Eg, Tout)
             % reset energy balances
             self.currentEnergyBalance_e = 0;
@@ -113,6 +63,192 @@ classdef CellManager < handle
                self.currentEnergyBalance_e = self.currentEnergyBalance_e + ...
                                              BSLsep.currentEnergyBalance_e; 
             end
+        end
+    end
+    
+    methods(Static)
+        function Cell = initDefaultCell(time, nBAgents, nBSLsepAgents, ...
+                                        nBuildings, pPHHagents, pAgriculture, ...
+                                        pThermal, pPVplants, ...
+                                        pBClass, pBModern, pBAirMech, ...
+                                        normSLP, Eg, ToutN, refBuildingData, ...
+                                        HotWaterProfilePHH, ...
+                                        BSL_COC, PHH_COC, ...
+                                        BSL_PV_APDdist, PHH_PV_APDdist)
+            %cellManager Create manager for default cell
+            %
+            %   The default cell consists of the 4 ref. building types free
+            %   standong house, row end house as well as smal and big multi
+            %   user house. Additionally there are seperate BSL agents
+            %   with inherent buildings (the themal load is neglected for
+            %   those). The cell composition for agents / buildings can be
+            %   adjusted by the proportions accordingly.
+            %   For BSL agents located in buildings a phh like thermal
+            %   profile is assumed.
+            %
+            % Inputs:
+            %   time - Vector of all time values for simulation as daytime
+            %   nBAgents - Number of all Agents in each Building class
+            %              [Free Standing, Row End, Small, Big Multi User]
+            %              (resulting number can differ slightly due rounding)
+            %   nBSLsepAgents - Number of seperate BSL Agents
+            %   nBuildings - Number of buildings represented by cell
+            %                [Free Standing, Row End, Small, Big Multi User]
+            %   pPHHagents - Proportion factor of private household agents
+            %                (0 to 1, one number for all building types or
+            %                 array with number for each type)
+            %   pAgriculture - Factor for propotion of agriculture agents on
+            %                  BSL agents (0 to 1)
+            %   pThermal - Propotions of buildings with connection to the
+            %              district heating network (0 to 1 each)
+            %              [Free Standing, Row End, Small, Big Multi User]
+            %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
+            %   pBClass - Proportions of building age classes
+            %             (0 to 1 each, 
+            %              the sum of all proportions must be equal 1)
+            %             Class 0: Before 1948
+            %             Class 1: 1948 - 1978
+            %             Class 2: 1979 - 1994
+            %             Class 3: 1995 - 2009
+            %             Class 4: new building
+            %   pBModern - Proportions of modernised buildings in each class
+            %              Each position in PBModern corresponds to the
+            %              class in PBClass
+            %              Modernised in Class4 means new building with
+            %              higher energy standard
+            %              (0 to 1 each)
+            %   pBAirMech - Proportions of buildings with enforced air
+            %               renewal. Each position in pBAirMech corresponds 
+            %               to the class in PBClass.
+            %               (0 to 1 each)
+            %   normSLP - timetable with all normalised load profiles [W]
+            %               Columns: PHH, G0, L0
+            %   Eg - Mean annual global irradiation for simulated region
+            %        [kWh/m^2]
+            %   ToutN - Normed outside temperature for specific region
+            %           in °C (double)
+            %   refBuildingData - Struct with all ref. Building types
+            %   HotWaterProfilePHH - Hourly day Profile of hot water demand
+            %                        for PHH agents (array of factors - 0 to 1)
+            %   BSL_COC - Struct for generating COC values of BSL agents
+            %               . function (Distribution)
+            %               . min (Min. possible COC factor)
+            %               . scale (Max. possible COC factor)
+            %   PHH_COC - Struct for generating COC values of PHH agents
+            %               . function (Distribution)
+            %               . min (Min. possible COC factor)
+            %               . scale (Max. possible COC factor)
+            %   BSL_PV_APDdist - Distribution for generating PV auxilary
+            %                    demand factors of BSL agents
+            %   PHH_PV_APDdist - Distribution for generating PV auxilary
+            %                    demand factors of PHH agents
+
+            % check probabilities, which are not checekd by agent /
+            % building classes
+            if min(pPHHagents) < 0 || max(pPHHagents) > 1
+               error("pPHHagents must be a number between 0 and 1");
+            end
+            if pAgriculture < 0 || pAgriculture > 1
+               error("pAgriculture must be a number between 0 and 1");
+            end
+            
+            if length(pPHHagents) == 1
+                pPHHagents = ones(1, 4) * pPHHagents; 
+            elseif length(pPHHagents) ~= 4
+                error("Length of pPHHagents must be 1 or 4");
+            end
+            
+            % free standing houses %
+            %----------------------%
+            PHHfree = AgentManager(time, round(nBAgents(1)*pPHHagents(1)), ...
+                                   PHH_COC.function, PHH_COC.min, ...
+                                   PHH_COC.scale, normSLP.PHH, ...
+                                   HotWaterProfilePHH);
+            pBSL = 1 - pPHHagents(1);
+            BSLaFree = AgentManager(time, round(nBAgents(1)*pBSL*...
+                                                pAgriculture), ...
+                                    BSL_COC.function, BSL_COC.min, ...
+                                    BSL_COC.scale, normSLP.L0, ...
+                                    HotWaterProfilePHH);
+           BSLcFree = AgentManager(time, round(nBAgents(1)*pBSL*...
+                                               (1-pAgriculture)), ...
+                                   BSL_COC.function, BSL_COC.min, ...
+                                   BSL_COC.scale, normSLP.G0, ...
+                                   HotWaterProfilePHH);
+           FSH = SUBmanager(nBuildings(1), pThermal(1), pPVplants, Eg, ...
+                            PHH_PV_APDdist, BSL_PV_APDdist, ...
+                            pBClass, pBModern, pBAirMech, ...
+                            refBuildingData.FSH, ToutN, ...
+                            PHHfree, BSLaFree, BSLcFree);
+            % row end houses %
+            %----------------%
+            PHHre = AgentManager(time, round(nBAgents(2)*pPHHagents(2)), ...
+                                 PHH_COC.function, PHH_COC.min, ...
+                                 PHH_COC.scale, normSLP.PHH, ...
+                                 HotWaterProfilePHH);
+            pBSL = 1 - pPHHagents(2);
+            BSLaRE = AgentManager(time, round(nBAgents(2)*pBSL*...
+                                              pAgriculture), ...
+                                  BSL_COC.function, BSL_COC.min, ...
+                                  BSL_COC.scale, normSLP.L0, ...
+                                  HotWaterProfilePHH);
+           BSLcRE = AgentManager(time, round(nBAgents(2)*pBSL*...
+                                             (1-pAgriculture)), ...
+                                 BSL_COC.function, BSL_COC.min, ...
+                                 BSL_COC.scale, normSLP.G0, ...
+                                 HotWaterProfilePHH);
+           REH = SUBmanager(nBuildings(2), pThermal(2), pPVplants, Eg, ...
+                            PHH_PV_APDdist, BSL_PV_APDdist, ...
+                            pBClass, pBModern, pBAirMech, ...
+                            refBuildingData.REH, ToutN, ...
+                            PHHre, BSLaRE, BSLcRE);
+           % small apartment houses %
+           %------------------------%
+           PHHsah = AgentManager(time, round(nBAgents(3)*pPHHagents(3)), ...
+                                 PHH_COC.function, PHH_COC.min, ...
+                                 PHH_COC.scale, normSLP.PHH, ...
+                                 HotWaterProfilePHH);
+           pBSL = 1 - pPHHagents(3);
+           BSLcSAH = AgentManager(time, round(nBAgents(3)*pBSL), ...
+                                  BSL_COC.function, BSL_COC.min, ...
+                                  BSL_COC.scale, normSLP.G0, ...
+                                  HotWaterProfilePHH);
+           SAH = MUBmanager(nBuildings(3), 6, pThermal(3), pPVplants, Eg, ...
+                            PHH_PV_APDdist, BSL_PV_APDdist, ...
+                            pBClass, pBModern, pBAirMech, ...
+                            refBuildingData.SAH, ToutN, ...
+                            PHHfree, BSLcFree);
+           % big apartment houses %
+           %----------------------%
+           PHHbah = AgentManager(time, round(nBAgents(4)*pPHHagents(4)), ...
+                                 PHH_COC.function, PHH_COC.min, ...
+                                 PHH_COC.scale, normSLP.PHH, ...
+                                 HotWaterProfilePHH);
+           pBSL = 1 - pPHHagents(4);
+           BSLcBAH = AgentManager(time, round(nBAgents(4)*pBSL), ...
+                                  BSL_COC.function, BSL_COC.min, ...
+                                  BSL_COC.scale, normSLP.G0, ...
+                                  HotWaterProfilePHH);
+           BAH = MUBmanager(nBuildings(4), 48, pThermal(4), pPVplants, Eg, ...
+                            PHH_PV_APDdist, BSL_PV_APDdist, ...
+                            pBClass, pBModern, pBAirMech, ...
+                            refBuildingData.BAH, ToutN, ...
+                            PHHfree, BSLcFree);                            
+           % seperate BSL agents %
+           %---------------------%
+           BSLsepA = BSLseperateManager(time, round(nBSLsepAgents * ...
+                                                    pAgriculture), ...
+                                        BSL_COC.function, BSL_COC.min, ...
+                                        BSL_COC.scale, normSLP.L0, ...
+                                        pPVplants, Eg, BSL_PV_APDdist);
+           BSLsepC = BSLseperateManager(time, round(nBSLsepAgents * ...
+                                                    (1-pAgriculture)), ...
+                                        BSL_COC.function, BSL_COC.min, ...
+                                        BSL_COC.scale, normSLP.G0, ...
+                                        pPVplants, Eg, BSL_PV_APDdist);
+                                    
+            % init cell
+            Cell = CellManager([FSH, REH], [SAH, BAH], [BSLsepA, BSLsepC]);
         end
     end
 end
