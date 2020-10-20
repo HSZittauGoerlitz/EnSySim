@@ -146,7 +146,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             % generate selection mask for PV generation
             self.maskPV = rand(1, self.nBuildings) <= pPVplants;
             self.nPV = sum(self.maskPV);
-            % init PV areas -> final managers have to scale it by agents COC
+            % init PV areas -> final managers have to scale it by COC
             self.APV = (rand(1, self.nPV) * 0.4 + 0.8) * 1e3 / Eg;
             
             %%%%%%%%%%%%%%%%%
