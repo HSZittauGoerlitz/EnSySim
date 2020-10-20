@@ -126,7 +126,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             if min(pBModern) < 0 || max(pBModern) > 1
                 error("Each building modernisation proportion must be in range from 0 to 1")
             end
-            if length(pBAirMech) ~= 5
+            if length(pBAirMech) ~= nClass
                 error("The building air renewing proportions fit to number of class proportions")
             end
             if min(pBAirMech) < 0 || max(pBAirMech) > 1
