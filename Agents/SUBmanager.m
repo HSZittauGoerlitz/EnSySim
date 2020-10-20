@@ -5,16 +5,16 @@ classdef SUBmanager < AbstractBuildingManager
         % All agents in building manager
         %-------------------------------
         
-        PHHagents  % private households
-        BSLhhlCagents  % common buisiness with household like profile
-        BSLhhlAagents  % agricultural buisiness with household like profile
+        PHHagents % private households
+        BSLhhlCagents % common buisiness with household like profile
+        BSLhhlAagents % agricultural buisiness with household like profile
         
         % selection masks
         %----------------
         
-        maskPHH  % mapping of phh agents and buildings
-        maskBSLhhlC  % mapping of BSL hhl common agents and buildings
-        maskBSLhhlA  % mapping of BSL hhl agricultural agents and buildings
+        maskPHH % mapping of phh agents and buildings
+        maskBSLhhlC % mapping of BSL hhl common agents and buildings
+        maskBSLhhlA % mapping of BSL hhl agricultural agents and buildings
     end
     
     methods
