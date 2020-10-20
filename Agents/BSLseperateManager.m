@@ -47,7 +47,6 @@ classdef BSLseperateManager < AgentManager
             %   pPVplants - Propotion of agents with PV-Plants (0 to 1)
             %   Eg - Mean annual global irradiation for simulated region
             %        [kWh/m^2]
-            %   normSLP - timetable with all normalised load profiles
             %   BSL_PV_dist - Distribution for generating PV auxilary
             %                 demand factors of BSL agents
 
