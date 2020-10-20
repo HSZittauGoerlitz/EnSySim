@@ -109,9 +109,10 @@ classdef (Abstract) AbstractBuildingManager < handle
             end
             if Eg < 0
                error("Mean annual global irradiation must be a number greater 0"); 
-            end         
-            if length(pBClass) ~= 5
-                error("The building class proportions must have 5 values")
+            end
+            nClass = length(pBClass);
+            if nClass <= 0
+                error("The building class proportions must have min. 1 value")
             end
             if min(pBClass) < 0 || max(pBClass) > 1
                 error("Each building class proportion must be in range from 0 to 1")
@@ -119,14 +120,14 @@ classdef (Abstract) AbstractBuildingManager < handle
             if sum(pBClass) < 0.995 || sum(pBClass) > 1.005 % allow slight deviation
                 error("The sum of building class proportions must be 1")
             end
-            if length(pBModern) ~= 5
-                error("The building modernisation proportions must have 5 values")
+            if length(pBModern) ~= nClass
+                error("The building modernisation proportions must fit to number of class proportions")
             end
             if min(pBModern) < 0 || max(pBModern) > 1
                 error("Each building modernisation proportion must be in range from 0 to 1")
             end
             if length(pBAirMech) ~= 5
-                error("The building air renewing proportions must have 5 values")
+                error("The building air renewing proportions fit to number of class proportions")
             end
             if min(pBAirMech) < 0 || max(pBAirMech) > 1
                 error("Each building air renewal proportion must be in range from 0 to 1")
