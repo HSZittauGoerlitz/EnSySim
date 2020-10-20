@@ -58,11 +58,11 @@ classdef AgentManager < handle
                error("SLP size must match time")
             end
             if min(p.Results.HotWaterProfile) < 0 || ...
-               max(p.Results.HotWaterProfilePHH) > 1
+               max(p.Results.HotWaterProfile) > 1
                 error("The Hot Water profile factors must be in range from 0 to 1")
             end
             if sum(p.Results.HotWaterProfile) < 0.995 || ...
-               sum(p.Results.HotWaterProfilePHH) > 1.005
+               sum(p.Results.HotWaterProfile) > 1.005
                 error("The sum of Hot Water profile factors must be 1")
             end
             
