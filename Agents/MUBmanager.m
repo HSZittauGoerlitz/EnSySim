@@ -22,8 +22,7 @@ classdef MUBmanager < AbstractBuildingManager
     
     methods
         function self = MUBmanager(nBuildings, nUnits, ...
-                                   pThermal, pPVplants, Eg, ...
-                                   PHH_PV_dist, BSL_PV_dist, ...
+                                   pThermal, pPVplants, Eg, PV_dist, ...
                                    pBClass, pBModern, pBAirMech, refData, ...
                                    ToutN, ...
                                    PHHmanager, BSLhhlCmanager)
@@ -37,12 +36,10 @@ classdef MUBmanager < AbstractBuildingManager
             %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
             %   Eg - Mean annual global irradiation for 
             %        simulated region [kWh/m^2]
-            %   PHH_PV_dist - Distribution for generating PV auxiliary
-            %                 demand factors of PHH agents
-            %   BSL_PV_dist - Distribution for generating PV auxiliary
-            %                 demand factors of BSL agents
-            %                 The random function of bsl distribution has a
-            %                 vector as result
+            %   PV_dist - Distribution for generating PV auxiliary
+            %             demand factors of each building
+            %             The random function of bsl distribution has a
+            %             vector as result
             %   pBClass - Proportions of building age classes
             %             (0 to 1 each, 
             %              the sum of all proportions must be equal 1)
@@ -111,28 +108,14 @@ classdef MUBmanager < AbstractBuildingManager
             %%%%%%%%%%%%%%%%%%%%
             % PV
             %%%%
-            % PHH
-            tempMaskAPV = self.maskPHH(self.maskPV);
-            self.APV(tempMaskAPV) = self.APV(tempMaskAPV) .* ...
-                                    self.PHHagents.COCfactor(...
-                                        self.maskPV(self.maskPHH));
-            % BSL C
-            tempMaskAPV = self.maskBSLhhlC(self.maskPV);
-            self.APV(tempMaskAPV) = self.APV(tempMaskAPV) .* ...
-                                    self.BSLhhlCagents.COCfactor(...
-                                        self.maskPV(self.maskBSLhhlC));
-
-           % auxilary demand
-           % 70% of all phh agents use phh distribution
-           % rest of all agents use bsl distribution
-           tempMaskAPV = self.maskPHH(self.maskPV) & ...
-                                      rand(1, self.nPV) <= 0.7;
-           self.APV(tempMaskAPV) = self.APV(tempMaskAPV) .* ...
-                                   PHH_PV_dist.random(1, sum(tempMaskAPV));
-           % get selection of rest
-           tempMaskAPV = ~tempMaskAPV;
-           self.APV(tempMaskAPV) = self.APV(tempMaskAPV) .* ...
-                                   BSL_PV_dist.random(sum(tempMaskAPV));
+            % buildings COCs
+            BuildingsCOC = zeros(1, self.nBuildings*nUnits);
+            BuildingsCOC(self.maskPHH) = self.PHHagents.COCfactor;
+            BuildingsCOC(self.maskBSLhhlC) = self.BSLhhlCagents.COCfactor;
+            BuildingsCOC = reshape(BuildingsCOC, [nUnits, self.nBuildings]);
+            BuildingsCOC = sum(BuildingsCOC, 1);
+            % get APV
+            self.APV = self.APV .* BuildingsCOC .* PV_dist.random(self.nPV);
         end
         
         function self = update(self, timeIdx, Eg, Tout)
