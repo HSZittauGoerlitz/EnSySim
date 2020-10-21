@@ -43,11 +43,11 @@ classdef MUBmanager < AbstractBuildingManager
             %   pBClass - Proportions of building age classes
             %             (0 to 1 each, 
             %              the sum of all proportions must be equal 1)
-            %             Class 0: Before 1948
-            %             Class 1: 1948 - 1978
-            %             Class 2: 1979 - 1994
-            %             Class 3: 1995 - 2009
-            %             Class 4: new building
+            %             Class 1: Before 1948
+            %             Class 2: 1948 - 1978
+            %             Class 3: 1979 - 1994
+            %             Class 4: 1995 - 2009
+            %             Class 5: new building
             %   pBModern - Proportions of modernised buildings in each class.
             %              Each position in PBModern corresponds to the
             %              class in PBClass
