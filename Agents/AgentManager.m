@@ -51,21 +51,22 @@ classdef AgentManager < handle
             if p.Results.nAgents <= 0
                 error("Number of agents must be a positive integer value");
             end
-            if length(p.Results.HotWaterProfile) ~= 24
-                error("The Hot Water profile must have 24 values (Hourly)")
-            end
             if length(p.Results.time) ~= length(p.Results.SLP)
                error("SLP size must match time")
             end
-            if min(p.Results.HotWaterProfile) < 0 || ...
-               max(p.Results.HotWaterProfile) > 1
-                error("The Hot Water profile factors must be in range from 0 to 1")
+            if ~isempty(p.Results.HotWaterProfile)
+                if length(p.Results.HotWaterProfile) ~= 24
+                    error("The Hot Water profile must have 24 values (Hourly)")
+                end
+                if min(p.Results.HotWaterProfile) < 0 || ...
+                   max(p.Results.HotWaterProfile) > 1
+                    error("The Hot Water profile factors must be in range from 0 to 1")
+                end
+                if sum(p.Results.HotWaterProfile) < 0.995 || ...
+                   sum(p.Results.HotWaterProfile) > 1.005
+                    error("The sum of Hot Water profile factors must be 1")
+                end
             end
-            if sum(p.Results.HotWaterProfile) < 0.995 || ...
-               sum(p.Results.HotWaterProfile) > 1.005
-                error("The sum of Hot Water profile factors must be 1")
-            end
-            
             %%%%%%%%%%%%%%%%%%%%%
             % Common Parameters %
             %%%%%%%%%%%%%%%%%%%%%
