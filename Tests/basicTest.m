@@ -60,43 +60,44 @@ TestCell = CellManager.initDefaultCell(time, nBAgents, nBSLsepAgents, ...
 
 %% Simulate
 idx = 0;
-Consumption_e = zeros(1, length(time));
+Balance_e = zeros(1, length(time));
 Generation_e = zeros(1, length(time));
-Consumption_t = zeros(1, length(time));
+Balance_t = zeros(1, length(time));
 Generation_t = zeros(1, length(time));
 for t = time
     idx = idx + 1;
-    TestCell.update(idx, t.Hour, globalRad.Eg(idx));
-    Consumption_e(idx) = TestCell.currentEnergyBalance_e;
-    Generation_e(idx) = sum(TestCell.PHHagents.Generation_e) + ...
-                        sum(TestCell.BSLagents.Generation_e);
-    Consumption_t(idx) = TestCell.currentEnergyBalance_t;
+    TestCell.update(idx, weatherBC.Eg(idx), weatherBC.T(idx));
+    Balance_e(idx) = TestCell.currentEnergyBalance_e;
+    Generation_e(idx) = (sum(horzcat(TestCell.SUBs.Generation_e)) + ...
+                         sum(horzcat(TestCell.MUBs.Generation_e)) + ...
+                         sum(horzcat(TestCell.BSLsepAgents.Generation_e))) * 0.25;
+    Balance_t(idx) = TestCell.currentEnergyBalance_t;
 end
 
 %% show results
-figure('Position', [500, 200, 1500, 800])
+figure('Position', [200, 100, 1500, 800])
 
 subplot(2, 2, 1)
-plot(time, Generation_e*1e-3, time, Consumption_e*1e-3)
+plot(time, Generation_e*1e-3, time, Balance_e*1e-3)
 grid on
 ylabel("Electrical Energy in kWh")
 
-legend("Generation", "Consumption", 'Orientation', 'horizontal', ...
+legend("Generation", "Balance", 'Orientation', 'horizontal', ...
        'Position', [0.4, 0.95, 0.2, 0.025])
 
 subplot(2, 2, 3)
-plot(time, cumsum(Generation_e*1e-6), time, cumsum(Consumption_e*1e-6))
+plot(time, cumsum(Generation_e*1e-6), time, cumsum(Balance_e*1e-6))
 grid on
 xlabel("Time")
 ylabel("Cumulative Electrical Energy in MWh")
 
 subplot(2, 2, 2)
-plot(time, Generation_t*1e-3, time, Consumption_t*1e-3)
+plot(time, Generation_t*1e-3, time, Balance_t*1e-3)
 grid on
 ylabel("Thermal Energy in kWh")
 
 subplot(2, 2, 4)
-plot(time, cumsum(Generation_t*1e-6), time, cumsum(Consumption_t*1e-6))
+plot(time, cumsum(Generation_t*1e-6), time, cumsum(Balance_t*1e-6))
 grid on
 xlabel("Time")
 ylabel("Cumulative Thermal Energy in MWh")
