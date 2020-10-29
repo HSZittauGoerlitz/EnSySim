@@ -246,7 +246,7 @@ classdef (Abstract) AbstractBuildingManager < handle
 
            % add slight randomisation to heating load
            self.Q_HLN = self.Q_HLN .* ...
-                       (0.8 + rand(1, self.nBuildings));
+                       (0.8 + rand(1, self.nBuildings) * 0.4);
                 
            % dhn
            %%%%%

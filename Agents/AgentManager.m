@@ -79,7 +79,7 @@ classdef AgentManager < handle
             %%%%%%%%%%%%%%%%%%%
             self.LoadProfile_e = p.Results.SLP .* self.COCfactor .* ...
                                  (0.8 + rand(length(p.Results.time), ... 
-                                             self.nAgents));
+                                             self.nAgents) * 0.4);
             %%%%%%%%%%%%%%%%
             % Thermal Load %
             %%%%%%%%%%%%%%%%
