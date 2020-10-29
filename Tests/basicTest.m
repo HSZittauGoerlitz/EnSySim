@@ -5,10 +5,10 @@ endTime = datetime("31.12.2020 23:45:00");
 load BoundaryConditions.mat
 
 % agents
-nBAgents = [500, 1000, 4000, 4500];
+nBAgents = [500, 1000, 4000, 4500]; % [Free Standing, Row End, Small, Big Multi User]
 nBSLsepAgents = 1000;
-nBuildings = [505, 1010, 680, 100];
-pPHHagents = [0.8, 0.8, 0.6, 0.9];
+nBuildings = [505, 1010, 680, 100]; % [Free Standing, Row End, Small, Big Multi User]
+pPHHagents = [0.8, 0.8, 0.6, 0.9]; % private household proportion per building type
 pAgriculture = 0.2;
 % agents - COC
 BSL_COC.function = BSL_COC_distribution;
@@ -18,7 +18,7 @@ PHH_COC.function = PHH_COC_distribution;
 PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating and PV
-pThermal = [0.07, 0.07, 0.14, 0.14];
+pThermal = [0.07, 0.07, 0.14, 0.14]; % district heating proportion per building type
 pPVplants = 0.4;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];

@@ -5,9 +5,9 @@ classdef CellManager < handle
     %   cell manager agent represents such an energy cell and registers the energy
     %   loads of all agents attached to his cell.
     %
-    % eeb: electrical energy bilance
+    % eeb: electrical energy balance
     % dhn: district heating network
-    % teb: thermal energy bilance
+    % teb: thermal energy balance
 
     properties
         % buildings and agents
@@ -89,7 +89,7 @@ classdef CellManager < handle
             %   time - Vector of all time values for simulation as daytime
             %   nBAgents - Number of all Agents in each Building class
             %              [Free Standing, Row End, Small, Big Multi User]
-            %              (resulting number can differ slightly due rounding)
+            %              (resulting number can differ slightly due to rounding)
             %   nBSLsepAgents - Number of seperate BSL Agents
             %   nBuildings - Number of buildings represented by cell
             %                [Free Standing, Row End, Small, Big Multi User]
@@ -98,10 +98,10 @@ classdef CellManager < handle
             %                 array with number for each type)
             %   pAgriculture - Factor for propotion of agriculture agents on
             %                  BSL agents (0 to 1)
-            %   pThermal - Propotions of buildings with connection to the
+            %   pThermal - Proportions of buildings with connection to the
             %              district heating network (0 to 1 each)
             %              [Free Standing, Row End, Small, Big Multi User]
-            %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
+            %   pPVplants - Proportion of buildings with PV-Plants (0 to 1)
             %   pBTypes - Structure of proportions for all reference building
             %             types (0 to 1 each, Types: FSH, REH, SAH, BAH)
             %               . Class for age classes

@@ -96,7 +96,7 @@ classdef AgentManager < handle
             %getCOC Generate COC factors for all agents
             %
             % Inputs:
-            %   COC_dist - Distribution used for random numer generation
+            %   COC_dist - Distribution used for random number generation
             %   minCOC - Min. possible COC factor
             %   scaleCOC - Max. possible COC factor
             iter = 0;
