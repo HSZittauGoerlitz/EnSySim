@@ -22,7 +22,7 @@ classdef MUBmanager < AbstractBuildingManager
     
     methods
         function self = MUBmanager(nBuildings, nUnits, ...
-                                   pThermal, pPVplants, Eg, PV_dist, ...
+                                   pThermal, pCHPplants, pPVplants, Eg, PV_dist, ...
                                    pBClass, pBModern, pBAirMech, refData, ...
                                    ToutN, ...
                                    PHHmanager, BSLhhlCmanager)
@@ -33,6 +33,8 @@ classdef MUBmanager < AbstractBuildingManager
             %   nUnits - Number of usable units per house
             %   pThermal - Propotion of buildings with connection to the
             %              district heating network (0 to 1)
+            %   pCHPplants - Portion of buildings with combined heat and
+            %                power generation plants (0 to 1 each)
             %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
             %   Eg - Mean annual global irradiation for 
             %        simulated region [kWh/m^2]
@@ -72,7 +74,7 @@ classdef MUBmanager < AbstractBuildingManager
             % general initialisation %
             %%%%%%%%%%%%%%%%%%%%%%%%%%
             self = self@AbstractBuildingManager(nBuildings, ...
-                                                pThermal, pPVplants, Eg, ...
+                                                pThermal, pCHPplants, pPVplants, Eg, ...
                                                 pBClass, pBModern, ...
                                                 pBAirMech, ...
                                                 refData, ToutN);
@@ -116,6 +118,9 @@ classdef MUBmanager < AbstractBuildingManager
             BuildingsCOC = sum(BuildingsCOC, 1);
             % get APV
             self.APV = self.APV .* BuildingsCOC(self.maskPV) .* PV_dist.random(self.nPV);
+            % get PCHP
+            regionCHP = -16; %  regionaltypische kälteste Außentemperatur, die in den letzten 20 Jahren zehnmal andauernd über zwei Tage erreicht wurde
+            self.PCHP = self.PCHP;
         end
         
         function self = update(self, timeIdx, Eg, Tout)
@@ -127,13 +132,12 @@ classdef MUBmanager < AbstractBuildingManager
             % TODO: add generation_t
             self.getSpaceHeatingDemand(Tout);
             self.currentEnergyBalance_t = ...
-                (sum(self.PHHagents.LoadProfile_t(timeIdx, :)) + ...
+                (sum(self.PHHagents.LoadProfile_t(timeIdx, :)) + ... % hot water demand
                  sum(self.BSLhhlCagents.LoadProfile_t(timeIdx, :)) + ...
                  sum(self.currentHeatingLoad) - ...
                  sum(self.Generation_t)) * 0.25;  % 1/4 hour steps
+            
         end
-
-        
     end
 end
 

@@ -36,6 +36,10 @@ classdef (Abstract) AbstractBuildingManager < handle
         
         Generation_e  % Electrical generation [W]
         Generation_t  % Thermal generation [W]
+        
+        nCHP  % Number of buildings with CHP-plants
+        PCHP  % installed CHP power (thermal + electrical)
+        
         nPV  % Number of buildings with PV-Plants
         APV  % PV area [m^2]
         
@@ -51,11 +55,13 @@ classdef (Abstract) AbstractBuildingManager < handle
         
         maskPV  % Mask for selecting all buildings with PV-Plants
         maskThermal  % Mask for selecting all buildings with connection to dhn
+        maskCHP  % Mask for selecting all buildings with CHP-plants
 
     end
     
     methods
         function self = AbstractBuildingManager(nBuildings, pThermal, ...
+                                                pCHPplants, ...
                                                 pPVplants, Eg, ...
                                                 pBClass, pBModern, ...
                                                 pBAirMech, refData, ...
@@ -66,6 +72,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             %   nBuildings - Number of buildings represented by manager
             %   pThermal - Propotion of buildings with connection to the
             %              district heating network (0 to 1)
+            %   pCHPplants - Portion of buildings with combined heat and
+            %                power generation plants (0 to 1 each)
             %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
             %   Eg - Mean annual global irradiation for 
             %        simulated region [kWh/m^2]
@@ -103,6 +111,9 @@ classdef (Abstract) AbstractBuildingManager < handle
             end
             if pThermal < 0 || pThermal > 1
                error("pThermal must be a number between 0 and 1");
+            end
+            if pCHPplants < 0 || pCHPplants > 1
+                error("pCHPplants must be a number between 0 and 1");
             end
             if pPVplants < 0 || pPVplants > 1
                 error("pPVplants must be a number between 0 and 1");
@@ -244,16 +255,26 @@ classdef (Abstract) AbstractBuildingManager < handle
                 pStart = pEnd;
             end
 
-           % add slight randomisation to heating load
-           self.Q_HLN = self.Q_HLN .* ...
+            % add slight randomisation to heating load
+            self.Q_HLN = self.Q_HLN .* ...
                        (0.8 + rand(1, self.nBuildings));
                 
-           % dhn
-           %%%%%
-           self.maskThermal = rand(1, self.nBuildings) <= pThermal;
-           self.nThermal = sum(self.maskThermal);
-           
-           self.currentHeatingLoad = zeros(1, self.nThermal);
+            % dhn
+            %%%%%
+            self.maskThermal = rand(1, self.nBuildings) <= pThermal;
+            self.nThermal = sum(self.maskThermal);
+
+            self.currentHeatingLoad = zeros(1, self.nThermal);
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Combined heat and power %
+            %%%%%%%%%%%%%%%%%%%%%%%%%%% 
+            self.maskCHP = rand(1, self.nBuildings);
+            % if bulding has dhn it can´t have a CHP plant 
+            self.maskCHP(self.maskThermal) = 0;
+            self.maskCHP = self.maskCHP <= pCHPplants;
+            self.nCHP = sum(self.maskCHP);
+            self.PCHP = zeros(1, self.nCHP);
         end
         
         function Q_HLN = getBuildingNormHeatingLoad(self, U, Geo, ...
