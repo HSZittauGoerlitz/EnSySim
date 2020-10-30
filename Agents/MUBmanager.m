@@ -119,7 +119,7 @@ classdef MUBmanager < AbstractBuildingManager
             % get APV
             self.APV = self.APV .* BuildingsCOC(self.maskPV) .* PV_dist.random(self.nPV);
             % get PCHP
-            regionCHP = -16; %  regionaltypische kälteste Außentemperatur, die in den letzten 20 Jahren zehnmal andauernd über zwei Tage erreicht wurde
+            regionCHP = ToutN = -16; %  regionaltypische kälteste Außentemperatur, die in den letzten 20 Jahren zehnmal andauernd über zwei Tage erreicht wurde
             self.PCHP = self.PCHP;
         end
         

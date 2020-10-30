@@ -38,10 +38,14 @@ classdef (Abstract) AbstractBuildingManager < handle
         Generation_t  % Thermal generation [W]
         
         nCHP  % Number of buildings with CHP-plants
-        PCHP  % installed CHP power (thermal + electrical)
+        PCHP_t  % installed CHP power (thermal)
+        PCHP_e  % installed CHP power (electrical)
         
         nPV  % Number of buildings with PV-Plants
         APV  % PV area [m^2]
+        
+        CStorage_t  % capacity of thermal storage [kWh]
+        pStorage_t  % loading percentage of storage
         
         % Storage
         %--------
@@ -55,13 +59,14 @@ classdef (Abstract) AbstractBuildingManager < handle
         
         maskPV  % Mask for selecting all buildings with PV-Plants
         maskThermal  % Mask for selecting all buildings with connection to dhn
+        maskStorage_t  % Mask for selecting all buildings with thermal storage
         maskCHP  % Mask for selecting all buildings with CHP-plants
 
     end
     
     methods
         function self = AbstractBuildingManager(nBuildings, pThermal, ...
-                                                pCHPplants, ...
+                                                PCHP_tplants, ...
                                                 pPVplants, Eg, ...
                                                 pBClass, pBModern, ...
                                                 pBAirMech, refData, ...
@@ -72,7 +77,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %   nBuildings - Number of buildings represented by manager
             %   pThermal - Propotion of buildings with connection to the
             %              district heating network (0 to 1)
-            %   pCHPplants - Portion of buildings with combined heat and
+            %   PCHP_tplants - Portion of buildings with combined heat and
             %                power generation plants (0 to 1 each)
             %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
             %   Eg - Mean annual global irradiation for 
@@ -112,8 +117,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             if pThermal < 0 || pThermal > 1
                error("pThermal must be a number between 0 and 1");
             end
-            if pCHPplants < 0 || pCHPplants > 1
-                error("pCHPplants must be a number between 0 and 1");
+            if PCHP_tplants < 0 || PCHP_tplants > 1
+                error("PCHP_tplants must be a number between 0 and 1");
             end
             if pPVplants < 0 || pPVplants > 1
                 error("pPVplants must be a number between 0 and 1");
@@ -153,8 +158,10 @@ classdef (Abstract) AbstractBuildingManager < handle
             % Electrical Model %
             %%%%%%%%%%%%%%%%%%%%
             self.Generation_e = zeros(1, self.nBuildings);
-            % PV
-            %%%%
+            
+            %%%%%%
+            % PV %
+            %%%%%%
             % generate selection mask for PV generation
             self.maskPV = rand(1, self.nBuildings) <= pPVplants;
             self.nPV = sum(self.maskPV);
@@ -165,8 +172,10 @@ classdef (Abstract) AbstractBuildingManager < handle
             % Thermal Model %
             %%%%%%%%%%%%%%%%%
             self.Generation_t = zeros(1, self.nBuildings);
-            % Normed heating load
-            %%%%%%%%%%%%%%%%%%%%%
+            
+            %%%%%%%%%%%%%%%%%%%%%%%
+            % Normed heating load %
+            %%%%%%%%%%%%%%%%%%%%%%%
             self.Q_HLN = zeros(1, nBuildings);
             self.ToutN = ToutN;
             % get and init specific buildings
@@ -258,23 +267,41 @@ classdef (Abstract) AbstractBuildingManager < handle
             % add slight randomisation to heating load
             self.Q_HLN = self.Q_HLN .* ...
                        (0.8 + rand(1, self.nBuildings));
-                
-            % dhn
-            %%%%%
+            %%%%%%%
+            % dhn %
+            %%%%%%%
             self.maskThermal = rand(1, self.nBuildings) <= pThermal;
             self.nThermal = sum(self.maskThermal);
 
             self.currentHeatingLoad = zeros(1, self.nThermal);
-
+            
             %%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Combined heat and power %
             %%%%%%%%%%%%%%%%%%%%%%%%%%% 
             self.maskCHP = rand(1, self.nBuildings);
             % if bulding has dhn it can´t have a CHP plant 
             self.maskCHP(self.maskThermal) = 0;
-            self.maskCHP = self.maskCHP <= pCHPplants;
+            self.maskCHP = self.maskCHP <= PCHP_tplants;
             self.nCHP = sum(self.maskCHP);
-            self.PCHP = zeros(1, self.nCHP);
+            % take normalized heating load as installed power
+            % round to full kW, result in W
+            self.PCHP_t = zeros(1, self.nCHP);
+            self.PCHP_t = round(self.Q_HLN(self.maskCHP)/1000)*1000;
+            % 30% electrical efficiency
+            self.PCHP_e = 0.3 * self.PCHP_t;
+            
+            %%%%%%%%%%%%%%%%%%%
+            % Thermal Storage %
+            %%%%%%%%%%%%%%%%%%%
+            
+            self.maskStorage_t = ~self.maskThermal;
+            self.CStorage_t = zeros(1, self.nCHP);
+            % 75l~kg per kW generation, 40K difference -> 60°C
+            % c_Wasser = 4,184kJ/(kg*K)
+            models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
+            volume = interp1(models,models,self.PCHP_t/1000*75,'next');
+            self.CStorage_t = volume*4.184*40; % [kJ]
+            
         end
         
         function Q_HLN = getBuildingNormHeatingLoad(self, U, Geo, ...
