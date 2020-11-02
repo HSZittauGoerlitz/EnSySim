@@ -48,7 +48,7 @@ classdef AgentManager < handle
             
             parse(p, varargin{:});
             
-            if p.Results.nAgents <= 0
+            if p.Results.nAgents < 0
                 error("Number of agents must be a positive integer value");
             end
             if length(p.Results.time) ~= length(p.Results.SLP)
