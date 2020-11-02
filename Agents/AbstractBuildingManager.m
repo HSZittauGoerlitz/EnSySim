@@ -348,7 +348,11 @@ classdef (Abstract) AbstractBuildingManager < handle
 
             Q_HLN = PhiT + PhiA;
         end
-    
+        
+        function self = getPVGeneration(self, Eg)
+            self.Generation_e(self.maskPV) = self.Generation_e(self.maskPV) + self.APV .* Eg;
+        end
+            
         function self = getSpaceHeatingDemand(self, Tout)
         %getSpaceHeatingDemand Calculate space heating demand in W
         %   The space heating demand is calculated in relation to outside
