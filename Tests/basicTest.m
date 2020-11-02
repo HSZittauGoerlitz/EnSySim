@@ -19,7 +19,7 @@ PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating and PV
 pThermal = [0.07, 0.07, 0.14, 0.14];
-pCHPplants = [0.9, 0, 0, 0];
+pCHPplants = [0, 0, 0, 0.3];
 pPVplants = 0.4;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];

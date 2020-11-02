@@ -133,7 +133,7 @@ classdef CellManager < handle
 
             % check probabilities, which are not checekd by agent /
             % building classes
-            if min(pPHHagents) <= 0 || max(pPHHagents) > 1
+            if min(pPHHagents) < 0 || max(pPHHagents) > 1
                error("pPHHagents must be a number between 0 and 1");
             end
             if pAgriculture < 0 || pAgriculture > 1

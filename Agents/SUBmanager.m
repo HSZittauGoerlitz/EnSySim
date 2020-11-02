@@ -141,26 +141,14 @@ classdef SUBmanager < AbstractBuildingManager
         end
         
         function self = update(self, timeIdx, Eg, Tout)
-            
-            % generation from PV
-            
-
-            % TODO: add generation_t
-            % what is considered to be good practice in terms of arguments
-            % and variables?
-            % syntax ?!
-            self.getPVGeneration(Eg);
-            self.getSpaceHeatingDemand(Tout); 
-            self.getCHPGeneration();
-            self.getStorage_t();
-            
-            % Balances
+            self.Generation_e(self.maskPV) = self.APV .* Eg;
             self.currentEnergyBalance_e = ...
                 (sum(self.PHHagents.LoadProfile_e(timeIdx, :)) + ...
                  sum(self.BSLhhlCagents.LoadProfile_e(timeIdx, :)) + ...
                  sum(self.BSLhhlAagents.LoadProfile_e(timeIdx, :)) - ...
                  sum(self.Generation_e)) * 0.25;  % 1/4 hour steps
-            
+            % TODO: add generation_t
+            self.getSpaceHeatingDemand(Tout);
             self.currentEnergyBalance_t = ...
                 (sum(self.PHHagents.LoadProfile_t(timeIdx, :)) + ...
                  sum(self.BSLhhlCagents.LoadProfile_t(timeIdx, :)) + ...

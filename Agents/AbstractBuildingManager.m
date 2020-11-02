@@ -40,12 +40,10 @@ classdef (Abstract) AbstractBuildingManager < handle
         nCHP  % Number of buildings with CHP-plants
         PCHP_t  % installed CHP power (thermal)
         PCHP_e  % installed CHP power (electrical)
-        maskWasOn  % logical array describing wether CHP was on last time step
         
         nPV  % Number of buildings with PV-Plants
         APV  % PV area [m^2]
         
-        nStorage_t   % number of storages
         CStorage_t  % capacity of thermal storage [kWh]
         pStorage_t  % loading percentage of storage
         
@@ -282,8 +280,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%%% 
             self.maskCHP = rand(1, self.nBuildings);
             % if bulding has dhn it can´t have a CHP plant 
-            self.maskCHP(self.maskThermal) = 1;
-            % generate CHP by portion of buildings
+            self.maskCHP(self.maskThermal) = 0;
             self.maskCHP = self.maskCHP <= PCHP_tplants;
             self.nCHP = sum(self.maskCHP);
             % take normalized heating load as installed power
@@ -292,22 +289,18 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.PCHP_t = round(self.Q_HLN(self.maskCHP)/1000)*1000;
             % 30% electrical efficiency
             self.PCHP_e = 0.3 * self.PCHP_t;
-            self.maskWasOn = zeros(1, self.nCHP);
             
             %%%%%%%%%%%%%%%%%%%
             % Thermal Storage %
             %%%%%%%%%%%%%%%%%%%
             
-            %every building has storage (except the ones on dhn)
             self.maskStorage_t = ~self.maskThermal;
-            self.CStorage_t = zeros(1, self.nCHP);  % this array is shorter then maskStorage_t ???
+            self.CStorage_t = zeros(1, self.nCHP);
             % 75l~kg per kW generation, 40K difference -> 60°C
             % c_Wasser = 4,184kJ/(kg*K)
             models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
             volume = interp1(models,models,self.PCHP_t/1000*75,'next');
             self.CStorage_t = volume*4.184*40; % [kJ]
-            % randomly load all storages
-            self.pStorage_t = rand(1,self.nStorage_t);
             
         end
         
@@ -315,7 +308,7 @@ classdef (Abstract) AbstractBuildingManager < handle
                                                     nInfiltration, ...
                                                     nVentilation)
         %getBuildingNormHeatingLoad Calculate normed heating load of a building
-        %   
+        %                           
         %   The calculation is done in reference to the simplified method 
         %   of DIN EN 12831-1:2017-09
         %   Modifications / Simplifications:
@@ -376,39 +369,6 @@ classdef (Abstract) AbstractBuildingManager < handle
                 self.currentHeatingLoad = self.currentHeatingLoad .* 0;
             end
         end
-        
-        function self = getCHPGeneration(self)
-            
-            % simple logic to decide wether CHP is running
-            % later: get modulation
-            % now: only on-off decision, without hot water
-            % rule: switch on if currentHeatingLoad * timeStep > 0.5 *
-            %                    pStorage_t * CStorage_t
-            
-            % On beacause storeage nearly empty
-            IsOn = self.currentHeatingLoad(self.maskCHP) * 0.25 ... % time step
-                       > 0.5 * self.pStorage_t(self.maskCHP) .* self.CStorage_t(self.maskCHP);
-            % also On because was on last time step and still fills storage
-            IsOn = IsOn | (self.maskWasOn & (self.currentHeatingLoad(self.maskCHP) + ...
-                         (1-self.pStorage_t(self.maskCHP)) .* self.CStorage_t(self.maskCHP) ...
-                         < 0.25 * self.PCHP_t(self.maskCHP)));
-            
-            CHPGeneration_t = self.PCHP_t(IsOn);
-            CHPGeneration_e = self.PCHP_e(IsOn);
-            
-            self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) + CHPGeneration_t;
-            self.Generation_e(self.maskCHP) = self.Generation_e(self.maskCHP) + CHPGeneration_e;
-            
-            self.maskWasOn = IsOn;
-        end
-        
-        function self = getStorage_t(self)
-            
-            % store everything in exess
-            self.pStorage_t = self.pStorage_t + (self.Generation_t(self.maskCHP)-self.currentHeatingLoad(self.maskCHP))...
-                              ./self.CStorage_t;
-        end
-                
     end
     
     methods (Abstract)
