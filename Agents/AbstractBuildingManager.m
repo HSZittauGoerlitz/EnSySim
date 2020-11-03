@@ -415,6 +415,17 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) - toStore;
             
         end
+       
+        function self = update(self, Eg, Tout)
+            self.Generation_t = zeros(1, self.nBuildings);
+            self.Generation_e = zeros(1, self.nBuildings);
+            
+            self.getPVGeneration(Eg);
+            self.getSpaceHeatingDemand(Tout); 
+            self.getCHPGeneration();
+            self.getStorage_t();
+        end
+       
     end
     
 end

@@ -149,10 +149,8 @@ classdef SUBmanager < AbstractBuildingManager
             % what is considered to be good practice in terms of arguments
             % and variables?
             % syntax ?!
-            self.getPVGeneration(Eg);
-            self.getSpaceHeatingDemand(Tout); 
-            self.getCHPGeneration();
-            self.getStorage_t();
+
+            update@AbstractBuildingManager(self, Eg, Tout);
             
             % Balances
             self.currentEnergyBalance_e = ...
