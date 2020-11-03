@@ -41,7 +41,7 @@ classdef CellManager < handle
             % reset energy balances
             self.currentEnergyBalance_e = 0;
             self.currentEnergyBalance_t = 0;
-            % go threw single user buildings
+            % go through single user buildings
             for sub = self.SUBs
                sub.update(timeIdx, Eg, Tout);
                self.currentEnergyBalance_e = self.currentEnergyBalance_e + ...
@@ -57,7 +57,7 @@ classdef CellManager < handle
                self.currentEnergyBalance_t = self.currentEnergyBalance_t + ...
                                              mub.currentEnergyBalance_t;
             end
-            % go threw seperate BSL agents
+            % go through seperate BSL agents
             for BSLsep = self.BSLsepAgents
                BSLsep.update(timeIdx, Eg);
                self.currentEnergyBalance_e = self.currentEnergyBalance_e + ...

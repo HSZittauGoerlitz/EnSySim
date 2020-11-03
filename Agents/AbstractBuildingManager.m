@@ -38,7 +38,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         Generation_t  % Thermal generation [W]
         
         nCHP  % Number of buildings with CHP-plants
-        PCHP_t  % installed CHP power (thermal)
+        PCHP_t  % installed CHP power (thermal) [W]
         PCHP_e  % installed CHP power (electrical)
         maskWasOn  % logical array describing wether CHP was on last time step
         
@@ -46,7 +46,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         APV  % PV area [m^2]
         
         nStorage_t   % number of storages
-        CStorage_t  % capacity of thermal storage [kWh]
+        CStorage_t  % capacity of thermal storage [Wh]
         pStorage_t  % loading percentage of storage
         
         % Storage
@@ -68,7 +68,7 @@ classdef (Abstract) AbstractBuildingManager < handle
     
     methods
         function self = AbstractBuildingManager(nBuildings, pThermal, ...
-                                                PCHP_tplants, ...
+                                                pCHPplants, ...
                                                 pPVplants, Eg, ...
                                                 pBClass, pBModern, ...
                                                 pBAirMech, refData, ...
@@ -79,7 +79,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %   nBuildings - Number of buildings represented by manager
             %   pThermal - Propotion of buildings with connection to the
             %              district heating network (0 to 1)
-            %   PCHP_tplants - Portion of buildings with combined heat and
+            %   pCHPplants - Portion of buildings with combined heat and
             %                power generation plants (0 to 1 each)
             %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
             %   Eg - Mean annual global irradiation for 
@@ -119,8 +119,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             if pThermal < 0 || pThermal > 1
                error("pThermal must be a number between 0 and 1");
             end
-            if PCHP_tplants < 0 || PCHP_tplants > 1
-                error("PCHP_tplants must be a number between 0 and 1");
+            if pCHPplants < 0 || pCHPplants > 1
+                error("pCHPplants must be a number between 0 and 1");
             end
             if pPVplants < 0 || pPVplants > 1
                 error("pPVplants must be a number between 0 and 1");
@@ -159,7 +159,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%%%%%%%%%%%%%%
             % Electrical Model %
             %%%%%%%%%%%%%%%%%%%%
-            self.Generation_e = zeros(1, self.nBuildings);
+            
             
             %%%%%%
             % PV %
@@ -173,7 +173,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%%%%%%%%%%%
             % Thermal Model %
             %%%%%%%%%%%%%%%%%
-            self.Generation_t = zeros(1, self.nBuildings);
+            
             
             %%%%%%%%%%%%%%%%%%%%%%%
             % Normed heating load %
@@ -274,8 +274,6 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%
             self.maskThermal = rand(1, self.nBuildings) <= pThermal;
             self.nThermal = sum(self.maskThermal);
-
-            self.currentHeatingLoad = zeros(1, self.nThermal);
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Combined heat and power %
@@ -284,7 +282,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             % if bulding has dhn it can´t have a CHP plant 
             self.maskCHP(self.maskThermal) = 1;
             % generate CHP by portion of buildings
-            self.maskCHP = self.maskCHP <= PCHP_tplants;
+            self.maskCHP = self.maskCHP <= pCHPplants;
             self.nCHP = sum(self.maskCHP);
             % take normalized heating load as installed power
             % round to full kW, result in W
@@ -292,21 +290,26 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.PCHP_t = round(self.Q_HLN(self.maskCHP)/1000)*1000;
             % 30% electrical efficiency
             self.PCHP_e = 0.3 * self.PCHP_t;
-            self.maskWasOn = zeros(1, self.nCHP);
+            self.maskWasOn = zeros(1, self.nBuildings);
+            
+
+            self.currentHeatingLoad = zeros(1, self.nThermal+self.nCHP);
             
             %%%%%%%%%%%%%%%%%%%
             % Thermal Storage %
             %%%%%%%%%%%%%%%%%%%
             
-            %every building has storage (except the ones on dhn)
-            self.maskStorage_t = ~self.maskThermal;
-            self.CStorage_t = zeros(1, self.nCHP);  % this array is shorter then maskStorage_t ???
+            %every building with CHP has storage (except the ones on dhn)
+            self.maskStorage_t = ~self.maskThermal & self.maskCHP;
+            self.nStorage_t = sum(self.maskStorage_t);
+            self.CStorage_t = zeros(1, self.nStorage_t);
             % 75l~kg per kW generation, 40K difference -> 60°C
             % c_Wasser = 4,184kJ/(kg*K)
             models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
             volume = interp1(models,models,self.PCHP_t/1000*75,'next');
-            self.CStorage_t = volume*4.184*40; % [kJ]
+            self.CStorage_t = volume*4.184*40/3600*1000; % [Wh]
             % randomly load all storages
+
             self.pStorage_t = rand(1,self.nStorage_t);
             
         end
@@ -363,15 +366,15 @@ classdef (Abstract) AbstractBuildingManager < handle
         % Inputs:
         %   Tout - Current (daily mean) outside temperature in °C (double or vector)
 
-            if min(self.Q_HLN(self.maskThermal)) <= 0
+            if min(self.Q_HLN) <= 0
                 error('Specific building heat load must be greater than 0.');
             end
 
             if Tout < 15
-                self.currentHeatingLoad = -self.Q_HLN(self.nThermal) /...
+                self.currentHeatingLoad = -self.Q_HLN /...
                                           (15-self.ToutN) * ...
                                           (Tout-self.ToutN) + ...
-                                          self.Q_HLN(self.nThermal);
+                                          self.Q_HLN;
             else
                 self.currentHeatingLoad = self.currentHeatingLoad .* 0;
             end
@@ -386,18 +389,16 @@ classdef (Abstract) AbstractBuildingManager < handle
             %                    pStorage_t * CStorage_t
             
             % On beacause storeage nearly empty
-            IsOn = self.currentHeatingLoad(self.maskCHP) * 0.25 ... % time step
-                       > 0.5 * self.pStorage_t(self.maskCHP) .* self.CStorage_t(self.maskCHP);
+            IsOn = zeros(1, self.nBuildings);
+            IsOn(self.maskCHP) = self.currentHeatingLoad(self.maskCHP) * 0.25 ... % time step
+                       > 0.5 * self.pStorage_t .* self.CStorage_t;
             % also On because was on last time step and still fills storage
-            IsOn = IsOn | (self.maskWasOn & (self.currentHeatingLoad(self.maskCHP) + ...
-                         (1-self.pStorage_t(self.maskCHP)) .* self.CStorage_t(self.maskCHP) ...
-                         < 0.25 * self.PCHP_t(self.maskCHP)));
-            
-            CHPGeneration_t = self.PCHP_t(IsOn);
-            CHPGeneration_e = self.PCHP_e(IsOn);
-            
-            self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) + CHPGeneration_t;
-            self.Generation_e(self.maskCHP) = self.Generation_e(self.maskCHP) + CHPGeneration_e;
+            IsOn(self.maskCHP) = IsOn(self.maskCHP) | (self.maskWasOn(self.maskCHP) & (self.currentHeatingLoad(self.maskCHP)*0.25 + ...
+                         (1-self.pStorage_t) .* self.CStorage_t ...
+                         > 0.25 * self.PCHP_t));
+
+            self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_t;
+            self.Generation_e(self.maskCHP) = self.Generation_e(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_e;
             
             self.maskWasOn = IsOn;
         end
@@ -405,14 +406,16 @@ classdef (Abstract) AbstractBuildingManager < handle
         function self = getStorage_t(self)
             
             % store everything in exess
-            self.pStorage_t = self.pStorage_t + (self.Generation_t(self.maskCHP)-self.currentHeatingLoad(self.maskCHP))...
-                              ./self.CStorage_t;
+            toStore = self.Generation_t(self.maskCHP)-self.currentHeatingLoad(self.maskCHP);
+            self.pStorage_t = self.pStorage_t + ...
+                              toStore./self.CStorage_t;
+            % maximum charge 100% rest gets deleted for now
+            self.pStorage_t(self.pStorage_t>1) = 1;
+            
+            self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) - toStore;
+            
         end
-                
     end
     
-    methods (Abstract)
-        update(self) 
-    end
 end
 

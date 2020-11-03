@@ -19,7 +19,7 @@ PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating and PV
 pThermal = [0.07, 0.07, 0.14, 0.14];
-pCHPplants = [0.9, 0, 0, 0];
+pCHPplants = [0, 0, 0, 0];
 pPVplants = 0.4;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];
@@ -65,6 +65,7 @@ Balance_e = zeros(1, length(time));
 Generation_e = zeros(1, length(time));
 Balance_t = zeros(1, length(time));
 Generation_t = zeros(1, length(time));
+
 for t = time
     idx = idx + 1;
     TestCell.update(idx, weatherBC.Eg(idx), weatherBC.T(idx));
@@ -73,6 +74,7 @@ for t = time
                          sum(horzcat(TestCell.MUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.BSLsepAgents.Generation_e))) * 0.25;
     Balance_t(idx) = TestCell.currentEnergyBalance_t;
+    
 end
 
 %% show results
