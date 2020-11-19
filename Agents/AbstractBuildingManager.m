@@ -417,7 +417,8 @@ classdef (Abstract) AbstractBuildingManager < handle
         end
        
         function self = update(self, Eg, Tout)
-
+            self.Generation_t = self.Generation_t * 0;
+            self.Generation_e = self.Generation_e * 0;
             
             self.getPVGeneration(Eg);
             self.getSpaceHeatingDemand(Tout); 
