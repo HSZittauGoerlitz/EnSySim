@@ -158,8 +158,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             
             %%%%%%%%%%%%%%%%%%%%
             % Electrical Model %
-            %%%%%%%%%%%%%%%%%%%%
-            
+            self.Generation_e = zeros(1, self.nBuildings);
             
             %%%%%%
             % PV %
@@ -173,7 +172,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%%%%%%%%%%%
             % Thermal Model %
             %%%%%%%%%%%%%%%%%
-            
+            self.Generation_t = zeros(1, self.nBuildings);
+
             
             %%%%%%%%%%%%%%%%%%%%%%%
             % Normed heating load %
@@ -417,8 +417,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         end
        
         function self = update(self, Eg, Tout)
-            self.Generation_t = zeros(1, self.nBuildings);
-            self.Generation_e = zeros(1, self.nBuildings);
+
             
             self.getPVGeneration(Eg);
             self.getSpaceHeatingDemand(Tout); 
