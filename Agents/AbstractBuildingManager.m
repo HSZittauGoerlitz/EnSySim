@@ -284,10 +284,10 @@ classdef (Abstract) AbstractBuildingManager < handle
             % generate CHP by portion of buildings
             self.maskCHP = self.maskCHP <= pCHPplants;
             self.nCHP = sum(self.maskCHP);
-            % take normalized heating load as installed power
+            % take 30% normalized heating load as installed power
             % round to full kW, result in W
             self.PCHP_t = zeros(1, self.nCHP);
-            self.PCHP_t = round(self.Q_HLN(self.maskCHP)/1000)*1000;
+            self.PCHP_t = round(self.Q_HLN(self.maskCHP)/1000)*1000*0.3;
             % 30% electrical efficiency
             self.PCHP_e = 0.3 * self.PCHP_t;
             self.maskWasOn = zeros(1, self.nBuildings);
@@ -413,6 +413,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.pStorage_t(self.pStorage_t>1) = 1;
             
             self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) - toStore;
+            
             
         end
        
