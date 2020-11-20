@@ -381,13 +381,13 @@ classdef (Abstract) AbstractBuildingManager < handle
         end
         
         function self = getCHPGeneration(self)
-            
-            % simple logic to decide wether CHP is running
-            % later: get modulation
-            % now: only on-off decision, without hot water
-            % rule: switch on if currentHeatingLoad * timeStep > 0.5 *
-            %                    pStorage_t * CStorage_t
-            
+
+            % CHP on autopilot.
+            % gets only switched on if current heating load could not be met from 
+            % storage content in next time step if constant.
+            % If switched on it runs till storage is full.
+            % For now no modulation is implemented.
+           
             % On beacause storeage nearly empty
             IsOn = zeros(1, self.nBuildings);
             IsOn(self.maskCHP) = self.currentHeatingLoad(self.maskCHP) * 0.25 ... % time step
