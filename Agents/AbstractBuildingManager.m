@@ -60,6 +60,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         maskThermal  % Mask for selecting all buildings with connection to dhn
         maskStorage_t  % Mask for selecting all buildings with thermal storage
         maskCHP  % Mask for selecting all buildings with CHP-plants
+        maskSelfSupply  % Mask for selecting all buildings with thermal self supply
 
     end
     
@@ -307,6 +308,9 @@ classdef (Abstract) AbstractBuildingManager < handle
             % randomly load all storages
             self.pStorage_t = rand(1,self.nStorage_t);
             
+            % get all buildings with self supply
+            self.maskSelfSupply = self.maskThermal | self.maskCHP;
+            
         end
         
         function Q_HLN = getBuildingNormHeatingLoad(self, U, Geo, ...
@@ -406,8 +410,11 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.pStorage_t(self.pStorage_t>1) = 1;
             
             self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) - toStore;
-            
-            
+        end
+        
+        function self = getThermalSelfSupply(self)
+           % Buildings with thermal self supply will just cover it's demand
+            self.Generation_t(self.maskSelfSupply) = self.Load_t(self.maskSelfSupply); 
         end
        
         function self = update(self, Eg, Tout)
@@ -416,7 +423,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.Load_e = self.Load_e * 0;
             self.Generation_t = self.Generation_t * 0;
             self.Generation_e = self.Generation_e * 0;
-            
+                      
             self.getPVGeneration(Eg);
             self.getSpaceHeatingDemand(Tout); 
             self.getCHPGeneration();
