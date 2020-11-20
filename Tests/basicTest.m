@@ -76,10 +76,7 @@ for t = time
     Balance_t(idx) = TestCell.currentEnergyBalance_t;
     Generation_t(idx) = (sum(horzcat(TestCell.SUBs.Generation_t)) + ...
                          sum(horzcat(TestCell.MUBs.Generation_t))) * 0.25;
-<<<<<<< Updated upstream
-=======
-    
->>>>>>> Stashed changes
+
 end
 
 %% show results
