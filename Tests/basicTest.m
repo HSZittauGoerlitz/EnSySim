@@ -74,7 +74,8 @@ for t = time
                          sum(horzcat(TestCell.MUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.BSLsepAgents.Generation_e))) * 0.25;
     Balance_t(idx) = TestCell.currentEnergyBalance_t;
-    
+    Generation_t(idx) = (sum(horzcat(TestCell.SUBs.Generation_t)) + ...
+                         sum(horzcat(TestCell.MUBs.Generation_t))) * 0.25;
 end
 
 %% show results
