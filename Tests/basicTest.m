@@ -61,48 +61,51 @@ TestCell = CellManager.initDefaultCell(time, nBAgents, nBSLsepAgents, ...
 
 %% Simulate
 idx = 0;
+% Results Electrical
 Balance_e = zeros(1, length(time));
+Load_e = zeros(1, length(time));
 Generation_e = zeros(1, length(time));
-Balance_t = zeros(1, length(time));
-Generation_t = zeros(1, length(time));
+% Results thermal
+% dhn
+Load_dhn = zeros(1, length(time));
+% CPH
 
 for t = time
     idx = idx + 1;
     TestCell.update(idx, weatherBC.Eg(idx), weatherBC.T(idx));
     Balance_e(idx) = TestCell.currentEnergyBalance_e;
+    Load_e(idx) = (sum(horzcat(TestCell.SUBs.Load_e)) + ...
+                   sum(horzcat(TestCell.MUBs.Load_e)) + ...
+                   sum(horzcat(TestCell.BSLsepAgents.Load_e))) * 0.25;
     Generation_e(idx) = (sum(horzcat(TestCell.SUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.MUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.BSLsepAgents.Generation_e))) * 0.25;
-    Balance_t(idx) = TestCell.currentEnergyBalance_t;
-    Generation_t(idx) = (sum(horzcat(TestCell.SUBs.Generation_t)) + ...
-                         sum(horzcat(TestCell.MUBs.Generation_t))) * 0.25;
-
 end
 
 %% show results
+red = [1, 0.3294, 0.3098];
+green = [0.1059, 0.7765, 0.1843];
+
 figure('Position', [200, 100, 1500, 800])
 
-subplot(2, 2, 1)
-plot(time, Generation_e*1e-3, time, Balance_e*1e-3)
+subplot(2, 1, 1)
+hold on
+plot(time, Load_e*1e-3, 'Color', red)
+plot(time, Generation_e*1e-3, 'Color', green)
+plot(time, Balance_e*1e-3, 'Color', [0, 0, 0])
+hold off
 grid on
 ylabel("Electrical Energy in kWh")
 
-legend("Generation", "Balance", 'Orientation', 'horizontal', ...
+legend("Load", "Generation", "Balance", 'Orientation', 'horizontal', ...
        'Position', [0.4, 0.95, 0.2, 0.025])
 
-subplot(2, 2, 3)
-plot(time, cumsum(Generation_e*1e-6), time, cumsum(Balance_e*1e-6))
+subplot(2, 1, 2)
+hold on
+plot(time, cumsum(Load_e*1e-6), 'Color', red)
+plot(time, cumsum(Generation_e*1e-6), 'Color', green)
+plot(time, cumsum(Balance_e*1e-6), 'Color', [0, 0, 0])
+hold off
 grid on
 xlabel("Time")
 ylabel("Cumulative Electrical Energy in MWh")
-
-subplot(2, 2, 2)
-plot(time, Generation_t*1e-3, time, Balance_t*1e-3)
-grid on
-ylabel("Thermal Energy in kWh")
-
-subplot(2, 2, 4)
-plot(time, cumsum(Generation_t*1e-6), time, cumsum(Balance_t*1e-6))
-grid on
-xlabel("Time")
-ylabel("Cumulative Thermal Energy in MWh")
