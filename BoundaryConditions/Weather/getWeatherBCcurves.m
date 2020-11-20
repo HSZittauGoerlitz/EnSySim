@@ -41,7 +41,8 @@ function weatherBC = getWeatherBCcurves(startDate, endDate, regionProfile)
             % all days after leap day must be subtracted by one to fit to
             % region profile doy
             dayStart = min(doy(maskY));
-            if dayStart > 60  % no leap day to consider
+            dayStop = max(doy(maskY));
+            if dayStart > 60 || dayStop < 60  % no leap day to consider
                 dayStart = dayStart - 1;
                 idxStart = find(regionProfile.doy == dayStart, 1);
                 dayStop = max(doy(maskY)) - 1;
