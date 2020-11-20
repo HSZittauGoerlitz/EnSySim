@@ -4,8 +4,11 @@ classdef MUBmanager < AbstractBuildingManager
     properties
         % Common
         %-------
-        nMaxAgents  % max. possible number of agents
         
+        nMaxAgents  % max. possible number of agents
+        nUnits  % Number of usable units per house
+        
+        tempLoad  % Helper for load calculation
         
         % All agents in building manager
         %-------------------------------
@@ -78,6 +81,8 @@ classdef MUBmanager < AbstractBuildingManager
                                                 pBClass, pBModern, ...
                                                 pBAirMech, ...
                                                 refData, ToutN);
+            
+            self.nUnits = nUnits;                                
             % set max. agents possible
             self.nMaxAgents = nBuildings * nUnits;
             % check input parameter
@@ -119,21 +124,40 @@ classdef MUBmanager < AbstractBuildingManager
             % get APV
             self.APV = self.APV .* BuildingsCOC(self.maskPV) .* PV_dist.random(self.nPV);
 
+            % init helper array
+            self.tempLoad = zeros(1, self.nBuildings*nUnits);
         end
         
         function self = update(self, timeIdx, Eg, Tout)
             update@AbstractBuildingManager(self, Eg, Tout);
-            self.currentEnergyBalance_e = ...
-                (sum(self.PHHagents.LoadProfile_e(timeIdx, :)) + ...
-                 sum(self.BSLhhlCagents.LoadProfile_e(timeIdx, :)) - ...
-                 sum(self.Generation_e)) * 0.25;  % 1/4 hour steps
-            % TODO: add generation_t
             
-            self.currentEnergyBalance_t = ...
-                (sum(self.PHHagents.LoadProfile_t(timeIdx, :)) + ... % hot water demand
-                 sum(self.BSLhhlCagents.LoadProfile_t(timeIdx, :)) + ...
-                 sum(self.currentHeatingLoad) - ...
-                 sum(self.Generation_t)) * 0.25;  % 1/4 hour steps
+            % Balances
+            % Electrical
+            % Load
+            self.tempLoad(self.maskPHH) = self.PHHagents.LoadProfile_e(timeIdx, :);
+            self.tempLoad(self.maskBSLhhlC) = self.BSLhhlCagents.LoadProfile_e(timeIdx, :);
+            self.Load_e = self.Load_e + sum(reshape(self.tempLoad, ...
+                                                    [self.nUnits, self.nBuildings]), ...
+                                            1);
+            % Generation
+            % is calculated by AbstractBuildingManager
+            % Balance
+            self.currentEnergyBalance_e = (sum(self.Generation_e) - ...
+                                           sum(self.Load_e)) *...
+                                           0.25;  % 1/4 hour steps
+            % Thermal
+            % Load
+            self.tempLoad(self.maskPHH) = self.PHHagents.LoadProfile_t(timeIdx, :);
+            self.tempLoad(self.maskBSLhhlC) = self.BSLhhlCagents.LoadProfile_t(timeIdx, :);
+            self.Load_t = self.Load_t + sum(reshape(self.tempLoad, ...
+                                                    [self.nUnits, self.nBuildings]), ...
+                                            1);
+            % Generation
+            % is calculated by AbstractBuildingManager
+            % Balance
+            self.currentEnergyBalance_t = (sum(self.Generation_t) - ...
+                                           sum(self.Load_t)) *...
+                                           0.25;  % 1/4 hour steps
             
         end
     end

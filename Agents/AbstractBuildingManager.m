@@ -18,8 +18,6 @@ classdef (Abstract) AbstractBuildingManager < handle
         % Bilance
         %--------
         % resulting Energy load bilance at given time step
-        % positive: Energy is consumed
-        % negative: Energy is generated
         
         currentEnergyBalance_e  % Resulting eeb in current time step [Wh]
         currentEnergyBalance_t  % Resulting teb in current time step [Wh]
@@ -27,15 +25,14 @@ classdef (Abstract) AbstractBuildingManager < handle
         % Load
         %-----
         
-        % Heating load of buildings with connection to dhn or to other
-        % energy sector
-        currentHeatingLoad  % [W]
+        Load_e  % resulting electrical load for each agent [W]
+        Load_t  % resulting thermal load for each agent [W]
         
         % Generation
         %-----------
         
-        Generation_e  % Electrical generation [W]
-        Generation_t  % Thermal generation [W]
+        Generation_e  % resulting electrical generation for each agent [W]
+        Generation_t  % resulting thermal generation for each agent [W]
         
         nCHP  % Number of buildings with CHP-plants
         PCHP_t  % installed CHP power (thermal) [W]
@@ -158,6 +155,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             
             %%%%%%%%%%%%%%%%%%%%
             % Electrical Model %
+            self.Load_e = zeros(1, self.nBuildings);
             self.Generation_e = zeros(1, self.nBuildings);
             
             %%%%%%
@@ -172,6 +170,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%%%%%%%%%%%
             % Thermal Model %
             %%%%%%%%%%%%%%%%%
+            self.Load_t = zeros(1, self.nBuildings);
             self.Generation_t = zeros(1, self.nBuildings);
 
             
@@ -279,10 +278,10 @@ classdef (Abstract) AbstractBuildingManager < handle
             % Combined heat and power %
             %%%%%%%%%%%%%%%%%%%%%%%%%%% 
             self.maskCHP = rand(1, self.nBuildings);
-            % if bulding has dhn it can´t have a CHP plant 
-            self.maskCHP(self.maskThermal) = 1;
             % generate CHP by portion of buildings
             self.maskCHP = self.maskCHP <= pCHPplants;
+            % if bulding has dhn it can´t have a CHP plant 
+            self.maskCHP(self.maskThermal) = false;
             self.nCHP = sum(self.maskCHP);
             % take 30% normalized heating load as installed power
             % round to full kW, result in W
@@ -291,9 +290,6 @@ classdef (Abstract) AbstractBuildingManager < handle
             % 30% electrical efficiency
             self.PCHP_e = 0.3 * self.PCHP_t;
             self.maskWasOn = zeros(1, self.nBuildings);
-            
-
-            self.currentHeatingLoad = zeros(1, self.nThermal+self.nCHP);
             
             %%%%%%%%%%%%%%%%%%%
             % Thermal Storage %
@@ -309,7 +305,6 @@ classdef (Abstract) AbstractBuildingManager < handle
             volume = interp1(models,models,self.PCHP_t/1000*75,'next');
             self.CStorage_t = volume*4.184*40/3600*1000; % [Wh]
             % randomly load all storages
-
             self.pStorage_t = rand(1,self.nStorage_t);
             
         end
@@ -353,7 +348,8 @@ classdef (Abstract) AbstractBuildingManager < handle
         end
         
         function self = getPVGeneration(self, Eg)
-            self.Generation_e(self.maskPV) = self.Generation_e(self.maskPV) + self.APV .* Eg;
+            self.Generation_e(self.maskPV) = self.Generation_e(self.maskPV) + ...
+                                             self.APV .* Eg;
         end
             
         function self = getSpaceHeatingDemand(self, Tout)
@@ -371,12 +367,9 @@ classdef (Abstract) AbstractBuildingManager < handle
             end
 
             if Tout < 15
-                self.currentHeatingLoad = -self.Q_HLN /...
-                                          (15-self.ToutN) * ...
-                                          (Tout-self.ToutN) + ...
-                                          self.Q_HLN;
-            else
-                self.currentHeatingLoad = self.currentHeatingLoad .* 0;
+                self.Load_t = self.Load_t + ...
+                              -self.Q_HLN / (15-self.ToutN) * ...
+                              (Tout-self.ToutN) + self.Q_HLN;
             end
         end
         
@@ -390,10 +383,10 @@ classdef (Abstract) AbstractBuildingManager < handle
            
             % On beacause storeage nearly empty
             IsOn = zeros(1, self.nBuildings);
-            IsOn(self.maskCHP) = self.currentHeatingLoad(self.maskCHP) * 0.25 ... % time step
+            IsOn(self.maskCHP) = self.Load_t(self.maskCHP) * 0.25 ... % time step
                        > 0.5 * self.pStorage_t .* self.CStorage_t;
             % also On because was on last time step and still fills storage
-            IsOn(self.maskCHP) = IsOn(self.maskCHP) | (self.maskWasOn(self.maskCHP) & (self.currentHeatingLoad(self.maskCHP)*0.25 + ...
+            IsOn(self.maskCHP) = IsOn(self.maskCHP) | (self.maskWasOn(self.maskCHP) & (self.Load_t(self.maskCHP)*0.25 + ...
                          (1-self.pStorage_t) .* self.CStorage_t ...
                          > 0.25 * self.PCHP_t));
 
@@ -406,7 +399,7 @@ classdef (Abstract) AbstractBuildingManager < handle
         function self = getStorage_t(self)
             
             % store everything in exess
-            toStore = self.Generation_t(self.maskCHP)-self.currentHeatingLoad(self.maskCHP);
+            toStore = self.Generation_t(self.maskCHP)-self.Load_t(self.maskCHP);
             self.pStorage_t = self.pStorage_t + ...
                               toStore./self.CStorage_t;
             % maximum charge 100% rest gets deleted for now
@@ -418,6 +411,9 @@ classdef (Abstract) AbstractBuildingManager < handle
         end
        
         function self = update(self, Eg, Tout)
+            % Reset current Load and Generation
+            self.Load_t = self.Load_t * 0;
+            self.Load_e = self.Load_e * 0;
             self.Generation_t = self.Generation_t * 0;
             self.Generation_e = self.Generation_e * 0;
             

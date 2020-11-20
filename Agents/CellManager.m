@@ -17,11 +17,18 @@ classdef CellManager < handle
         MUBs % List of multi user building manager
         BSLsepAgents % List of manager for seperate BSL agents
         
-        % resulting balance
-        % -----------------
+        % Bilance
+        %--------
+        % resulting Energy load bilance at given time step
         
-        currentEnergyBalance_e % Resulting eeb in current time step [Wh]
-        currentEnergyBalance_t % Resulting teb in current time step [Wh]
+        currentEnergyBalance_e  % Resulting eeb in current time step [Wh]
+        currentEnergyBalance_t  % Resulting teb in current time step [Wh]
+        
+        % Generation
+        %-----------
+        
+        Generation_e  % resulting electrical generation for each cell [W]
+        Generation_t  % resulting thermal generation for each cell [W]
     end
 
     methods
@@ -39,6 +46,8 @@ classdef CellManager < handle
         
         function self = update(self, timeIdx, Eg, Tout)
             % reset energy balances
+            self.Generation_e = 0;
+            self.Generation_t = 0;
             self.currentEnergyBalance_e = 0;
             self.currentEnergyBalance_t = 0;
             % go through single user buildings
