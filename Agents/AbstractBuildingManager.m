@@ -309,7 +309,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.pStorage_t = rand(1,self.nStorage_t);
             
             % get all buildings with self supply
-            self.maskSelfSupply = self.maskThermal | self.maskCHP;
+            self.maskSelfSupply = ~(self.maskThermal | self.maskCHP);
             
         end
         
