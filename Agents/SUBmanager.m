@@ -141,39 +141,48 @@ classdef SUBmanager < AbstractBuildingManager
         end
         
         function self = update(self, timeIdx, Eg, Tout)
-            
-            % TODO: add generation_t
-            % what is considered to be good practice in terms of arguments
-            % and variables?
-            % syntax ?!
+        % update() calculates all loads and generation for current time
+        % step
+        %
+        % Inputs:
+        %   timeIdx - current index in time array
+        %   Eg - current solar radiation
+        %   Tout - current outside temperature
 
+            % call update method of parent class
             update@AbstractBuildingManager(self, Eg, Tout);
-            
-            % Balances
+
             % Electrical
             % Load
+            % add electricity demand from agents to Load
             self.Load_e(self.maskPHH) = self.Load_e(self.maskPHH) + ...
                 self.PHHagents.LoadProfile_e(timeIdx, :);
             self.Load_e(self.maskBSLhhlC) = self.Load_e(self.maskBSLhhlC) + ...
                 self.BSLhhlCagents.LoadProfile_e(timeIdx, :);
             self.Load_e(self.maskBSLhhlA) = self.Load_e(self.maskBSLhhlA) + ...
                 self.BSLhhlAagents.LoadProfile_e(timeIdx, :);
+
+            % Thermal
+            % Load
+            % add hot water heating demand from agents to Load
+            self.Load_t(self.maskPHH) = self.Load_t(self.maskPHH) + ...
+                self.PHHagents.LoadProfile_t(timeIdx, :);
+            self.Load_t(self.maskBSLhhlC) = self.Load_t(self.maskBSLhhlC) + ...
+                self.BSLhhlCagents.LoadProfile_t(timeIdx, :);
+            self.Load_t(self.maskBSLhhlA) = self.Load_t(self.maskBSLhhlA) + ...
+                self.BSLhhlAagents.LoadProfile_t(timeIdx, :);            
+
+            self.updateStorage_t();
+            
             % Generation
             % is calculated by AbstractBuildingManager
             % Balance
             self.currentEnergyBalance_e = (sum(self.Generation_e) - ...
                                            sum(self.Load_e)) *...
                                            0.25;  % 1/4 hour steps
-            % Thermal
-            % Load
-            self.Load_t(self.maskPHH) = self.Load_t(self.maskPHH) + ...
-                self.PHHagents.LoadProfile_t(timeIdx, :);
-            self.Load_t(self.maskBSLhhlC) = self.Load_t(self.maskBSLhhlC) + ...
-                self.BSLhhlCagents.LoadProfile_t(timeIdx, :);
-            self.Load_t(self.maskBSLhhlA) = self.Load_t(self.maskBSLhhlA) + ...
-                self.BSLhhlAagents.LoadProfile_t(timeIdx, :);
+
             % Generation
-            self.getThermalSelfSupply();
+
             % Balance
             self.currentEnergyBalance_t = (sum(self.Generation_t) - ...
                                            sum(self.Load_t)) *...
