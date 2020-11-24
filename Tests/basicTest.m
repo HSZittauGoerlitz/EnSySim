@@ -19,7 +19,7 @@ PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating and PV
 pThermal = [0.07, 0.07, 0.14, 0.14];
-pCHPplants = [0.5, 0.5, 0, 0];
+pCHPplants = [0.1, 0, 0, 0];
 pPVplants = 0.4;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];
@@ -69,6 +69,9 @@ Generation_e = zeros(1, length(time));
 % dhn
 Load_dhn = zeros(1, length(time));
 % CPH
+CHP_state = zeros(sum(horzcat(TestCell.SUBs.nCHP)), length(time));
+% Storage
+Storage_t = zeros(sum(horzcat(TestCell.SUBs.nStorage_t)), length(time));
 
 for t = time
     idx = idx + 1;
@@ -80,6 +83,9 @@ for t = time
     Generation_e(idx) = (sum(horzcat(TestCell.SUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.MUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.BSLsepAgents.Generation_e))) * 0.25;
+    temp = horzcat(TestCell.SUBs.maskWasOn);
+    CHP_state(:,idx) = temp(horzcat(TestCell.SUBs.maskCHP));
+    Storage_t(:,idx) = horzcat(TestCell.SUBs.pStorage_t);
 end
 
 %% show results
@@ -109,3 +115,11 @@ hold off
 grid on
 xlabel("Time")
 ylabel("Cumulative Electrical Energy in MWh")
+
+figure()
+subplot(2, 1, 1)
+imagesc(Storage_t);
+subplot(2, 1, 2)
+imagesc(CHP_state);
+
+
