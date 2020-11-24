@@ -302,7 +302,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.CStorage_t = zeros(1, self.nStorage_t);
             % 75l~kg per kW generation, 40K difference -> 60°C
             % c_Wasser = 4,184kJ/(kg*K)
-            models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
+            models = [0,200,300,400,500,600,750,950,1500,2000,3000,5000,99999999];
             volume = interp1(models,models,self.PCHP_t/1000*75,'next');
             self.CStorage_t = volume*4.184*40/3600*1000; % [Wh]
             % randomly load all storages
