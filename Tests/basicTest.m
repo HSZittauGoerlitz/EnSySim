@@ -4,12 +4,12 @@ endTime = datetime("31.12.2020 23:45:00");
 
 load BoundaryConditions.mat
 
-% agents
-nBAgents = [500, 1000, 4000, 4500];
-nBSLsepAgents = 1000;
-nBuildings = [505, 1010, 680, 100];
-pPHHagents = [0.8, 0.8, 0.6, 0.9];
-pAgriculture = 0.2;
+% agents [Free Standing, Row End, Small, Big Multi User]
+nBAgents = [50, 0, 0, 0]; %agents per building class
+nBSLsepAgents = 0;
+nBuildings = [50, 0, 0, 0]; %number of buildings
+pPHHagents = [1, 0, 0, 0];
+pAgriculture = 0;
 % agents - COC
 BSL_COC.function = BSL_COC_distribution;
 BSL_COC.min = 1;
@@ -18,8 +18,8 @@ PHH_COC.function = PHH_COC_distribution;
 PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating and PV
-pThermal = [0.07, 0.07, 0.14, 0.14];
-pCHPplants = [0.1, 0, 0, 0];
+pThermal = [0.5, 0.07, 0.14, 0.14];
+pCHPplants = [0.5, 0, 0, 0];
 pPVplants = 0.4;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];
@@ -94,7 +94,7 @@ green = [0.1059, 0.7765, 0.1843];
 
 figure('Position', [200, 100, 1500, 800])
 
-subplot(2, 1, 1)
+subplot(2, 2, 1)
 hold on
 plot(time, Load_e*1e-3, 'Color', red)
 plot(time, Generation_e*1e-3, 'Color', green)
@@ -106,7 +106,7 @@ ylabel("Electrical Energy in kWh")
 legend("Load", "Generation", "Balance", 'Orientation', 'horizontal', ...
        'Position', [0.4, 0.95, 0.2, 0.025])
 
-subplot(2, 1, 2)
+subplot(2, 2, 2)
 hold on
 plot(time, cumsum(Load_e*1e-6), 'Color', red)
 plot(time, cumsum(Generation_e*1e-6), 'Color', green)
@@ -115,6 +115,28 @@ hold off
 grid on
 xlabel("Time")
 ylabel("Cumulative Electrical Energy in MWh")
+
+subplot(2, 2, 3)
+hold on
+plot(time, Load_t*1e-3, 'Color', red)
+plot(time, Generation_t*1e-3, 'Color', green)
+plot(time, Balance_t*1e-3, 'Color', [0, 0, 0])
+hold off
+grid on
+ylabel("Thermal Energy in kWh")
+
+legend("Load", "Generation", "Balance", 'Orientation', 'horizontal', ...
+       'Position', [0.4, 0.95, 0.2, 0.025])
+
+subplot(2, 2, 4)
+hold on
+plot(time, cumsum(Load_t*1e-6), 'Color', red)
+plot(time, cumsum(Generation_t*1e-6), 'Color', green)
+plot(time, cumsum(Balance_t*1e-6), 'Color', [0, 0, 0])
+hold off
+grid on
+xlabel("Time")
+ylabel("Cumulative Thermal Energy in MWh")
 
 figure()
 subplot(2, 1, 1)
