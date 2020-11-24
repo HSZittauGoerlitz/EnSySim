@@ -296,7 +296,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             % Thermal Storage %
             %%%%%%%%%%%%%%%%%%%
             
-            %every building with CHP has storage (except the ones on dhn)
+            %every building with CHP has thermal storage (except the ones on dhn)
             self.maskStorage_t = ~self.maskThermal & self.maskCHP;
             self.nStorage_t = sum(self.maskStorage_t);
             self.CStorage_t = zeros(1, self.nStorage_t);
@@ -377,7 +377,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             end
         end
         
-        function self = getCHPGeneration(self)
+        function self = getCHPGeneration(self, histLoad_t)
 
         %getCHPGeneration decides wether or not CHP is running and
         %   calculates thermal and electrical output.
@@ -389,23 +389,25 @@ classdef (Abstract) AbstractBuildingManager < handle
             % mask for switched on CHP
             IsOn = zeros(1, self.nBuildings);
             % On beacause storage nearly empty
-            IsOn(self.maskCHP) = self.Load_t(self.maskCHP) * 0.25 ... % time step
-                       > self.pStorage_t .* self.CStorage_t;
+            IsOn(self.maskCHP) = histLoad_t(self.maskCHP) * 0.25 ... % time step
+                       > 0.5 * self.pStorage_t .* self.CStorage_t;
             % also On because was on last time step and still fills storage
-            IsOn(self.maskCHP) = IsOn(self.maskCHP) | (self.maskWasOn(self.maskCHP) & (self.Load_t(self.maskCHP)*0.25 + ...
+            IsOn(self.maskCHP) = IsOn(self.maskCHP) | (self.maskWasOn(self.maskCHP) & (histLoad_t(self.maskCHP)*0.25 + ...
                          (1-self.pStorage_t) .* self.CStorage_t ...
                          > 0.25 * self.PCHP_t));
             % for now all heat demand gets supplied
             self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_t;
             % rest of thermal load gets supplied by Spitzenlastkessel (only
             % possible because load is known)
-            self.Generation_t(self.maskCHP) = self.Load_t(self.maskCHP);
+            spitzenlast = self.Generation_t(self.maskCHP)<self.Load_t(self.maskCHP);
+            self.Generation_t(spitzenlast) = self.Load_t(spitzenlast);
+            
             self.Generation_e(self.maskCHP) = self.Generation_e(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_e;
             
             self.maskWasOn = IsOn;
         end
         
-        function self = getStorage_t(self)
+        function self = updateStorage_t(self)
             
         % getStorage_t calculate storage utilization 
         % The updated storage utiliztion gets calculated from a difference
@@ -427,15 +429,19 @@ classdef (Abstract) AbstractBuildingManager < handle
        
         function self = update(self, Eg, Tout)
             % Reset current Load and Generation
+            histLoad_t = self.Load_t;
+            histLoad_e = self.Load_e;
+            
             self.Load_t = self.Load_t * 0;
             self.Load_e = self.Load_e * 0;
+            
             self.Generation_t = self.Generation_t * 0;
             self.Generation_e = self.Generation_e * 0;
                       
             self.getPVGeneration(Eg);
             self.getSpaceHeatingDemand(Tout); 
-            self.getCHPGeneration();
-            self.getStorage_t();
+            self.getCHPGeneration(histLoad_t);
+            self.getThermalSelfSupply();
         end
        
     end
