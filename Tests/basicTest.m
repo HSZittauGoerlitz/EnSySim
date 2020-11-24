@@ -66,6 +66,9 @@ Balance_e = zeros(1, length(time));
 Load_e = zeros(1, length(time));
 Generation_e = zeros(1, length(time));
 % Results thermal
+Balance_t = zeros(1, length(time));
+Load_t = zeros(1, length(time));
+Generation_t = zeros(1, length(time));
 % dhn
 Load_dhn = zeros(1, length(time));
 % CPH
@@ -83,6 +86,15 @@ for t = time
     Generation_e(idx) = (sum(horzcat(TestCell.SUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.MUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.BSLsepAgents.Generation_e))) * 0.25;
+    
+    Balance_t(idx) = TestCell.currentEnergyBalance_t;
+    Load_t(idx) = (sum(horzcat(TestCell.SUBs.Load_t)) + ...
+                   sum(horzcat(TestCell.MUBs.Load_t)) ) * 0.25;
+    Generation_t(idx) = (sum(horzcat(TestCell.SUBs.Generation_t)) + ...
+                         sum(horzcat(TestCell.MUBs.Generation_t))) * 0.25;          
+                     
+                     
+                     
     temp = horzcat(TestCell.SUBs.maskWasOn);
     CHP_state(:,idx) = temp(horzcat(TestCell.SUBs.maskCHP));
     Storage_t(:,idx) = horzcat(TestCell.SUBs.pStorage_t);
