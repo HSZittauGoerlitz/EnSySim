@@ -379,22 +379,27 @@ classdef (Abstract) AbstractBuildingManager < handle
         
         function self = getCHPGeneration(self)
 
-            % CHP on autopilot.
-            % gets only switched on if current heating load could not be met from 
-            % storage content in next time step if constant.
-            % If switched on it runs till storage is full.
-            % For now no modulation is implemented.
+        %getCHPGeneration decides wether or not CHP is running and
+        %   calculates thermal and electrical output.
+        %   CHP gets switched on if current heating load could not be met from 
+        %   storage content in this time step.
+        %   If switched on it runs till storage is full.
+        %   For now no modulation is implemented.
            
-            % On beacause storeage nearly empty
+            % mask for switched on CHP
             IsOn = zeros(1, self.nBuildings);
+            % On beacause storage nearly empty
             IsOn(self.maskCHP) = self.Load_t(self.maskCHP) * 0.25 ... % time step
-                       > 0.5 * self.pStorage_t .* self.CStorage_t;
+                       > self.pStorage_t .* self.CStorage_t;
             % also On because was on last time step and still fills storage
             IsOn(self.maskCHP) = IsOn(self.maskCHP) | (self.maskWasOn(self.maskCHP) & (self.Load_t(self.maskCHP)*0.25 + ...
                          (1-self.pStorage_t) .* self.CStorage_t ...
                          > 0.25 * self.PCHP_t));
-
+            % for now all heat demand gets supplied
             self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_t;
+            % rest of thermal load gets supplied by Spitzenlastkessel (only
+            % possible because load is known)
+            self.Generation_t(self.maskCHP) = self.Load_t(self.maskCHP);
             self.Generation_e(self.maskCHP) = self.Generation_e(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_e;
             
             self.maskWasOn = IsOn;
@@ -402,6 +407,9 @@ classdef (Abstract) AbstractBuildingManager < handle
         
         function self = getStorage_t(self)
             
+        % getStorage_t calculate storage utilization 
+        % The updated storage utiliztion gets calculated from a difference
+        % between generation and load. 
             % store everything in exess
             toStore = self.Generation_t(self.maskCHP)-self.Load_t(self.maskCHP);
             self.pStorage_t = self.pStorage_t + ...
