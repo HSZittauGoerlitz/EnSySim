@@ -111,7 +111,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%
             % check input parameter %
             %%%%%%%%%%%%%%%%%%%%%%%%%
-            if nBuildings <= 0
+            if nBuildings < 0
                 error("Number of buildings must be a positive integer value");
             end
             if pThermal < 0 || pThermal > 1
