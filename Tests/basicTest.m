@@ -5,9 +5,9 @@ endTime = datetime("31.12.2020 23:45:00");
 load BoundaryConditions.mat
 
 % agents [Free Standing, Row End, Small, Big Multi User]
-nBAgents = [50, 0, 0, 0]; %agents per building class
+nBAgents = [10, 0, 0, 0]; %agents per building class
 nBSLsepAgents = 0;
-nBuildings = [50, 0, 0, 0]; %number of buildings
+nBuildings = [10, 0, 0, 0]; %number of buildings
 pPHHagents = [1, 0, 0, 0];
 pAgriculture = 0;
 % agents - COC
@@ -18,9 +18,9 @@ PHH_COC.function = PHH_COC_distribution;
 PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating and PV
-pThermal = [0.5, 0.07, 0.14, 0.14];
-pCHPplants = [0.5, 0, 0, 0];
-pPVplants = 0.4;
+pThermal = [00, 0.07, 0.14, 0.14]; % percentage from all with district heating
+pCHPplants = [1, 0, 0, 0]; % percentage from not with district heating with CHP
+pPVplants = 0;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];
 FSH.Modern = [0.4704, 0.4712, 0.2897, 0.0485, 0.0];
@@ -150,10 +150,11 @@ grid on
 xlabel("Time")
 ylabel("Cumulative Thermal Energy in MWh")
 
-figure()
+figure() % ToDo: time as x-axis
 subplot(2, 1, 1)
 imagesc(Storage_t);
 subplot(2, 1, 2)
-imagesc(CHP_state);
+imagesc(CHP_state); % ToDo: binary color, time as x-axis
+
 
 
