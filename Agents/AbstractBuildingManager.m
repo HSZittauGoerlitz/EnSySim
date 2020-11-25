@@ -278,11 +278,11 @@ classdef (Abstract) AbstractBuildingManager < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Combined heat and power %
             %%%%%%%%%%%%%%%%%%%%%%%%%%% 
-            self.maskCHP = rand(1, self.nBuildings);
+            % if bulding has dhn it can´t have a CHP plant 
+            self.maskCHP = ones(1, self.nBuildings);
+            self.maskCHP(~self.maskThermal) = rand(1, self.nBuildings-sum(self.maskThermal));
             % generate CHP by portion of buildings
             self.maskCHP = self.maskCHP <= pCHPplants;
-            % if bulding has dhn it can´t have a CHP plant 
-            self.maskCHP(self.maskThermal) = false;
             self.nCHP = sum(self.maskCHP);
             % take 30% normalized heating load as installed power
             % round to full kW, result in W
