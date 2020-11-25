@@ -290,6 +290,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.PCHP_t = round(self.Q_HLN(self.maskCHP)/1000)*1000*0.3;
             % 30% electrical efficiency
             self.PCHP_e = 0.3 * self.PCHP_t;
+            % keep track of state of CHP plants
             self.maskWasOn = zeros(1, self.nBuildings);
             
             %%%%%%%%%%%%%%%%%%%
@@ -399,8 +400,8 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_t;
             % rest of thermal load gets supplied by Spitzenlastkessel (only
             % possible because load is known)
-            spitzenlast = self.Generation_t(self.maskCHP)<self.Load_t(self.maskCHP);
-            self.Generation_t(spitzenlast) = self.Load_t(spitzenlast);
+            %spitzenlast = self.Generation_t(self.maskCHP)<self.Load_t(self.maskCHP);
+            %self.Generation_t(spitzenlast) = self.Load_t(spitzenlast);
             
             self.Generation_e(self.maskCHP) = self.Generation_e(self.maskCHP) + IsOn(self.maskCHP).*self.PCHP_e;
             
@@ -413,17 +414,59 @@ classdef (Abstract) AbstractBuildingManager < handle
         % The updated storage utiliztion gets calculated from a difference
         % between generation and load. 
             % store everything in exess
-            toStore = self.Generation_t(self.maskCHP)-self.Load_t(self.maskCHP);
-            self.pStorage_t = self.pStorage_t + ...
-                              toStore./self.CStorage_t;
+%             toStore = self.Generation_t(self.maskCHP)-self.Load_t(self.maskCHP);
+%             self.pStorage_t = self.pStorage_t + ...
+%                               toStore./self.CStorage_t;
             % maximum charge 100% rest gets deleted for now
-            self.pStorage_t(self.pStorage_t>1) = 1;
+            %self.pStorage_t(self.pStorage_t>1) = 1;
+            %self.pStorage_t(self.pStorage_t<0) = 0;
             
-            self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) - toStore;
+            %self.Load_t(self.maskCHP) = self.Load_t(self.maskCHP) + toStore;
+%%%%%%%%%%%%%%%
+%             % first use storage to satisfy all demand
+%             % get storages delivering energy
+%             out = self.Generation_t(self.maskCHP)<self.Load_t(self.maskCHP);
+%             % how much is needed?
+%             toStore = self.Generation_t(out)-self.Load_t(out);
+%             % adjust storage state
+%             self.pStorage_t(out)>
+%             self.pStorage_t = self.pStorage_t + toStore./self.CStorage_t;
+%             % correct empty storages
+%             
+%             self.pStorage_t(self.pStorage_t<0) = 0;
+            
+%%% Aufgabe: wenn Generation > Load -> einspeichern = "+"  |
+%            wenn Generation < Load -> ausspeichern = "-"  +-> Limits beachten!
+            
+            inout = 0.25*(self.Generation_t(self.maskCHP)-self.Load_t(self.maskCHP));
+            % check how much we can store
+            in = min((1-self.pStorage_t(inout>0)).*self.CStorage_t(inout>0),inout(inout>0));
+            % adjust p
+            self.pStorage_t(inout>0) = self.pStorage_t(inout>0) + in./self.CStorage_t(inout>0);
+
+            % check how much we can supply
+            out = min((self.pStorage_t(inout<0)).*self.CStorage_t(inout<0),-1*inout(inout<0));
+            % adjust p
+            self.pStorage_t(inout<0) = self.pStorage_t(inout<0) - out./self.CStorage_t(inout<0);
+%%% Jetzt soll das ein- bzw. ausgespeicherte auf die Last- bzw.
+%%% Erzeugungsschiene angerechnet werden.
+            
+            result = zeros(1,length(inout));
+            result(inout>0) = in;
+            self.Load_t(self.maskCHP) = self.Load_t(self.maskCHP) + result/0.25;
+            result = result * 0;
+            result(inout<0) = out;
+            self.Generation_t(self.maskCHP) = self.Generation_t(self.maskCHP) + result/0.25;
+
+            inout(inout>0) = inout(inout>0) - in;
+            inout(inout<0) = inout(inout<0) + out;
+            
+            
+            
         end
         
         function self = getThermalSelfSupply(self)
-           % Buildings with thermal self supply will just cover it's demand
+            % Buildings with thermal self supply will just cover it's demand
             self.Generation_t(self.maskSelfSupply) = self.Load_t(self.maskSelfSupply); 
         end
        
