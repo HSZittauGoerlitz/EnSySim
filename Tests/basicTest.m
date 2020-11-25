@@ -5,11 +5,11 @@ endTime = datetime("31.12.2020 23:45:00");
 load BoundaryConditions.mat
 
 % agents [Free Standing, Row End, Small, Big Multi User]
-nBAgents = [10, 0, 0, 0]; %agents per building class
-nBSLsepAgents = 0;
-nBuildings = [10, 0, 0, 0]; %number of buildings
-pPHHagents = [1, 0, 0, 0];
-pAgriculture = 0;
+nBAgents = [500, 1000, 4000, 4500]; %agents per building class
+nBSLsepAgents = 1000;
+nBuildings = [505, 1010, 680, 100]; %number of buildings
+pPHHagents = [0.8, 0.8, 0.6, 0.9];
+pAgriculture = 0.2;
 % agents - COC
 BSL_COC.function = BSL_COC_distribution;
 BSL_COC.min = 1;
@@ -18,9 +18,9 @@ PHH_COC.function = PHH_COC_distribution;
 PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating and PV
-pThermal = [00, 0.07, 0.14, 0.14]; % percentage from all with district heating
-pCHPplants = [1, 0, 0, 0]; % percentage from not with district heating with CHP
-pPVplants = 0;
+pThermal = [0.07, 0.07, 0.14, 0.14]; % percentage from all with district heating
+pCHPplants = [0.5, 0.5, 0, 0]; % percentage from not with district heating with CHP
+pPVplants = 0.4;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];
 FSH.Modern = [0.4704, 0.4712, 0.2897, 0.0485, 0.0];
@@ -106,7 +106,7 @@ green = [0.1059, 0.7765, 0.1843];
 
 figure('Position', [200, 100, 1500, 800])
 
-subplot(2, 2, 1)
+s1 = subplot(2, 2, 1);
 hold on
 plot(time, Load_e*1e-3, 'Color', red)
 plot(time, Generation_e*1e-3, 'Color', green)
@@ -118,7 +118,7 @@ ylabel("Electrical Energy in kWh")
 legend("Load", "Generation", "Balance", 'Orientation', 'horizontal', ...
        'Position', [0.4, 0.95, 0.2, 0.025])
 
-subplot(2, 2, 2)
+s2 = subplot(2, 2, 2);
 hold on
 plot(time, cumsum(Load_e*1e-6), 'Color', red)
 plot(time, cumsum(Generation_e*1e-6), 'Color', green)
@@ -128,7 +128,7 @@ grid on
 xlabel("Time")
 ylabel("Cumulative Electrical Energy in MWh")
 
-subplot(2, 2, 3)
+s3 = subplot(2, 2, 3);
 hold on
 plot(time, Load_t*1e-3, 'Color', red)
 plot(time, Generation_t*1e-3, 'Color', green)
@@ -140,7 +140,7 @@ ylabel("Thermal Energy in kWh")
 legend("Load", "Generation", "Balance", 'Orientation', 'horizontal', ...
        'Position', [0.4, 0.95, 0.2, 0.025])
 
-subplot(2, 2, 4)
+s4 = subplot(2, 2, 4);
 hold on
 plot(time, cumsum(Load_t*1e-6), 'Color', red)
 plot(time, cumsum(Generation_t*1e-6), 'Color', green)
@@ -149,12 +149,19 @@ hold off
 grid on
 xlabel("Time")
 ylabel("Cumulative Thermal Energy in MWh")
+linkaxes([s1 s2 s3 s4],'x');
 
-figure() % ToDo: time as x-axis
-subplot(2, 1, 1)
+f = figure();% ToDo: time as x-axis
+s1 = subplot(3, 1, 1);
 imagesc(Storage_t);
-subplot(2, 1, 2)
+set(gca,'XColor', 'none')
+s2 = subplot(3, 1, 2);
 imagesc(CHP_state); % ToDo: binary color, time as x-axis
-
-
-
+set(gca,'XColor', 'none');
+s3 = subplot(3,1,3);
+xaxis= 1:length(time);
+plot(xaxis, weatherBC.T, 'Color', [0, 0, 0]);
+xlim(s3, [1, length(xaxis)]);
+set(gca,'XColor', 'none');
+ 
+linkaxes([s1 s2 s3],'x');

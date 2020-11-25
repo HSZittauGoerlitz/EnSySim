@@ -481,10 +481,16 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.Generation_t = self.Generation_t * 0;
             self.Generation_e = self.Generation_e * 0;
                       
-            self.getPVGeneration(Eg);
+            if self.nPV 
+                self.getPVGeneration(Eg);
+            end
             self.getSpaceHeatingDemand(Tout); 
-            self.getCHPGeneration(histLoad_t);
+            if self.nCHP
+                self.getCHPGeneration(histLoad_t);
+            end
+            
             self.getThermalSelfSupply();
+            
         end
        
     end
