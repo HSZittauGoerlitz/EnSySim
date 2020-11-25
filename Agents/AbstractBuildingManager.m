@@ -407,7 +407,7 @@ classdef (Abstract) AbstractBuildingManager < handle
             self.maskWasOn = IsOn;
         end
         
-        function self = updateStorage_t(self)
+        function self = updateCHPStorage_t(self)
             
         % getStorage_t calculate storage utilization 
         % The updated storage utiliztion gets calculated from a difference

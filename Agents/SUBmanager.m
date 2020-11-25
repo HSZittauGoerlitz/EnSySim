@@ -172,7 +172,7 @@ classdef SUBmanager < AbstractBuildingManager
             self.Load_t(self.maskBSLhhlA) = self.Load_t(self.maskBSLhhlA) + ...
                 self.BSLhhlAagents.LoadProfile_t(timeIdx, :);            
 
-            self.updateStorage_t();
+            self.updateCHPStorage_t();
             
             % Generation
             % is calculated by AbstractBuildingManager
