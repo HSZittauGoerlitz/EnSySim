@@ -113,12 +113,13 @@ plot(time, Generation_e*1e-3, 'Color', green)
 plot(time, Balance_e*1e-3, 'Color', [0, 0, 0])
 hold off
 grid on
-ylabel("Electrical Energy in kWh")
+ylabel("Energy in kWh")
+title("Electrical")
 
 legend("Load", "Generation", "Balance", 'Orientation', 'horizontal', ...
        'Position', [0.4, 0.95, 0.2, 0.025])
 
-s2 = subplot(2, 2, 2);
+s3 = subplot(2, 2, 3);
 hold on
 plot(time, cumsum(Load_e*1e-6), 'Color', red)
 plot(time, cumsum(Generation_e*1e-6), 'Color', green)
@@ -126,19 +127,17 @@ plot(time, cumsum(Balance_e*1e-6), 'Color', [0, 0, 0])
 hold off
 grid on
 xlabel("Time")
-ylabel("Cumulative Electrical Energy in MWh")
+ylabel("Cumulative Energy in MWh")
 
-s3 = subplot(2, 2, 3);
+s2 = subplot(2, 2, 2);
 hold on
 plot(time, Load_t*1e-3, 'Color', red)
 plot(time, Generation_t*1e-3, 'Color', green)
 plot(time, Balance_t*1e-3, 'Color', [0, 0, 0])
 hold off
 grid on
-ylabel("Thermal Energy in kWh")
-
-legend("Load", "Generation", "Balance", 'Orientation', 'horizontal', ...
-       'Position', [0.4, 0.95, 0.2, 0.025])
+ylabel("Energy in kWh")
+title("Thermal")
 
 s4 = subplot(2, 2, 4);
 hold on
@@ -148,20 +147,5 @@ plot(time, cumsum(Balance_t*1e-6), 'Color', [0, 0, 0])
 hold off
 grid on
 xlabel("Time")
-ylabel("Cumulative Thermal Energy in MWh")
+ylabel("Cumulative Energy in MWh")
 linkaxes([s1 s2 s3 s4],'x');
-
-f = figure();% ToDo: time as x-axis
-s1 = subplot(3, 1, 1);
-imagesc(Storage_t);
-set(gca,'XColor', 'none')
-s2 = subplot(3, 1, 2);
-imagesc(CHP_state); % ToDo: binary color, time as x-axis
-set(gca,'XColor', 'none');
-s3 = subplot(3,1,3);
-xaxis= 1:length(time);
-plot(xaxis, weatherBC.T, 'Color', [0, 0, 0]);
-xlim(s3, [1, length(xaxis)]);
-set(gca,'XColor', 'none');
- 
-linkaxes([s1 s2 s3],'x');
