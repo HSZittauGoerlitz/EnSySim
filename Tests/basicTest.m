@@ -17,7 +17,7 @@ BSL_COC.scale = 1;
 PHH_COC.function = PHH_COC_distribution;
 PHH_COC.min = 1;
 PHH_COC.scale = 5;
-% district heating and PV
+% district heating, CHP and PV
 pThermal = [0.07, 0.07, 0.14, 0.14]; % percentage from all with district heating
 pCHPplants = [0.5, 0.5, 0, 0]; % percentage from not with district heating with CHP
 pPVplants = 0.4;
