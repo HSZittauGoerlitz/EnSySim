@@ -1,0 +1,90 @@
+import numpy as np
+from SystemComponents.building import Building
+
+# from numba import types, typed
+# from numba.experimental import jitclass
+
+# buildingType = Building.class_type.instance_type
+# spec = [('buildings', types.ListType(buildingType)),
+#         ('nBuildings', types.int32),
+#         ('Eg', types.float32),
+#         ('ToutN', types.float32),
+#         ('hist', types.int32),
+#         ('balance_e', types.float32[:]),
+#         ('balance_t', types.float32[:]),
+#         ]
+
+
+# @jitclass(spec)
+class Cell():
+    def __init__(self, nBuildings, Eg, ToutN, hist=None):
+        """ Create cell to simulate a energy grid segment
+
+        Args:
+            nBuildings (int): Number of buildings in this grid segment
+            Eg (float): Mean annual global irradiation
+                        for simulated region [kWh/m^2]
+            ToutN (float): Normed outside temperature for
+                           specific region in °C
+            hist (int): If not None the last "hist" values of
+                        electrical and thermal balance are saved by this cell
+                        (default: None)
+        """
+        # input checks
+        if Eg <= 0:
+            raise ValueError("Mean annual global irradiation is "
+                             "a positive number")
+
+        # init instance attributes
+        self.Eg = Eg
+        self.ToutN = ToutN
+        self.buildings = []
+        self._createBuildings(nBuildings)
+        self.hist = False
+
+        if hist:
+            self.hist = True
+            self.balance_e = np.zeros(hist, dtype=np.float32)
+            self.balance_t = np.zeros(hist, dtype=np.float32)
+
+    def _createBuildings(self, nBuildings):
+        if nBuildings <= 0:
+            raise ValueError("Number of Buildings must be greater than 0")
+
+        self.buildings = nBuildings * [None]
+        for idx in range(nBuildings):
+            self.buildings[idx] = Building(1, self.Eg, self.ToutN)
+
+    def _step(self, SLPdata, HWprofile):
+        """ Calculate and return current energy balance
+
+        Args:
+            SLPdata (dict with float): Standard load Profile of all agent types
+            HWprofile (float): Actual hot water profile value [W]
+
+        Returns:
+            [(float, float)]: Current electrical and thermal energy balance [W]
+        """
+        # init current step
+        electrical_load = 0.
+        thermal_load = 0.
+        electrical_generation = 0.
+        thermal_generation = 0.
+        electrical_balance = 0.
+        thermal_balance = 0.
+
+        for building in self.buildings:
+            ae, at = building._step(SLPdata, HWprofile)
+            electrical_balance += ae
+            thermal_balance += at
+
+        electrical_balance += electrical_generation - electrical_load
+        thermal_balance += thermal_generation - thermal_load
+
+        if self.hist:
+            self.balance_e[:-1] = self.balance_e[1:]
+            self.balance_e[-1] = electrical_balance
+            self.balance_t[:-1] = self.balance_t[1:]
+            self.balance_t[-1] = thermal_balance
+
+        return (electrical_balance, thermal_balance)
