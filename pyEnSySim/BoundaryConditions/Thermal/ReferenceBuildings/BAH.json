@@ -1,0 +1,84 @@
+{
+  "GeometryParameters": {
+    "Aliving": 2850,
+    "Awall": 2197,
+    "Awindow": 522,
+    "Adoor": 37,
+    "Abasement": 1001,
+    "Aroof": 1001,
+    "V": 11910
+  },
+  "Uvalues": {
+    "class_1": {
+      "original": {
+        "Roof": 0.78,
+        "Wall": 1.45,
+        "Window": 2.57,
+        "Basement": 1.11,
+        "Door": 3.5,
+        "Delta": 0.1
+      },
+      "modernised": {
+        "Roof": 0.32,
+        "Wall": 0.46,
+        "Window": 2.8,
+        "Basement": 0.51,
+        "Door": 2,
+        "Delta": 0.05
+      }
+    },
+    "class_2": {
+      "original": {
+        "Roof": 0.82,
+        "Wall": 1.3,
+        "Window": 2.8,
+        "Basement": 0.85,
+        "Door": 3.5,
+        "Delta": 0.1
+      },
+      "modernised": {
+        "Roof": 0.32,
+        "Wall": 0.46,
+        "Window": 2.8,
+        "Basement": 0.51,
+        "Door": 2,
+        "Delta": 0.05
+      }
+    },
+    "class_3": {
+      "original": {
+        "Roof": 0.84,
+        "Wall": 0.76,
+        "Window": 2.57,
+        "Basement": 0.85,
+        "Door": 3.5,
+        "Delta": 0.1
+      },
+      "modernised": {
+        "Roof": 0.27,
+        "Wall": 0.37,
+        "Window": 2.57,
+        "Basement": 0.41,
+        "Door": 2,
+        "Delta": 0.05
+      }
+    }
+  },
+  "n": {
+    "original": {
+      "Infiltration": 0.46,
+      "VentilationMech": 0.14,
+      "VentilationFree": 0.07
+    },
+    "modernised": {
+      "Infiltration": 0.15,
+      "VentilationMech": 0.45,
+      "VentilationFree": 0.23
+    },
+    "new": {
+      "Infiltration": 0.05,
+      "VentilationMech": 0.55,
+      "VentilationFree": 0.28
+    }
+  }
+}
