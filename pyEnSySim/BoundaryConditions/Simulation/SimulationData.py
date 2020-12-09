@@ -1,8 +1,6 @@
-import json
 import numpy as np
 import numpy.matlib
 import pandas as pd
-import os
 
 
 def _addHotwater(simData):
