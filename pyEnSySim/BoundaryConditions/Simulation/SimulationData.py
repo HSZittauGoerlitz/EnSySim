@@ -253,25 +253,3 @@ def getSimData(startDate, endDate):
             data.SLP_BSLc.to_numpy(dtype=np.float),
             data.HWP_in_W.to_numpy(dtype=np.float)
             )
-
-
-def loadReferenceBuildingData():
-    """ Load all available building reference data sets and provide them as
-    combined dictionary.
-
-    returns:
-        Dict: All available data sets of reference buildings
-    """
-    loc = "./pyEnSySim/BoundaryConditions/Thermal/ReferenceBuildings/"
-    refFiles = os.listdir(loc)
-
-    buildingData = {}
-
-    for file_ in refFiles:
-        name, ending = file_.split(".")
-        if ending == "json":
-            with open(loc + file_, 'r') as data_file:
-                data = json.load(data_file)
-            buildingData[name] = data
-
-    return buildingData
