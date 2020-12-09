@@ -1,5 +1,5 @@
 {
-  "GeometryParameters": {
+  "Geometry": {
     "Aliving": 110,
     "Awall": 123.4,
     "Awindow": 26.5,
