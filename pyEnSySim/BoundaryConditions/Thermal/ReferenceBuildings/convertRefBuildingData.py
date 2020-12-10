@@ -96,7 +96,6 @@ for file_ in refFiles:
                          index=['UValues', 'DeltaU'])
         n = pd.DataFrame.from_dict(data['n'])
         # save to hdf file
-        # TODO: Add Building Volume
         store = pd.HDFStore(name + '.h5')
         store['Geo'] = Geo
         store['U'] = U
