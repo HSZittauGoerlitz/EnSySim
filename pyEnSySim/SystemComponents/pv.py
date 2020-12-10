@@ -12,6 +12,10 @@ spec = [('A', types.float32),  # Effective Area of PV plant
 class PV():
     def __init__(self, Eg, COC, demand):
         """ Create PV object with specific Area
+
+        The PV area is considered as the effective area, including
+        efficiency, orientation or shadowing.
+
         Args:
             Eg (float): Mean annual global irradiation
                         for simulated region [kWh/m^2]
@@ -24,3 +28,14 @@ class PV():
 
         """
         self.A = (random.random() * 0.4 + 0.8) * 1e3/Eg * COC * demand
+
+    def _step(self, Eg):
+        """ Calculate current electrical power
+
+        Args:
+            Eg (float32): Current irradiation on PV module [W/m^2]
+
+        Returns:
+            float32: Resulting electrical power [W]
+        """
+        return self.A * Eg
