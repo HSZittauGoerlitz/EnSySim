@@ -1,5 +1,4 @@
 import numpy as np
-from SystemComponents.building import Building
 
 # from numba import types, typed
 # from numba.experimental import jitclass
@@ -39,6 +38,7 @@ class Cell():
         self.Eg = Eg
         self.ToutN = ToutN
         self.buildings = []
+        self.nBuildings = 0
         self._createBuildings(nBuildings)
         self.hist = False
 
@@ -47,13 +47,9 @@ class Cell():
             self.balance_e = np.zeros(hist, dtype=np.float32)
             self.balance_t = np.zeros(hist, dtype=np.float32)
 
-    def _createBuildings(self, nBuildings):
-        if nBuildings <= 0:
-            raise ValueError("Number of Buildings must be greater than 0")
-
-        self.buildings = nBuildings * [None]
-        for idx in range(nBuildings):
-            self.buildings[idx] = Building(1, self.Eg, self.ToutN)
+    def addBuilding(self, building):
+        self.buildings.append(building)
+        self.nBuildings += 1
 
     def _step(self, SLPdata, HWprofile):
         """ Calculate and return current energy balance
