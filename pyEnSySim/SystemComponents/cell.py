@@ -43,6 +43,8 @@ class Cell():
         self._createBuildings(nBuildings)
         self.hist = False
         self.PV = None
+        self.cells = []
+        self.nCells = 0
 
         if hist:
             self.hist = True
@@ -52,6 +54,10 @@ class Cell():
     def addBuilding(self, building):
         self.buildings.append(building)
         self.nBuildings += 1
+
+    def addCell(self, cell):
+        self.cells.append(cell)
+        self.nCells += 1
 
     def addPV(self, PV):
         if not self.PV:
