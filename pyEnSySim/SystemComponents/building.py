@@ -194,9 +194,9 @@ class Building():
 
         # calculate loads
         for agent in self.agents:
-            ae, at = agent._step(SLPdata, HWprofile)
-            electrical_load += ae
-            thermal_load += at
+            subBalance_e, subBalance_t = agent._step(SLPdata, HWprofile)
+            electrical_load += subBalance_e
+            thermal_load += subBalance_t
 
         thermal_load += self._getSpaceHeatingDemand(Tout, ToutN)
 

@@ -87,15 +87,17 @@ class Cell():
 
         # calculate buildings
         for building in self.buildings:
-            ae, at = building._step(SLPdata, HWprofile, Tout, self.ToutN, Eg)
-            electrical_balance += ae
-            thermal_balance += at
+            subBalance_e, subBalance_t = building._step(SLPdata, HWprofile,
+                                                        Tout, self.ToutN, Eg)
+            electrical_balance += subBalance_e
+            thermal_balance += subBalance_t
 
         # calculate cells
         for cell in self.cells:
-            ae, at = cell._step(SLPdata, HWprofile, Tout, Eg)
-            electrical_balance += ae
-            thermal_balance += at
+            subBalance_e, subBalance_t = cell._step(SLPdata, HWprofile,
+                                                    Tout, Eg)
+            electrical_balance += subBalance_e
+            thermal_balance += subBalance_t
 
         # calculate PV
         if self.PV:
