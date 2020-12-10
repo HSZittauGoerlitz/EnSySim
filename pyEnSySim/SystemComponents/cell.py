@@ -91,6 +91,12 @@ class Cell():
             electrical_balance += ae
             thermal_balance += at
 
+        # calculate cells
+        for cell in self.cells:
+            ae, at = cell._step(SLPdata, HWprofile, Tout, Eg)
+            electrical_balance += ae
+            thermal_balance += at
+
         # calculate PV
         if self.PV:
             electrical_generation += self.PV._step(Eg)
