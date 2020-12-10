@@ -1,3 +1,4 @@
 *.asv
 *.pyc
 */__pycache__
+.vscode/.ropeproject/config.py
