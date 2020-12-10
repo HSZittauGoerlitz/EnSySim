@@ -209,6 +209,8 @@ class Building():
             # Building is self-supplied
             thermal_generation = thermal_load
 
+        # TODO: Storage, Controller
+
         # Calculate resulting energy balance
         electrical_balance = electrical_generation - electrical_load
         thermal_balance = thermal_generation - thermal_load
