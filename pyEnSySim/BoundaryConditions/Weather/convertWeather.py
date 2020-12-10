@@ -4,6 +4,7 @@ import os
 import pandas as pd
 
 # %% parameter
+# HINT: Standard mean annual global irradiation in kWh/m^2
 # choose location for execution via vs code jupyter or script
 cwd = os.getcwd()
 if cwd.split(os.sep)[-1] == "Weather":
