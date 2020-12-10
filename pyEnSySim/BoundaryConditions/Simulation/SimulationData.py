@@ -154,7 +154,7 @@ def _cleanSimData(simData):
     return simData
 
 
-def getSimTime(startDate, endDate):
+def _getSimTime(startDate, endDate):
     """ Prepare a pandas dataframe for simulation course
     This function will add all time related informations
     (Summer, Winter, day of year, hour of day, correct week days for SLP)
@@ -221,7 +221,7 @@ def getSimData_df(startDate, endDate):
     Returns:
         pandas data frame: All simulation data needed
     """
-    data = getSimTime(startDate, endDate)
+    data = _getSimTime(startDate, endDate)
     data = _addSLPdata(data)
     data = _addHotwater(data)
     return _cleanSimData(data)
@@ -240,7 +240,7 @@ def getSimData(startDate, endDate):
     Returns:
         int / np float (arrays): nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP
     """
-    data = getSimTime(startDate, endDate)
+    data = _getSimTime(startDate, endDate)
     data = _addSLPdata(data)
     data = _addHotwater(data)
     data = _cleanSimData(data)
