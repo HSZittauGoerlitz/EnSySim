@@ -170,7 +170,7 @@ class Building():
         else:
             return 0.
 
-    def _step(self, SLPdata, HWprofile, Tout, ToutN):
+    def _step(self, SLPdata, HWprofile, Tout, ToutN, Eg):
         """ Calculate and return current energy balance
 
         Args:
@@ -179,6 +179,8 @@ class Building():
             Tout (float32): Current (daily mean) outside temperature [°C]
             ToutN (float32): Normed outside temperature for
                              region of building [°C]
+            Eg (float32): Current irradiation on PV module [W/m^2]
+
         Returns:
             [(float, float)]: Current electrical and thermal energy balance [W]
         """
@@ -199,7 +201,10 @@ class Building():
         thermal_load += self._getSpaceHeatingDemand(Tout, ToutN)
 
         # calculate generation
-        # TODO: PV, CHP
+        # TODO: CHP
+        if self.PV:
+            electrical_generation += self.PV._step(Eg)
+
         if not self.isAtDHN:
             # Building is self-supplied
             thermal_generation = thermal_load
