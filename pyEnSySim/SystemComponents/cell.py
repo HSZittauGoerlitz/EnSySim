@@ -51,6 +51,11 @@ class Cell():
             self.balance_e = np.zeros(hist, dtype=np.float32)
             self.balance_t = np.zeros(hist, dtype=np.float32)
 
+    def activateHist(self, nHist):
+        self.hist = True
+        self.balance_e = np.zeros(nHist, dtype=np.float32)
+        self.balance_t = np.zeros(nHist, dtype=np.float32)
+
     def addBuilding(self, building):
         self.buildings.append(building)
         self.nBuildings += 1
@@ -64,6 +69,11 @@ class Cell():
             self.PV = PV
         else:
             print("WARNING: Cell already has a PV plant, nothing is added")
+
+    def deactivateHist(self):
+        self.hist = False
+        self.balance_e = None
+        self.balance_t = None
 
     def _step(self, SLPdata, HWprofile, Tout, Eg):
         """ Calculate and return current energy balance
