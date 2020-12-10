@@ -17,11 +17,10 @@ import numpy as np
 
 # @jitclass(spec)
 class Cell():
-    def __init__(self, nBuildings, Eg, ToutN, hist=None):
+    def __init__(self, Eg, ToutN, hist=None):
         """ Create cell to simulate a energy grid segment
 
         Args:
-            nBuildings (int): Number of buildings in this grid segment
             Eg (float): Mean annual global irradiation
                         for simulated region [kWh/m^2]
             ToutN (float): Normed outside temperature for
@@ -40,7 +39,6 @@ class Cell():
         self.ToutN = ToutN
         self.buildings = []
         self.nBuildings = 0
-        self._createBuildings(nBuildings)
         self.hist = False
         self.PV = None
         self.cells = []
