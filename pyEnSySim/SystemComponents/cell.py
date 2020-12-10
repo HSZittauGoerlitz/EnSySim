@@ -11,6 +11,7 @@ import numpy as np
 #         ('hist', types.int32),
 #         ('balance_e', types.float32[:]),
 #         ('balance_t', types.float32[:]),
+#         ('PV', PV.class_type.instance_type),
 #         ]
 
 
@@ -41,6 +42,7 @@ class Cell():
         self.nBuildings = 0
         self._createBuildings(nBuildings)
         self.hist = False
+        self.PV = None
 
         if hist:
             self.hist = True
@@ -51,12 +53,20 @@ class Cell():
         self.buildings.append(building)
         self.nBuildings += 1
 
-    def _step(self, SLPdata, HWprofile):
+    def addPV(self, PV):
+        if not self.PV:
+            self.PV = PV
+        else:
+            print("WARNING: Cell already has a PV plant, nothing is added")
+
+    def _step(self, SLPdata, HWprofile, Tout, Eg):
         """ Calculate and return current energy balance
 
         Args:
             SLPdata (dict with float): Standard load Profile of all agent types
             HWprofile (float): Actual hot water profile value [W]
+            Tout (float32): Current (daily mean) outside temperature [°C]
+            Eg (float32): Current irradiation on PV module [W/m^2]
 
         Returns:
             [(float, float)]: Current electrical and thermal energy balance [W]
@@ -69,10 +79,17 @@ class Cell():
         electrical_balance = 0.
         thermal_balance = 0.
 
+        # calculate buildings
         for building in self.buildings:
-            ae, at = building._step(SLPdata, HWprofile)
+            ae, at = building._step(SLPdata, HWprofile, Tout, self.ToutN, Eg)
             electrical_balance += ae
             thermal_balance += at
+
+        # calculate PV
+        if self.PV:
+            electrical_generation += self.PV._step(Eg)
+
+        # TODO: CHP, Storage, Controller
 
         electrical_balance += electrical_generation - electrical_load
         thermal_balance += thermal_generation - thermal_load
