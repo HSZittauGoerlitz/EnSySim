@@ -24,7 +24,7 @@ buildingData = pd.DataFrame(index=['Geometry', 'UValues', 'n'])
 
 
 # %% helper
-def getA_UValuePairs(data):
+def getA_UValuePairs(data, name):
     """ Filter all area information from building data
     and find corresponding u values for each age class
     and modernisation state
@@ -37,11 +37,14 @@ def getA_UValuePairs(data):
 
     Args:
         data (dict): Data for building
+        name (string): Name of building data set to mention,
+                       if something is wrong with data
 
     Returns:
         tuple with:
             - list of float: Areas
             - list of string: Component name of areas
+            - float: Volume
             - nested lists of float: [[[U-Values], U-Delta], -> class 1
                                       [[U-Values], U-Delta], -> class 2
                                       ...]
@@ -51,11 +54,17 @@ def getA_UValuePairs(data):
     U = []
     CMnames = []
     names = []
+
     for part, area in data['Geometry'].items():
         # skip geometries not needed
-        if part[0] != 'A':
+        if part == 'V':
+            V = area
             continue
         elif part == 'Aliving':
+            continue
+        elif part[0] != 'A':
+            print("WARNING: Unknown entry {} in Geometry of {}"
+                  .format(part, name))
             continue
 
         names.append(part[1:].capitalize())
@@ -69,7 +78,7 @@ def getA_UValuePairs(data):
                 Uclass.append(data['Uvalues'][CName][MName][name])
             U.append([Uclass, data['Uvalues'][CName][MName]['Delta']])
 
-    return (A, names, U, CMnames)
+    return (A, names, V, U, CMnames)
 
 
 # %% run
@@ -78,15 +87,18 @@ for file_ in refFiles:
     if ending == "json":
         with open(loc + file_, 'r') as data_file:
             data = json.load(data_file)
-        A, Anames, U, CMnames = getA_UValuePairs(data)
-        A = pd.DataFrame(A, index=Anames, columns=['Area_in_m2'])
+        A, Anames, V, U, CMnames = getA_UValuePairs(data, name)
+        GeoIdx = pd.MultiIndex.from_product([['Areas'], Anames])
+        Geo = pd.DataFrame(A, index=GeoIdx, columns=['Value'])
+        Geo.loc[('', 'Volume'), 'Value'] = V
         U = pd.DataFrame(np.array(U).T,
                          columns=pd.MultiIndex.from_tuples(CMnames),
                          index=['UValues', 'DeltaU'])
         n = pd.DataFrame.from_dict(data['n'])
         # save to hdf file
+        # TODO: Add Building Volume
         store = pd.HDFStore(name + '.h5')
-        store['A'] = A
+        store['Geo'] = Geo
         store['U'] = U
         store['n'] = n
         store.close()
