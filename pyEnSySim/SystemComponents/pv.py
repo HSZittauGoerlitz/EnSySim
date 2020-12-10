@@ -27,7 +27,7 @@ class PV():
                             demand completely
 
         """
-        self.A = (random.random() * 0.4 + 0.8) * 1e3/Eg * COC * demand
+        self.A = (random.random() * 0.4 + 0.8) * COC * 1e3/Eg * demand
 
     def _step(self, Eg):
         """ Calculate current electrical power
