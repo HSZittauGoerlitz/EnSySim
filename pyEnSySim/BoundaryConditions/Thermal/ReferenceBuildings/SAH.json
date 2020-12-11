@@ -6,7 +6,8 @@
     "Adoor": 2.5,
     "Abasement": 188.5,
     "Aroof": 188.5,
-    "V": 1480
+    "V": 1480,
+    "nUnits": 6
   },
   "Uvalues": {
     "class_1": {
