@@ -1,5 +1,6 @@
 # %% imports
 import json
+import numpy as np
 import pandas as pd
 import os
 
@@ -57,10 +58,10 @@ def getA_UValuePairs(data, name):
     for part, value in data['Geometry'].items():
         # skip geometries not needed
         if part == 'V':
-            V = value
+            V = np.float32(value)
             continue
         if part == 'nUnits':
-            nUnits = value
+            nUnits = np.uint32(value)
             continue
         elif part == 'Aliving':
             continue
@@ -70,17 +71,18 @@ def getA_UValuePairs(data, name):
             continue
 
         Anames.append(part[1:].capitalize())
-        A.append(float(value))
+        A.append(value)
 
     for CName in data['Uvalues'].keys():
         for MName in data['Uvalues'][CName]:
             CMnames.append((CName, MName))
-            Uclass = []
-            for name in Anames:
-                Uclass.append(data['Uvalues'][CName][MName][name])
-            U.append([Uclass, data['Uvalues'][CName][MName]['Delta']])
+            Uclass = np.zeros(len(Anames), dtype=np.float32)
+            for idx, name in enumerate(Anames):
+                Uclass[idx] = data['Uvalues'][CName][MName][name]
+            U.append([Uclass,
+                      np.float32(data['Uvalues'][CName][MName]['Delta'])])
 
-    return (A, Anames, V, nUnits, U, CMnames)
+    return (np.array(A, dtype=np.float32), Anames, V, nUnits, U, CMnames)
 
 
 # %% run
