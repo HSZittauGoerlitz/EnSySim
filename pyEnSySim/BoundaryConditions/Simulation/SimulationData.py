@@ -238,44 +238,46 @@ def _getWeather(simData, region):
             minDay = simData.doy[maskY].min()
             if minDay < leapDay:
                 # time before
-                maskBS = ((weatherBC.doy >= minDay) &
+                maskBC = ((weatherBC.doy >= minDay) &
                           (weatherBC.doy <= leapDay-1))
                 subMaskY = (maskY &
                             (simData.doy[maskY] >= minDay) &
                             (simData.doy[maskY] < leapDay))
-                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBS,
+                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
                                                             'Eg'].values
-                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBS, 'T'].values
+                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
                 # set min day to leapDay
                 minDay = leapDay
 
             # second is leap day
             if minDay == leapDay:
-                maskBS = (weatherBC.doy == leapDay)
+                maskBC = (weatherBC.doy == 0)  # leap day in BC is at doy 0
                 subMaskY = (maskY & (simData.doy[maskY] == leapDay))
-                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBS,
+                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
                                                             'Eg'].values
-                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBS, 'T'].values
+                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
+                # set min day to one after leapDay
+                minDay = leapDay + 1
 
             # third is time after leap day
             maxDay = simData.doy[maskY].max()
-            maskBS = ((weatherBC.doy >= minDay) &
+            maskBC = ((weatherBC.doy >= minDay) &
                       (weatherBC.doy <= maxDay))
             subMaskY = (maskY &
                         (simData.doy[maskY] >= minDay) &
                         (simData.doy[maskY] < maxDay))
-            simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBS,
+            simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
                                                         'Eg'].values
-            simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBS, 'T'].values
+            simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
 
         else:  # no leap dy
             # get mask for BC data
-            maskBS = ((weatherBC.doy >= simData.doy[maskY].min()) &
+            maskBC = ((weatherBC.doy >= simData.doy[maskY].min()) &
                       (weatherBC.doy <= simData.doy[maskY].max()))
             # fill up data for actual year
             # only use values to ignore indices
-            simData.loc[maskY, 'Eg'] = weatherBC.loc[maskBS, 'Eg'].values
-            simData.loc[maskY, 'T'] = weatherBC.loc[maskBS, 'T'].values
+            simData.loc[maskY, 'Eg'] = weatherBC.loc[maskBC, 'Eg'].values
+            simData.loc[maskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
 
     # add an sligthly randomisation
     simData.loc[:, 'T'] *= (np.random.random(simData.loc[:, 'T'].size) *
@@ -335,6 +337,6 @@ def getSimData(startDate, endDate, region):
             data.SLP_BSLa.to_numpy(dtype=np.float32),
             data.SLP_BSLc.to_numpy(dtype=np.float32),
             data.HWP_in_W.to_numpy(dtype=np.float32),
-            data.loc[: 'T'].to_numpy(dtype=np.float32),
+            data.loc[:, 'T'].to_numpy(dtype=np.float32),
             data.Eg.to_numpy(dtype=np.float32)
             )
