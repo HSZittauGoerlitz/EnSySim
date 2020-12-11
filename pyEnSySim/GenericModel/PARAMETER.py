@@ -1,9 +1,9 @@
 # Building data for now
 # TODO: Add source
-FSH = {}
-REH = {}
-SAH = {}
-BAH = {}
+FSH = {'type': 'FSH'}
+REH = {'type': 'REH'}
+SAH = {'type': 'SAH'}
+BAH = {'type': 'BAH'}
 PBTYPES_NOW = {}
 FSH['Class'] = [0.2587, 0.383, 0.1767, 0.1816, 0.0]
 FSH['Modern'] = [0.4704, 0.4712, 0.2897, 0.0485, 0.0]
