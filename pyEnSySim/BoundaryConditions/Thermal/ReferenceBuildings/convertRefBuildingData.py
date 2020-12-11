@@ -90,7 +90,7 @@ for file_ in refFiles:
         A, Anames, V, U, CMnames = getA_UValuePairs(data, name)
         GeoIdx = pd.MultiIndex.from_product([['Areas'], Anames])
         Geo = pd.DataFrame(A, index=GeoIdx, columns=['Value'])
-        Geo.loc[('', 'Volume'), 'Value'] = V
+        Geo.loc[('Volume', ''), 'Value'] = V
         U = pd.DataFrame(np.array(U).T,
                          columns=pd.MultiIndex.from_tuples(CMnames),
                          index=['UValues', 'DeltaU'])
