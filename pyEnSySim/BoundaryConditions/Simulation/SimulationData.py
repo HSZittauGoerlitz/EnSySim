@@ -16,7 +16,7 @@ def _addHotwater(simData):
     """
     # all agents are using PHH profile,
     # since there is no statistic to business hot water demand available
-    HWP = pd.read_hdf("pyEnSySim/BoundaryConditions/Thermal/"
+    HWP = pd.read_hdf("./BoundaryConditions/Thermal/"
                       "HotWaterDayProfile.h5", key='PHH')
     simData.loc[:, 'HWP_in_W'] = (HWP.loc[simData.time.dt.hour,
                                   'fProportion'].values *
@@ -46,11 +46,11 @@ def _addSLPdata(simData):
     cIdx = ['SLP_PHH', 'SLP_BSLa', 'SLP_BSLc']
     newData = pd.DataFrame(index=np.arange(simData.shape[0]), columns=cIdx)
     # load SLP base data
-    PHH = pd.read_hdf("pyEnSySim/BoundaryConditions/Electrical/SLP/PHH.h5",
+    PHH = pd.read_hdf("./BoundaryConditions/Electrical/SLP/PHH.h5",
                       key='PHH')
-    G0 = pd.read_hdf("pyEnSySim/BoundaryConditions/Electrical/SLP/G0.h5",
+    G0 = pd.read_hdf("./BoundaryConditions/Electrical/SLP/G0.h5",
                      key='G0')
-    L0 = pd.read_hdf("pyEnSySim/BoundaryConditions/Electrical/SLP/L0.h5",
+    L0 = pd.read_hdf("./BoundaryConditions/Electrical/SLP/L0.h5",
                      key='L0')
     # add SLP data
     # Winter
@@ -197,8 +197,7 @@ def _getSimTime(startDate, endDate):
             (df.weekDaySLP < 5))
     df.loc[mask, 'weekDaySLP'] = 5
     # load and check holidays and set them to sunday
-    holidays = pd.read_csv("./pyEnSySim/BoundaryConditions/"
-                           "Simulation/holydaysSN.csv",
+    holidays = pd.read_csv("./BoundaryConditions/Simulation/holydaysSN.csv",
                            parse_dates=[0],
                            dayfirst=True)
 
@@ -222,7 +221,7 @@ def _getWeather(simData, region):
                             East, West, South, North
 
     """
-    weatherBC = pd.read_hdf("./pyEnSySim/BoundaryConditions/Weather/" +
+    weatherBC = pd.read_hdf("./BoundaryConditions/Weather/" +
                             region + ".h5", 'Weather')
     # add columns for weather
     simData['T'] = 0.
