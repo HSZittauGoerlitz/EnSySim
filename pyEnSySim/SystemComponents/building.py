@@ -93,7 +93,7 @@ class Building():
                   "no agent is added")
 
     def addPV(self, PV):
-        if not self.PV:
+        if self.PV is None:
             self.PV = PV
         else:
             print("WARNING: Building already has a PV plant, nothing is added")
@@ -107,18 +107,22 @@ class Building():
             Eg (float32): Mean annual global irradiation
                           for simulated region [kWh/m^2]
         """
-        if not self.PV:
-            sumCOC = 0
-            sumAPVdemand = 0
-            nAgents = 0
-            for agent in self.agents:
-                sumCOC += agent.COC
-                sumAPVdemand += agent.demandAPV
-                nAgents += 1
+        if len(self.agents) > 0:
+            if self.PV is None:
+                sumCOC = 0
+                sumAPVdemand = 0
+                nAgents = 0
+                for agent in self.agents:
+                    sumCOC += agent.COC
+                    sumAPVdemand += agent.demandAPV
+                    nAgents += 1
 
-            self.PV = PV(Eg, sumCOC, sumAPVdemand/nAgents)
+                self.PV = PV(Eg, sumCOC, sumAPVdemand/nAgents)
+            else:
+                print("WARNING: Building already has a PV plant, "
+                      "nothing is added")
         else:
-            print("WARNING: Building already has a PV plant, nothing is added")
+            print("HINT: Building has no agents, no PV added")
 
     def _addNormHeatingLoad(self, ToutN):
         """ Calculate normed heating load Q_HLN of a building [W]
