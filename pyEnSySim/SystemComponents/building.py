@@ -7,13 +7,13 @@ from numba.experimental import jitclass
 
 spec = [('agents', types.ListType(Agent.class_type.instance_type)),
         ('nMaxAgents', types.uint32),
-        ('nAgents', types.uint32)
+        ('nAgents', types.uint32),
         ('Areas', types.float32[:]),  # m^2
         ('UValues', types.float32[:]),  # W / (K m^2)
         ('DeltaU', types.float32),  # W / (K m^2)
         ('nInfiltration', types.float32),  # 1/h
         ('nVentilation', types.float32),  # 1/h
-        ('isAtDHN', types.boolean)
+        ('isAtDHN', types.boolean),
         ('V', types.float32),  # m^3
         ('Q_HLN', types.float32),  # W
         ('PV', PV.class_type.instance_type),
