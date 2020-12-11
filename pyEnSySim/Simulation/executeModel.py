@@ -2,7 +2,8 @@ from numba.core import types
 from numba.typed import Dict
 
 
-def simulate(mainCell, steps, SLP_PHH, SLP_BSLa, SLP_BSLc, HotWaterData):
+def simulate(mainCell, steps, SLP_PHH, SLP_BSLa, SLP_BSLc,
+             HotWaterData, T, Eg):
     """ Run Simulation with given models main cell
 
     Args:
@@ -15,6 +16,8 @@ def simulate(mainCell, steps, SLP_PHH, SLP_BSLa, SLP_BSLc, HotWaterData):
         SLP_BSLc (np float array): Standard load profile data for
                                   common business agents
         HotWaterData (np float array): Hot water profile data
+        T (np float array): Temperature curve
+        Eg (np float array): Global irradiation curve
     """
     # prepare dict of SLP data for agents
     SLP = Dict.empty(key_type=types.unicode_type,
@@ -29,4 +32,4 @@ def simulate(mainCell, steps, SLP_PHH, SLP_BSLa, SLP_BSLc, HotWaterData):
         SLP['BSLa'] = SLP_BSLa[step]
         SLP['BSLc'] = SLP_BSLc[step]
 
-        mainCell._step(SLP, HotWaterData[step])
+        mainCell._step(SLP, HotWaterData[step], T[step], Eg[step])
