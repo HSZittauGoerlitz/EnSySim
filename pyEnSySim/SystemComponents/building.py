@@ -121,8 +121,6 @@ class Building():
             else:
                 print("WARNING: Building already has a PV plant, "
                       "nothing is added")
-        else:
-            print("HINT: Building has no agents, no PV added")
 
     def _addNormHeatingLoad(self, ToutN):
         """ Calculate normed heating load Q_HLN of a building [W]
