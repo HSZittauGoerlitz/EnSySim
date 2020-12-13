@@ -1,22 +1,23 @@
 from SystemComponents.agent import Agent
 from SystemComponents.pv import PV
 
-from numba import types, typed
+from numba import optional, types, typed
 from numba.experimental import jitclass
 
+agent_type = Agent.class_type.instance_type
 
-spec = [('agents', types.ListType(Agent.class_type.instance_type)),
+spec = [('agents', types.ListType(agent_type)),
         ('nMaxAgents', types.uint32),
-        ('nAgents', types.uint32)
+        ('nAgents', types.uint32),
         ('Areas', types.float32[:]),  # m^2
         ('UValues', types.float32[:]),  # W / (K m^2)
         ('DeltaU', types.float32),  # W / (K m^2)
         ('nInfiltration', types.float32),  # 1/h
         ('nVentilation', types.float32),  # 1/h
-        ('isAtDHN', types.boolean)
+        ('isAtDHN', types.boolean),
         ('V', types.float32),  # m^3
         ('Q_HLN', types.float32),  # W
-        ('PV', PV.class_type.instance_type),
+        ('PV', optional(PV.class_type.instance_type)),
         ]
 
 
@@ -54,26 +55,24 @@ class Building():
                              "number of U-Values")
         else:
             for idx in range(len(Areas)):
-                if Areas[idx] < 0:
-                    raise ValueError("Area {} is smaller than 0".
-                                     format(idx))
-                if UValues[idx] < 0:
-                    raise ValueError("U-Value {} is smaller than 0".
-                                     format(idx))
+                if Areas[idx] < 0.:
+                    raise ValueError("Area is smaller than 0")
+                if UValues[idx] < 0.:
+                    raise ValueError("U-Value is smaller than 0")
 
-        if DeltaU <= 0:
+        if DeltaU <= 0.:
             raise ValueError("U-Value offset must not be negative")
 
-        if (nInfiltration < 0) | (nVentilation < 0):
+        if (nInfiltration < 0.) | (nVentilation < 0.):
             raise ValueError("Infiltration rate must not be negative")
 
-        if V < 0:
+        if V < 0.:
             raise ValueError("Building volume must not be negative")
 
         # set attributes
         self.nMaxAgents = nMaxAgents
         self.nAgents = 0
-        self.agents = typed.List.empty_list(Agent.class_type.instance_type)
+        self.agents = typed.List.empty_list(agent_type)
         self.Areas = Areas
         self.UValues = UValues
         self.DeltaU = DeltaU
@@ -90,11 +89,11 @@ class Building():
             self.agents.append(agent)
             self.nAgents += 1
         else:
-            print("WARNING: Number of max. Agents ({}) reached, "
-                  "no agent is added".format(self.nMaxAgents))
+            print("WARNING: Number of max. Agents reached, "
+                  "no agent is added")
 
     def addPV(self, PV):
-        if not self.PV:
+        if self.PV is None:
             self.PV = PV
         else:
             print("WARNING: Building already has a PV plant, nothing is added")
@@ -108,18 +107,20 @@ class Building():
             Eg (float32): Mean annual global irradiation
                           for simulated region [kWh/m^2]
         """
-        if not self.PV:
-            sumCOC = 0
-            sumAPVdemand = 0
-            nAgents = 0
-            for agent in self.agents:
-                sumCOC += agent.COC
-                sumAPVdemand += agent.demandAPV
-                nAgents += 1
+        if len(self.agents) > 0:
+            if self.PV is None:
+                sumCOC = 0
+                sumAPVdemand = 0
+                nAgents = 0
+                for agent in self.agents:
+                    sumCOC += agent.COC
+                    sumAPVdemand += agent.demandAPV
+                    nAgents += 1
 
-            self.PV = PV(Eg, sumCOC, sumAPVdemand/nAgents)
-        else:
-            print("WARNING: Building already has a PV plant, nothing is added")
+                self.PV = PV(Eg, sumCOC, sumAPVdemand/nAgents)
+            else:
+                print("WARNING: Building already has a PV plant, "
+                      "nothing is added")
 
     def _addNormHeatingLoad(self, ToutN):
         """ Calculate normed heating load Q_HLN of a building [W]

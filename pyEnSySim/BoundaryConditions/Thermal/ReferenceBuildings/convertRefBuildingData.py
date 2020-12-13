@@ -53,12 +53,15 @@ def getA_UValuePairs(data, name):
     A = []
     U = []
     CMnames = []
-    names = []
+    Anames = []
 
-    for part, area in data['Geometry'].items():
+    for part, value in data['Geometry'].items():
         # skip geometries not needed
         if part == 'V':
-            V = area
+            V = np.float32(value)
+            continue
+        if part == 'nUnits':
+            nUnits = np.uint32(value)
             continue
         elif part == 'Aliving':
             continue
@@ -67,18 +70,19 @@ def getA_UValuePairs(data, name):
                   .format(part, name))
             continue
 
-        names.append(part[1:].capitalize())
-        A.append(float(area))
+        Anames.append(part[1:].capitalize())
+        A.append(value)
 
     for CName in data['Uvalues'].keys():
         for MName in data['Uvalues'][CName]:
             CMnames.append((CName, MName))
-            Uclass = []
-            for name in names:
-                Uclass.append(data['Uvalues'][CName][MName][name])
-            U.append([Uclass, data['Uvalues'][CName][MName]['Delta']])
+            Uclass = np.zeros(len(Anames), dtype=np.float32)
+            for idx, name in enumerate(Anames):
+                Uclass[idx] = data['Uvalues'][CName][MName][name]
+            U.append([Uclass,
+                      np.float32(data['Uvalues'][CName][MName]['Delta'])])
 
-    return (A, names, V, U, CMnames)
+    return (np.array(A, dtype=np.float32), Anames, V, nUnits, U, CMnames)
 
 
 # %% run
@@ -87,13 +91,14 @@ for file_ in refFiles:
     if ending == "json":
         with open(loc + file_, 'r') as data_file:
             data = json.load(data_file)
-        A, Anames, V, U, CMnames = getA_UValuePairs(data, name)
+        A, Anames, V, nUnits, U, CMnames = getA_UValuePairs(data, name)
         GeoIdx = pd.MultiIndex.from_product([['Areas'], Anames])
         Geo = pd.DataFrame(A, index=GeoIdx, columns=['Value'])
-        Geo.loc[('', 'Volume'), 'Value'] = V
-        U = pd.DataFrame(np.array(U).T,
-                         columns=pd.MultiIndex.from_tuples(CMnames),
-                         index=['UValues', 'DeltaU'])
+        Geo.loc[('Volume', ''), 'Value'] = V
+        Geo.loc[('nUnits', ''), 'Value'] = nUnits
+        U = pd.DataFrame(U,
+                         index=pd.MultiIndex.from_tuples(CMnames),
+                         columns=['UValues', 'DeltaU']).T
         n = pd.DataFrame.from_dict(data['n'])
         # save to hdf file
         store = pd.HDFStore(name + '.h5')

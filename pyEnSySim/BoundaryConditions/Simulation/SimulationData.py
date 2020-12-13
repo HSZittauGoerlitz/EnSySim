@@ -16,7 +16,7 @@ def _addHotwater(simData):
     """
     # all agents are using PHH profile,
     # since there is no statistic to business hot water demand available
-    HWP = pd.read_hdf("pyEnSySim/BoundaryConditions/Thermal/"
+    HWP = pd.read_hdf("./BoundaryConditions/Thermal/"
                       "HotWaterDayProfile.h5", key='PHH')
     simData.loc[:, 'HWP_in_W'] = (HWP.loc[simData.time.dt.hour,
                                   'fProportion'].values *
@@ -46,11 +46,11 @@ def _addSLPdata(simData):
     cIdx = ['SLP_PHH', 'SLP_BSLa', 'SLP_BSLc']
     newData = pd.DataFrame(index=np.arange(simData.shape[0]), columns=cIdx)
     # load SLP base data
-    PHH = pd.read_hdf("pyEnSySim/BoundaryConditions/Electrical/SLP/PHH.h5",
+    PHH = pd.read_hdf("./BoundaryConditions/Electrical/SLP/PHH.h5",
                       key='PHH')
-    G0 = pd.read_hdf("pyEnSySim/BoundaryConditions/Electrical/SLP/G0.h5",
+    G0 = pd.read_hdf("./BoundaryConditions/Electrical/SLP/G0.h5",
                      key='G0')
-    L0 = pd.read_hdf("pyEnSySim/BoundaryConditions/Electrical/SLP/L0.h5",
+    L0 = pd.read_hdf("./BoundaryConditions/Electrical/SLP/L0.h5",
                      key='L0')
     # add SLP data
     # Winter
@@ -197,8 +197,7 @@ def _getSimTime(startDate, endDate):
             (df.weekDaySLP < 5))
     df.loc[mask, 'weekDaySLP'] = 5
     # load and check holidays and set them to sunday
-    holidays = pd.read_csv("./pyEnSySim/BoundaryConditions/"
-                           "Simulation/holydaysSN.csv",
+    holidays = pd.read_csv("./BoundaryConditions/Simulation/holydaysSN.csv",
                            parse_dates=[0],
                            dayfirst=True)
 
@@ -208,7 +207,88 @@ def _getSimTime(startDate, endDate):
     return df
 
 
-def getSimData_df(startDate, endDate):
+def _getWeather(simData, region):
+    """ Calculate temperature and irradiation curve for
+        given simulation time and region
+
+    The caracteristic data is modified by an uniformly distributed random
+    number in range from 0.8 to 1.2.
+
+    Args:
+        simData (pandas data frame): Simulation data
+        region (string): Location of simulation (determines climate / weather)
+                         Supported regions:
+                            East, West, South, North
+
+    """
+    weatherBC = pd.read_hdf("./BoundaryConditions/Weather/" +
+                            region + ".h5", 'Weather')
+    # add columns for weather
+    simData['T'] = 0.
+    simData['Eg'] = 0.
+
+    # Split up Eg data generation into linked doy sequences
+    for year in range(simData.time.dt.year.min(),
+                      simData.time.dt.year.max()+1):
+        maskY = simData.time.dt.year == year
+        # for years with leap day
+        if simData.time[maskY].dt.is_leap_year.any():
+            leapDay = 60
+            # first time before leap day, if existing
+            minDay = simData.doy[maskY].min()
+            if minDay < leapDay:
+                # time before
+                maskBC = ((weatherBC.doy >= minDay) &
+                          (weatherBC.doy <= leapDay-1))
+                subMaskY = (maskY &
+                            (simData.doy[maskY] >= minDay) &
+                            (simData.doy[maskY] < leapDay))
+                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
+                                                            'Eg'].values
+                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
+                # set min day to leapDay
+                minDay = leapDay
+
+            # second is leap day
+            if minDay == leapDay:
+                maskBC = (weatherBC.doy == 0)  # leap day in BC is at doy 0
+                subMaskY = (maskY & (simData.doy[maskY] == leapDay))
+                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
+                                                            'Eg'].values
+                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
+                # set min day to one after leapDay
+                minDay = leapDay + 1
+
+            # third is time after leap day
+            maxDay = simData.doy[maskY].max()
+            maskBC = ((weatherBC.doy >= minDay) &
+                      (weatherBC.doy <= maxDay))
+            subMaskY = (maskY &
+                        (simData.doy[maskY] >= minDay) &
+                        (simData.doy[maskY] < maxDay))
+            simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
+                                                        'Eg'].values
+            simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
+
+        else:  # no leap dy
+            # get mask for BC data
+            maskBC = ((weatherBC.doy >= simData.doy[maskY].min()) &
+                      (weatherBC.doy <= simData.doy[maskY].max()))
+            # fill up data for actual year
+            # only use values to ignore indices
+            simData.loc[maskY, 'Eg'] = weatherBC.loc[maskBC, 'Eg'].values
+            simData.loc[maskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
+
+    # add an sligthly randomisation
+    simData.loc[:, 'T'] *= (np.random.random(simData.loc[:, 'T'].size) *
+                            0.4 + 0.8)
+    simData.loc[:, 'Eg'] *= (np.random.random(simData.loc[:, 'T'].size) *
+                             0.4 + 0.8)
+
+    return simData
+
+
+def getSimData_df(startDate, endDate, region):
     """ Get all boundary condition data needed for a simulation run
 
     Args:
@@ -217,6 +297,9 @@ def getSimData_df(startDate, endDate):
         endDate (string): End date DD.MM.YYYY
                           (end day is not in time range, so end date
                            should be end date + 1 day)
+        region (string): Location of simulation (determines climate / weather)
+                         Supported regions:
+                            East, West, South, North
 
     Returns:
         pandas data frame: All simulation data needed
@@ -224,10 +307,13 @@ def getSimData_df(startDate, endDate):
     data = _getSimTime(startDate, endDate)
     data = _addSLPdata(data)
     data = _addHotwater(data)
-    return _cleanSimData(data)
+    data = _getWeather(data, region)
+    data = _cleanSimData(data)
+
+    return data
 
 
-def getSimData(startDate, endDate):
+def getSimData(startDate, endDate, region):
     """ Get all boundary condition data needed for a simulation run
 
     Args:
@@ -236,18 +322,21 @@ def getSimData(startDate, endDate):
         endDate (string): End date DD.MM.YYYY
                           (end day is not in time range, so end date
                            should be end date + 1 day)
+        region (string): Location of simulation (determines climate / weather)
+                         Supported regions:
+                            East, West, South, North
 
     Returns:
-        int / np float (arrays): nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP
+        int / np float (arrays): nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc,
+                                 HWP, T, Eg
     """
-    data = _getSimTime(startDate, endDate)
-    data = _addSLPdata(data)
-    data = _addHotwater(data)
-    data = _cleanSimData(data)
+    data = getSimData_df(startDate, endDate, region)
 
     return (data.time.size, data.time,
-            data.SLP_PHH.to_numpy(dtype=np.float),
-            data.SLP_BSLa.to_numpy(dtype=np.float),
-            data.SLP_BSLc.to_numpy(dtype=np.float),
-            data.HWP_in_W.to_numpy(dtype=np.float)
+            data.SLP_PHH.to_numpy(dtype=np.float32),
+            data.SLP_BSLa.to_numpy(dtype=np.float32),
+            data.SLP_BSLc.to_numpy(dtype=np.float32),
+            data.HWP_in_W.to_numpy(dtype=np.float32),
+            data.loc[:, 'T'].to_numpy(dtype=np.float32),
+            data.Eg.to_numpy(dtype=np.float32)
             )
