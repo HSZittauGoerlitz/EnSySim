@@ -108,7 +108,7 @@ class Cell():
             thermal_balance += subBalance_t
 
         # calculate PV
-        if self.PV:
+        if self.PV is not None:
             electrical_generation += self.PV._step(Eg)
 
         # TODO: CHP, Storage, Controller

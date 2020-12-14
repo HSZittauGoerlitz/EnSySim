@@ -203,7 +203,7 @@ class Building():
 
         # calculate generation
         # TODO: CHP
-        if self.PV:
+        if self.PV is not None:
             electrical_generation += self.PV._step(Eg)
 
         if not self.isAtDHN:
