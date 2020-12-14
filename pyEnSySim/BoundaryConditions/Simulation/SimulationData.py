@@ -270,7 +270,7 @@ def _getWeather(simData, region):
 
             # third is time after leap day
             maxDay = simData.doy[maskY].max()
-            maskBC = ((weatherBC.doy >= minDay) &
+            maskBC = ((weatherBC.doy >= minDay-1) &  # 60 is normal day
                       (weatherBC.doy <= maxDay))
             subMaskY = (maskY &
                         (simData.doy[maskY] >= minDay) &
@@ -349,4 +349,3 @@ def getSimData(startDate, endDate, region):
             data.loc[:, 'T'].to_numpy(dtype=np.float32),
             data.Eg.to_numpy(dtype=np.float32)
             )
-
