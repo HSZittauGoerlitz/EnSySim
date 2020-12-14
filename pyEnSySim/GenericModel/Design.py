@@ -18,8 +18,8 @@ def _addAgents(building, pAgent, pPHH, pAgriculture):
         pAgent (float32): Probability that agents is created
                           (Corresponds to the propotion of agents on
                            max. possible Agents in Building(s))
-        pPHH (float32): Propotion of PHH agents in Building
-        pAgriculture (float32): Propotion of BSL agents which are
+        pPHH (float32): Proportion of PHH agents in Building
+        pAgriculture (float32): Proportion of BSL agents which are
                                 agricultural
 
     Returns:

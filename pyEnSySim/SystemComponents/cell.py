@@ -30,9 +30,9 @@ class Cell():
                         (default: None)
         """
         # input checks
-        if Eg <= 0:
+        if Eg < 0:
             raise ValueError("Mean annual global irradiation is "
-                             "a positive number")
+                             "a negative number")
 
         # init instance attributes
         self.Eg = Eg
