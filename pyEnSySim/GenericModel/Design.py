@@ -5,9 +5,7 @@
 """
 import numpy as np
 import pandas as pd
-from SystemComponents.agent import Agent
-from SystemComponents.building import Building
-from SystemComponents.cell import Cell
+from SystemComponentsFast import Agent, Building, Cell
 
 
 def _addAgents(building, pAgent, pPHH, pAgriculture):
@@ -25,21 +23,21 @@ def _addAgents(building, pAgent, pPHH, pAgriculture):
     Returns:
         Building: Building object with agents
     """
-    for aNr in range(building.nMaxAgents):
+    for aNr in range(building.n_max_agents):
         if np.random.random() > pAgent:
             continue
 
         # determine agent type
         if np.random.random() <= pPHH:
-            aType = 'PHH'
+            aType = 0
         else:
             if np.random.random() <= pAgriculture:
-                aType = 'BSLa'
+                aType = 1
             else:
-                aType = 'BSLc'
+                aType = 2
 
         agent = Agent(aType)
-        building.addAgent(agent)
+        building.add_agent(agent)
 
     return building
 
@@ -98,23 +96,28 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
 
         isAtDHN = np.random.random() <= pDHN
 
+        # create a_uv_array
+        a_uv_values = np.array([Geo.loc['Areas'].values.T[0],
+                                U.loc['UValues', (classNames[classIdx],
+                                                  mState)]
+                                ]).T
+
         # create building
         building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
-                            Geo.loc['Areas'].values.T[0],
-                            U.loc['UValues', (classNames[classIdx], mState)],
+                            a_uv_values,
                             U.loc['DeltaU', (classNames[classIdx], mState)],
                             n.loc['Infiltration', infState],
                             n.loc[airState, infState],
                             Geo.loc[('Volume')].values.astype(np.uint32)[0][0],
-                            isAtDHN, cell.ToutN
+                            isAtDHN, cell.t_out_n
                             )
         # Create and add agents
         _addAgents(building, pAgent, pPHH, pAgriculture)
         # add PV to buildings
         if np.random.random() <= pPV:
-            building.addDimensionedPV(cell.Eg)
+            building.add_dimensioned_pv(cell.eg)
         # add building to cell
-        cell.addBuilding(building)
+        cell.add_building(building)
 
     return cell
 
