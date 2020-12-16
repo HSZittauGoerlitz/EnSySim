@@ -260,10 +260,10 @@ impl Building {
 
         // calculate loads
         for idx in 0..self.agents.len() {
-            let (sub_balance_e, sub_balance_t) = self.agents[idx].
+            let (sub_load_e, sub_load_t) = self.agents[idx].
                                                    step(slp_data, hw_profile);
-            electrical_load += sub_balance_e;
-            thermal_load += sub_balance_t;
+            electrical_load += sub_load_e;
+            thermal_load += sub_load_t;
         }
         thermal_load += self.get_space_heating_demand(t_out, t_out_n);
 
