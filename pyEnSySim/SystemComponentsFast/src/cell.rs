@@ -122,12 +122,14 @@ impl Cell {
         let mut thermal_balance = 0.;
 
         // calculate loads
+
+        // calculate balance of building
         for idx in 0..self.buildings.len() {
             let (sub_balance_e, sub_balance_t) = self.buildings[idx].
                                                     step(slp_data, hw_profile,
                                                          t_out, t_out_n, eg);
-            electrical_load += sub_balance_e;
-            thermal_load += sub_balance_t;
+            electrical_balance += sub_balance_e;
+            thermal_balance += sub_balance_t;
         }
 
         // calculate generation
@@ -137,8 +139,8 @@ impl Cell {
         // TODO: Storage, Controller
 
         // Calculate resulting energy balance
-        electrical_balance = electrical_generation - electrical_load;
-        thermal_balance = thermal_generation - thermal_load;
+        electrical_balance += electrical_generation - electrical_load;
+        thermal_balance += thermal_generation - thermal_load;
 
         // save data
         self.save_hist(&electrical_balance, &thermal_balance);
