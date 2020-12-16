@@ -1,7 +1,7 @@
 // external
 use pyo3::prelude::*;
 
-use crate::{agent, pv};
+use crate::{agent, pv, hist_memory};
 
 #[pyclass]
 #[derive(Clone)]
@@ -22,6 +22,10 @@ pub struct Building {
     #[pyo3(get)]
     q_hln: f32,  // W
     pv: Option<pv::PV>,
+    #[pyo3(get)]
+    hist_e: Option<hist_memory::HistMemory>,
+    #[pyo3(get)]
+    hist_t: Option<hist_memory::HistMemory>
 }
 
 /// Class simulate buildings energy demand
@@ -47,10 +51,11 @@ impl Building {
     ///                     district heating network
     /// * t_out_n (f32): Normed outside temperature for
     ///                  region of building [°C]
+    /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     fn new(n_max_agents: u32, areas_uv: Vec<[f32; 2]>, delta_u: f32,
            n_infiltration: f32, n_ventilation: f32, volume: f32,
-           is_at_dhn: bool, t_out_n: f32) -> Self {
+           is_at_dhn: bool, t_out_n: f32, hist: usize) -> Self {
         // check parameter
         if n_max_agents <= 0 {
             panic!("Number of max. Agents must be greater than 0");
@@ -74,6 +79,16 @@ impl Building {
             panic!("Building volume must not be negative");
         }
 
+        let (hist_e, hist_t);
+
+        if hist > 0 {
+            hist_e = Some(hist_memory::HistMemory::new(hist));
+            hist_t = Some(hist_memory::HistMemory::new(hist));
+        } else {
+            hist_e = None;
+            hist_t = None;
+        }
+
         // Create object
         let mut building = Building {
             n_max_agents: n_max_agents,
@@ -87,6 +102,8 @@ impl Building {
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
             pv: None,
+            hist_e: hist_e,
+            hist_t: hist_t,
         };
         building.add_norm_heating_load(&t_out_n);
         // all other possible components are empty
@@ -120,7 +137,8 @@ impl Building {
     /// # Arguments
     /// * Eg (f32): Mean annual global irradiation
     ///             for simulated region [kWh/m^2]
-    fn add_dimensioned_pv(&mut self, eg: f32) {
+    /// * hist (usize): Size of history memory for pv plant (0 for no memory)
+    fn add_dimensioned_pv(&mut self, eg: f32, hist: usize) {
         match &self.pv {
             None => {
                 let mut sum_coc = 0.;
@@ -131,7 +149,7 @@ impl Building {
                     sum_apv_demand += self.agents[idx].demand_apv();
                     n_agents += 1;
                 }
-                self.pv = Some(pv::PV::new(eg, sum_coc, sum_apv_demand));
+                self.pv = Some(pv::PV::new(eg, sum_coc, sum_apv_demand, hist));
             },
             Some(_building_pv) => print!("WARNING: Building already has a
                                         PV plant, nothing is added"),
@@ -169,8 +187,8 @@ impl Building {
         self.q_hln = phi_t + phi_a;
     }
 
-    fn get_pv_generation(&self, eg: &f32) -> f32 {
-        match &self.pv {
+    fn get_pv_generation(&mut self, eg: &f32) -> f32 {
+        match &mut self.pv {
             None => 0.,
             Some(building_pv) => {
                 building_pv.step(eg)
@@ -203,6 +221,21 @@ impl Building {
         }
     }
 
+    fn save_hist(&mut self, e_balance: &f32, t_balance: &f32) {
+        match &mut self.hist_e {
+            None => {},
+            Some(hist_e) => {
+                hist_e.save(*e_balance)
+            },
+        }
+        match &mut self.hist_t {
+            None => {},
+            Some(hist_t) => {
+                hist_t.save(*t_balance)
+            },
+        }
+    }
+
     /// Calculate and return current power balance
     ///
     /// # Arguments
@@ -215,7 +248,7 @@ impl Building {
     ///
     /// # Returns
     /// * (f32, f32): Current electrical and thermal power balance [W]
-    pub fn step(&self, slp_data: &[f32; 3], hw_profile: &f32,
+    pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
                 t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32) {
         // init current step
         let mut electrical_load = 0.;
@@ -247,6 +280,9 @@ impl Building {
         // Calculate resulting energy balance
         electrical_balance = electrical_generation - electrical_load;
         thermal_balance = thermal_generation - thermal_load;
+
+        // save data
+        self.save_hist(&electrical_balance, &thermal_balance);
 
         return (electrical_balance, thermal_balance);
     }

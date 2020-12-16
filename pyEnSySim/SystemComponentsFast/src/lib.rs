@@ -7,6 +7,7 @@ mod agent;
 mod building;
 mod cell;
 mod pv;
+mod hist_memory;
 
 #[pymodule]
 fn SystemComponentsFast(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -35,7 +36,7 @@ fn SystemComponentsFast(_py: Python, m: &PyModule) -> PyResult<()> {
 /// * t (&f32): Temperature curve
 /// * eg (&f32): Global irradiation curve
 #[pyfunction]
-fn simulate(main_cell: &cell::Cell, steps: usize,
+fn simulate(main_cell: &mut cell::Cell, steps: usize,
             slp_phh: PyReadonlyArrayDyn<f32>, slp_bsla: PyReadonlyArrayDyn<f32>,
             slp_bslc: PyReadonlyArrayDyn<f32>,
             hot_water_data: PyReadonlyArrayDyn<f32>,
@@ -49,11 +50,15 @@ fn simulate(main_cell: &cell::Cell, steps: usize,
     let t = t.as_array();
     let eg = eg.as_array();
 
+    // get the constant to a new memory place,
+    //since cell can be changed due saving history
+    let cell_t_out_n: f32 = main_cell.t_out_n;
+
     for step in 0..steps {
         slp[0] = slp_phh[step];
         slp[1] = slp_bsla[step];
         slp[2] = slp_bslc[step];
         main_cell.step(&slp, &hot_water_data[step], &t[step],
-                       &main_cell.t_out_n, &eg[step]);
+                       &cell_t_out_n, &eg[step]);
     }
 }

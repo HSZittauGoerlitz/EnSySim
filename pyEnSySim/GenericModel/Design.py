@@ -43,7 +43,7 @@ def _addAgents(building, pAgent, pPHH, pAgriculture):
 
 
 def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
-                  pAgent, pPHH, pAgriculture, pPV):
+                  pAgent, pPHH, pAgriculture, pPV, hist=0):
     """ Add Buildings of one type to cell
 
     Args:
@@ -64,6 +64,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         pAgriculture (float32): Propotion of BSL agents which are
                                 agricultural
         pPV (float32): Proportion of buildings with PV plants
+        hist (int): Size of history for power balance of buildings, pv etc.
     """
     pClass = np.array(pBuilding['Class'])
     pModern = np.array(pBuilding['Modern'])
@@ -109,13 +110,13 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
                             n.loc['Infiltration', infState],
                             n.loc[airState, infState],
                             Geo.loc[('Volume')].values.astype(np.uint32)[0][0],
-                            isAtDHN, cell.t_out_n
+                            isAtDHN, cell.t_out_n, hist
                             )
         # Create and add agents
         _addAgents(building, pAgent, pPHH, pAgriculture)
         # add PV to buildings
         if np.random.random() <= pPV:
-            building.add_dimensioned_pv(cell.eg)
+            building.add_dimensioned_pv(cell.eg, hist)
         # add building to cell
         cell.add_building(building)
 
@@ -207,7 +208,7 @@ def _loadBuildingData(bType):
 
 
 def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
-                        pDHN, pPVplants, pBTypes, region):
+                        pDHN, pPVplants, pBTypes, region, hist=0):
     """ Create a cell of a generic energy system
 
     The default cell consists of 4 ref. building types:
@@ -259,6 +260,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
         region (string): Region location of cell (determines climate / weather)
                          Supported regions:
                             East, West, South, North
+        hist (int): Size of history for power balance of cells, buildings etc.
 
     Returns:
         Cell: Generic energy system cell
@@ -295,7 +297,8 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
 
     # init cell
     cell = Cell(climate.loc['Eg', 'standard data'],
-                climate.loc['T', 'standard data'])
+                climate.loc['T', 'standard data'],
+                hist)
 
     # init buildings and agents
     for key in pBTypes.keys():
@@ -307,7 +310,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
         _addBuildings(cell, nBuildings[bType], pBTypes[bType], pDHN[bType],
                       Geo, U, n,
                       pAgents[bType], pPHHagents[bType], pAgriculture[bType],
-                      pPVplants)
+                      pPVplants, hist)
 
         break
 

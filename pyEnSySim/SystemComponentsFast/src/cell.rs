@@ -1,7 +1,7 @@
 // external
 use pyo3::prelude::*;
 
-use crate::{building, pv};
+use crate::{building, pv, hist_memory};
 
 #[pyclass]
 pub struct Cell {
@@ -14,6 +14,10 @@ pub struct Cell {
     #[pyo3(get)]
     pub t_out_n: f32,
     pv: Option<pv::PV>,
+    #[pyo3(get)]
+    hist_e: Option<hist_memory::HistMemory>,
+    #[pyo3(get)]
+    hist_t: Option<hist_memory::HistMemory>
 }
 
 #[pymethods]
@@ -25,18 +29,31 @@ impl Cell {
     ///               for simulated region [kWh/m^2]
     /// * t_out_n (f32): Normed outside temperature for
     ///                  specific region in °C
+    /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(eg: f32, t_out_n: f32) -> Self {
+    pub fn new(eg: f32, t_out_n: f32, hist: usize) -> Self {
         if eg < 0. {
             panic!("Mean annual global irradiation is a negative number")
         }
 
-        let mut cell = Cell {
+        let (hist_e, hist_t);
+
+        if hist > 0 {
+            hist_e = Some(hist_memory::HistMemory::new(hist));
+            hist_t = Some(hist_memory::HistMemory::new(hist));
+        } else {
+            hist_e = None;
+            hist_t = None;
+        }
+
+        let cell = Cell {
             buildings: Vec::new(),
             n_buildings: 0,
             eg: eg,
             t_out_n: t_out_n,
             pv: None,
+            hist_e: hist_e,
+            hist_t: hist_t,
         };
 
         cell
@@ -58,11 +75,26 @@ impl Cell {
 
 /// PV plant
 impl Cell {
-    fn get_pv_generation(&self, eg: &f32) -> f32 {
-        match &self.pv {
+    fn get_pv_generation(&mut self, eg: &f32) -> f32 {
+        match &mut self.pv {
             None => 0.,
             Some(cell_pv) => {
                  cell_pv.step(eg)
+            },
+        }
+    }
+
+    fn save_hist(&mut self, e_balance: &f32, t_balance: &f32) {
+        match &mut self.hist_e {
+            None => {},
+            Some(hist_e) => {
+                hist_e.save(*e_balance)
+            },
+        }
+        match &mut self.hist_t {
+            None => {},
+            Some(hist_t) => {
+                hist_t.save(*t_balance)
             },
         }
     }
@@ -79,7 +111,7 @@ impl Cell {
     ///
     /// # Returns
     /// * (f32, f32): Current electrical and thermal power balance [W]
-    pub fn step(&self, slp_data: &[f32; 3], hw_profile: &f32,
+    pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
             t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32) {
         // init current step
         let mut electrical_load = 0.;
@@ -107,6 +139,9 @@ impl Cell {
         // Calculate resulting energy balance
         electrical_balance = electrical_generation - electrical_load;
         thermal_balance = thermal_generation - thermal_load;
+
+        // save data
+        self.save_hist(&electrical_balance, &thermal_balance);
 
         return (electrical_balance, thermal_balance);
     }
