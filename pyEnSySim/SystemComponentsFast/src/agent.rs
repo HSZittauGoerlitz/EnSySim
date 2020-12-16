@@ -43,6 +43,17 @@ impl Agent {
     }
 }
 
+macro_rules! sample_coc {
+    ($dist:expr, $rng:expr, $coc:expr, $scale:expr) => {
+        let mut i = 0;
+        while i < 10 {
+            $coc = $dist.sample(&mut $rng) * $scale;
+            if $coc >= 1. {break;}
+            i += 1;
+        }
+    }
+}
+
 /// Agent to simulate human consumption behaviour
 impl Agent {
     /// Calculate the demand for PV area to cover a part of the
@@ -77,21 +88,11 @@ impl Agent {
         if self.a_type == 0 {
             // Beta distribution with a, b
             let dist = Beta::new(3.944677863332723, 2.638609989052125).unwrap();
-            let mut i = 0;
-            while i < 10 {
-                coc = dist.sample(&mut rng) * 5.;
-                if coc >= 1. {break;}
-                i += 1;
-            }
+            sample_coc!(dist, rng, coc, 5.);
         } else {
             // Gamma sistribution with shape, scale
             let dist = Gamma::new(1.399147113755027, 1.876519590091970).unwrap();
-            let mut i = 0;
-            while i < 10 {
-                coc = dist.sample(&mut rng) * 1.;
-                if coc >= 1. {break;}
-                i += 1;
-            }
+            sample_coc!(dist, rng, coc, 1.);
         }
 
         if coc < 1. {
