@@ -108,7 +108,7 @@ impl Building {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(building_pv) => print!("WARNING: Building already has a
+            Some(_building_pv) => print!("WARNING: Building already has a
                                         PV plant, nothing is added"),
         }
     }
@@ -133,7 +133,7 @@ impl Building {
                 }
                 self.pv = Some(pv::PV::new(eg, sum_coc, sum_apv_demand));
             },
-            Some(building_pv) => print!("WARNING: Building already has a
+            Some(_building_pv) => print!("WARNING: Building already has a
                                         PV plant, nothing is added"),
         }
     }

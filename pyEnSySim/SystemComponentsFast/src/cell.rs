@@ -50,7 +50,7 @@ impl Cell {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(cell_pv) => print!("WARNING: Cell already has a
+            Some(_cell_pv) => print!("WARNING: Cell already has a
                                      PV plant, nothing is added"),
         }
     }
