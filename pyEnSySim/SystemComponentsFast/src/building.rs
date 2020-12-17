@@ -24,9 +24,13 @@ pub struct Building {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
-    hist_e: Option<hist_memory::HistMemory>,
+    gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
-    hist_t: Option<hist_memory::HistMemory>
+    gen_t: Option<hist_memory::HistMemory>,
+    #[pyo3(get)]
+    load_e: Option<hist_memory::HistMemory>,
+    #[pyo3(get)]
+    load_t: Option<hist_memory::HistMemory>,
 }
 
 /// Class simulate buildings energy demand
@@ -80,14 +84,18 @@ impl Building {
             panic!("Building volume must not be negative");
         }
 
-        let (hist_e, hist_t);
+        let (gen_e, gen_t, load_e, load_t);
 
         if hist > 0 {
-            hist_e = Some(hist_memory::HistMemory::new(hist));
-            hist_t = Some(hist_memory::HistMemory::new(hist));
+            gen_e = Some(hist_memory::HistMemory::new(hist));
+            gen_t = Some(hist_memory::HistMemory::new(hist));
+            load_e = Some(hist_memory::HistMemory::new(hist));
+            load_t = Some(hist_memory::HistMemory::new(hist));
         } else {
-            hist_e = None;
-            hist_t = None;
+            gen_e = None;
+            gen_t = None;
+            load_e = None;
+            load_t = None;
         }
 
         // Create object
@@ -103,8 +111,10 @@ impl Building {
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
             pv: None,
-            hist_e: hist_e,
-            hist_t: hist_t,
+            gen_e: gen_e,
+            gen_t: gen_t,
+            load_e: load_e,
+            load_t: load_t,
         };
         building.add_norm_heating_load(&t_out_n);
         // all other possible components are empty
@@ -222,17 +232,30 @@ impl Building {
         }
     }
 
-    fn save_hist(&mut self, e_balance: &f32, t_balance: &f32) {
-        match &mut self.hist_e {
+    fn save_hist(&mut self, e_gen: &f32, e_load: &f32,
+                 t_gen: &f32, t_load: &f32) {
+        match &mut self.gen_e {
             None => {},
-            Some(hist_e) => {
-                hist_e.save(*e_balance)
+            Some(gen_e) => {
+                gen_e.save(*e_gen)
             },
         }
-        match &mut self.hist_t {
+        match &mut self.gen_t {
             None => {},
-            Some(hist_t) => {
-                hist_t.save(*t_balance)
+            Some(gen_t) => {
+                gen_t.save(*t_gen)
+            },
+        }
+        match &mut self.load_e {
+            None => {},
+            Some(load_e) => {
+                load_e.save(*e_load)
+            },
+        }
+        match &mut self.load_t {
+            None => {},
+            Some(load_t) => {
+                load_t.save(*t_load)
             },
         }
     }
@@ -250,14 +273,12 @@ impl Building {
     /// # Returns
     /// * (f32, f32): Current electrical and thermal power balance [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32) {
+                t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
         let mut thermal_load = 0.;
         let mut electrical_generation = 0.;
         let mut thermal_generation = 0.;
-        let mut electrical_balance = 0.;
-        let mut thermal_balance = 0.;
 
         // calculate loads
         for idx in 0..self.agents.len() {
@@ -278,13 +299,11 @@ impl Building {
         }
         // TODO: Storage, Controller
 
-        // Calculate resulting energy balance
-        electrical_balance = electrical_generation - electrical_load;
-        thermal_balance = thermal_generation - thermal_load;
-
         // save data
-        self.save_hist(&electrical_balance, &thermal_balance);
+        self.save_hist(&electrical_generation, &electrical_load,
+                       &thermal_generation, &thermal_load);
 
-        return (electrical_balance, thermal_balance);
+        return (electrical_generation, electrical_load,
+                thermal_generation, thermal_load);
     }
 }

@@ -9,7 +9,7 @@ use crate::hist_memory;
 pub struct PV {
     a: f32,  // Effective Area of PV plant [m^2]
     #[pyo3(get)]
-    hist_e: Option<hist_memory::HistMemory>,
+    gen_e: Option<hist_memory::HistMemory>,
 }
 
 #[pymethods]
@@ -33,16 +33,16 @@ impl PV {
         let a = rng.gen_range(0.8, 1.2) * coc * 1e3/eg * demand;
 
 
-        let hist_e;
+        let gen_e;
 
         if hist > 0 {
-            hist_e = Some(hist_memory::HistMemory::new(hist));
+            gen_e = Some(hist_memory::HistMemory::new(hist));
         } else {
-            hist_e = None;
+            gen_e = None;
         }
 
         let pv = PV {a: a,
-                     hist_e: hist_e,
+                     gen_e: gen_e,
                     };
         pv
     }
@@ -51,10 +51,10 @@ impl PV {
 /// PV plant
 impl PV {
     fn save_hist(&mut self, power_e: &f32) {
-        match &mut self.hist_e {
+        match &mut self.gen_e {
             None => {},
-            Some(hist_e) => {
-                hist_e.save(*power_e)
+            Some(gen_e) => {
+                gen_e.save(*power_e)
             },
         }
     }
