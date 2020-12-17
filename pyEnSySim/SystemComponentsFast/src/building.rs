@@ -21,6 +21,7 @@ pub struct Building {
     v: f32,  // m3
     #[pyo3(get)]
     q_hln: f32,  // W
+    #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
     hist_e: Option<hist_memory::HistMemory>,

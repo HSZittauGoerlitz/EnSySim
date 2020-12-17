@@ -13,6 +13,7 @@ pub struct Cell {
     eg: f32,
     #[pyo3(get)]
     pub t_out_n: f32,
+    #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
     hist_e: Option<hist_memory::HistMemory>,
