@@ -16,21 +16,21 @@ def getCellsPVgeneration(cell):
     PV = None
 
     if cell.pv is not None:
-        if cell.pv.hist_e is None:
+        if cell.pv.gen_e is None:
             print("WARNING: The pv plant of cell has no history record")
         else:
-            PV = np.array(cell.pv.hist_e.get_memory())
+            PV = np.array(cell.pv.gen_e.get_memory())
 
     for bNr, building in enumerate(cell.buildings):
         if building.pv is not None:
-            if building.pv.hist_e is None:
+            if building.pv.gen_e is None:
                 print("WARNING: The pv plant of building {} "
                       "has no history record".format(bNr))
             else:
                 if PV is None:
-                    PV = np.array(building.pv.hist_e.get_memory())
+                    PV = np.array(building.pv.gen_e.get_memory())
                 else:
-                    bPV = np.array(building.pv.hist_e.get_memory())
+                    bPV = np.array(building.pv.gen_e.get_memory())
                     if PV.size != bPV.size:
                         print("WARNING: Hist size for pv plant of building {} "
                               "is different to other sizes, "
