@@ -4,11 +4,16 @@ use pyo3::prelude::*;
 use crate::{building, pv, sep_bsl_agent, hist_memory};
 
 #[pyclass]
+#[derive(Clone)]
 pub struct Cell {
+    #[pyo3(get)]
+    sub_cells: Vec<Cell>,
     #[pyo3(get)]
     buildings: Vec<building::Building>,
     #[pyo3(get)]
     sep_bsl_agents: Vec<sep_bsl_agent::SepBSLagent>,
+    #[pyo3(get)]
+    n_cells: u32,
     #[pyo3(get)]
     n_buildings: u32,
     #[pyo3(get)]
@@ -60,6 +65,8 @@ impl Cell {
         }
 
         let cell = Cell {
+            sub_cells: Vec::new(),
+            n_cells: 0,
             buildings: Vec::new(),
             n_buildings: 0,
             sep_bsl_agents: Vec::new(),
@@ -79,6 +86,11 @@ impl Cell {
     fn add_building(&mut self, building: building::Building) {
         self.buildings.push(building);
         self.n_buildings += 1;
+    }
+
+    fn add_cell(&mut self, cell:Cell) {
+        self.sub_cells.push(cell);
+        self.n_cells += 1;
     }
 
     fn add_pv(&mut self, pv: pv::PV) {
@@ -154,6 +166,17 @@ impl Cell {
         let mut thermal_load = 0.;
         let mut electrical_generation = 0.;
         let mut thermal_generation = 0.;
+
+        // calculate sub cells
+        for idx in 0..self.sub_cells.len() {
+            let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
+                self.sub_cells[idx].step(slp_data, hw_profile,
+                                         t_out, t_out_n, eg);
+            electrical_generation += sub_gen_e;
+            thermal_generation += sub_gen_t;
+            electrical_load += sub_load_e;
+            thermal_load += sub_load_t;
+        }
 
         // calculate buildings
         for idx in 0..self.buildings.len() {
