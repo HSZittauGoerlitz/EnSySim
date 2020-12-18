@@ -18,13 +18,13 @@ impl PV {
     ///
     /// # Arguments
     /// * eg (f32): Mean annual global irradiation
-    ///               for simulated region [kWh/m^2]
+    ///             for simulated region [kWh/m^2]
     /// * coc (f32): Sum of all agents Coefficient of Consumer
-    ///               of building corresponding to this PV plant
+    ///              of building corresponding to this PV plant
     /// * demand (f32): Factor to describe the demand of agent(s)
-    ///                   to cover their electrical energy demand with PV
-    ///                   E.g demand = 1 means agent likes to cover his
-    ///                   demand completely
+    ///                 to cover their electrical energy demand with PV
+    ///                 E.g demand = 1 means agent likes to cover his
+    ///                 demand completely
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(eg: f32, coc: f32, demand: f32, hist: usize) -> Self {
