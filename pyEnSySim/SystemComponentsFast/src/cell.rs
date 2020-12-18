@@ -1,14 +1,18 @@
 // external
 use pyo3::prelude::*;
 
-use crate::{building, pv, hist_memory};
+use crate::{building, pv, sep_bsl_agent, hist_memory};
 
 #[pyclass]
 pub struct Cell {
     #[pyo3(get)]
     buildings: Vec<building::Building>,
     #[pyo3(get)]
+    sep_bsl_agents: Vec<sep_bsl_agent::SepBSLagent>,
+    #[pyo3(get)]
     n_buildings: u32,
+    #[pyo3(get)]
+    n_sep_bsl_agents: u32,
     #[pyo3(get)]
     eg: f32,
     #[pyo3(get)]
@@ -58,6 +62,8 @@ impl Cell {
         let cell = Cell {
             buildings: Vec::new(),
             n_buildings: 0,
+            sep_bsl_agents: Vec::new(),
+            n_sep_bsl_agents: 0,
             eg: eg,
             t_out_n: t_out_n,
             pv: None,
@@ -81,6 +87,11 @@ impl Cell {
             Some(_cell_pv) => print!("WARNING: Cell already has a
                                      PV plant, nothing is added"),
         }
+    }
+
+    fn add_sep_bsl_agent(&mut self, sep_bsl_agent: sep_bsl_agent::SepBSLagent) {
+        self.sep_bsl_agents.push(sep_bsl_agent);
+        self.n_sep_bsl_agents += 1;
     }
 }
 
@@ -123,7 +134,7 @@ impl Cell {
         }
     }
 
-    /// Calculate and return current power balance
+    /// Calculate and return current power consumption and generation
     ///
     /// # Arguments
     /// * slp_data (&[f32; 3]): Standard load Profile of all agent types
@@ -134,7 +145,8 @@ impl Cell {
     /// * eg (&f32): Current irradiation on PV module [W/m^2]
     ///
     /// # Returns
-    /// * (f32, f32): Current electrical and thermal power balance [W]
+    /// * (f32, f32, f32, f32): Current electrical and thermal
+    ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
             t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
@@ -143,9 +155,7 @@ impl Cell {
         let mut electrical_generation = 0.;
         let mut thermal_generation = 0.;
 
-        // calculate loads
-
-        // calculate balance of building
+        // calculate buildings
         for idx in 0..self.buildings.len() {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
                 self.buildings[idx].step(slp_data, hw_profile,
@@ -155,6 +165,15 @@ impl Cell {
             electrical_load += sub_load_e;
             thermal_load += sub_load_t;
         }
+
+        // calculate separate BSL agents
+        for idx in 0..self.sep_bsl_agents.len() {
+            let (sub_gen_e, sub_load_e) =
+                self.sep_bsl_agents[idx].step(slp_data, eg);
+            electrical_generation += sub_gen_e;
+            electrical_load += sub_load_e;
+        }
+
 
         // calculate generation
         // TODO: CHP

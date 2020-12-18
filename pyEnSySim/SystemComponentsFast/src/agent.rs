@@ -4,13 +4,13 @@ use rand::Rng;
 use rand_distr::{Distribution, Beta, Gamma, Normal, FisherF};
 
 #[pyclass]
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Agent {
     a_type: usize,  // 0: PHH, 1: BSLa, 2: BSLc
     #[pyo3(get)]
-    demand_apv: f32,
-    #[pyo3(get)]
     coc: f32,
+    #[pyo3(get)]
+    demand_apv: f32,
 }
 
 #[pymethods]
@@ -24,7 +24,7 @@ impl Agent {
     /// "BSLa": Small Agriculture business with
     ///         electrical standard load profile and
     ///         thermal phh standard load profile
-    /// "BSLc": Common business with
+    /// "BSLc": Small Common business with
     ///         electrical standard load profile and
     ///         thermal phh standard load profile
     #[new]
@@ -119,14 +119,14 @@ impl Agent {
         (684.7 * hw_profile + 314.4) * r_f
     }
 
-    /// Calculate and return current energy load
+    /// Calculate and return current power load
     ///
     /// # Arguments
     ///    slp_data ([f32; 3]): Standard load Profile of all agent types
     ///    hw_profile (f32): Actual hw profile value [W]
     ///
     /// # Returns
-    /// * (f32, f32): Currend electrical and thermal energy demand [W]
+    /// * (f32, f32): Currend electrical and thermal power demand [W]
     pub fn step(&self, slp_data: &[f32; 3], hw_profile: &f32) -> (f32, f32) {
         let mut rng = rand::thread_rng();
 

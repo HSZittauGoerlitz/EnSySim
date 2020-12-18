@@ -5,7 +5,7 @@
 """
 import numpy as np
 import pandas as pd
-from SystemComponentsFast import Agent, Building, Cell
+from SystemComponentsFast import Agent, Building, Cell, SepBSLagent
 
 
 def _addAgents(building, pAgent, pPHH, pAgriculture):
@@ -48,7 +48,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
 
     Args:
         cell (Cell): Cell where to add buildings
-        nBuilding (int32): Number of buildings to add
+        nBuilding (uint32): Number of buildings to add
         pBuilding (dict): Probability dict of building for
                           age class, Modernisation state and
                           ventilation method
@@ -121,6 +121,33 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         cell.add_building(building)
 
     return cell
+
+
+def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
+    """ Add separate BSL Agent to cell
+
+    Args:
+        cell (Cell): ell where to add Agent
+        nAgents (uint32): Number of agents to add
+        pAgriculture (float32): Propotion of BSL agents which are
+                                agricultural
+        pPV (float32): Proportion of bsl agents with PV plants
+        hist (int): Size of history for power balance of bsl agents, pv etc.
+                    (Default: 0)
+    """
+    for Nr in range(nAgents):
+        # get agent type
+        if np.random.random() < pAgriculture:
+            aType = 1
+        else:
+            aType = 2
+
+        agent = SepBSLagent(aType, hist)
+
+        if np.random.random() <= pPV:
+            agent.add_dimensioned_pv(cell.eg, hist)
+
+        cell.add_sep_bsl_agent(agent)
 
 
 def _check_pBTypes(pBTypes):
@@ -207,8 +234,10 @@ def _loadBuildingData(bType):
     return (Geo, U, n)
 
 
-def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
-                        pDHN, pPVplants, pBTypes, region, hist=0):
+def generateGenericCell(nBuildings, pAgents, pPHHagents,
+                        pAgriculture, pDHN, pPVplants, pBTypes,
+                        nSepBSLAgents, pAgricultureBSLsep,
+                        region, hist=0):
     """ Create a cell of a generic energy system
 
     The default cell consists of 4 ref. building types:
@@ -238,7 +267,6 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
                          corresponding Buildings.
                          This allows to simulate vacancy.
                          (0 to 1 each) ({string: float32})
-
         pPHHagents (dict): Mapping of proportion factor for PHH agents
                            in each building type (0 to 1 each)
                            ({string: float32})
@@ -257,6 +285,9 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
                             enforced air renewal
                           . type for the name of the building type
                             (must be equal to the reference building data file)
+        nSepBSLAgents (uint32): Number of agents to add
+        pAgricultureBSLsep (float32): Factor for propotion of agriculture on
+                                      separate BSL agents (0 to 1)
         region (string): Region location of cell (determines climate / weather)
                          Supported regions:
                             East, West, South, North
@@ -275,7 +306,8 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
     if (min(pPHHagents.values()) < 0) | (max(pPHHagents.values()) > 1):
         raise ValueError("PHH probabilities must be between 0 and 1")
 
-    if (min(pAgriculture.values()) < 0) | (max(pAgriculture.values()) > 1):
+    if ((min(pAgriculture.values()) < 0) | (max(pAgriculture.values()) > 1) |
+       (pAgricultureBSLsep < 0) | (pAgricultureBSLsep > 1)):
         raise ValueError("Agriculture probabilities must be between 0 and 1")
 
     if (min(pDHN.values()) < 0) | (max(pDHN.values()) > 1):
@@ -285,6 +317,9 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
         raise ValueError("PV probability must be between 0 and 1")
 
     _check_pBTypes(pBTypes)
+
+    if nSepBSLAgents < 0:
+        raise ValueError("Number of separate BSL agents must be 0 or higher")
 
     supportedRegions = ["East", "West", "South", "North"]
     if region not in supportedRegions:
@@ -312,6 +347,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents, pAgriculture,
                       pAgents[bType], pPHHagents[bType], pAgriculture[bType],
                       pPVplants, hist)
 
-        break
+    # init sep BSL agents
+    addSepBSLAgents(cell, nSepBSLAgents, pAgricultureBSLsep, pPVplants, hist)
 
     return cell

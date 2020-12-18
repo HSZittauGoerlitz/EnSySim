@@ -3,10 +3,12 @@ use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use numpy::PyReadonlyArrayDyn;
 // local
+#[macro_use]
 mod agent;
 mod building;
 mod cell;
 mod pv;
+mod sep_bsl_agent;
 mod hist_memory;
 
 #[pymodule]
@@ -14,6 +16,7 @@ fn SystemComponentsFast(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<agent::Agent>()?;
     m.add_class::<building::Building>()?;
     m.add_class::<cell::Cell>()?;
+    m.add_class::<sep_bsl_agent::SepBSLagent>()?;
     m.add_class::<pv::PV>()?;
     m.add_function(wrap_pyfunction!(simulate, m)?).unwrap();
     Ok(())

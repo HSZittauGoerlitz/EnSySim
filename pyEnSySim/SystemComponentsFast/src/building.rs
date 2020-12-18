@@ -160,8 +160,15 @@ impl Building {
                     sum_apv_demand += self.agents[idx].demand_apv();
                     n_agents += 1;
                 }
+
+                if n_agents == 0 {
+                    sum_apv_demand = 0.;
+                } else {
+                    sum_apv_demand /= n_agents as f32;
+                }
+
                 self.pv = Some(pv::PV::new(eg, sum_coc,
-                                           sum_apv_demand/n_agents as f32,
+                                           sum_apv_demand,
                                            hist));
             },
             Some(_building_pv) => print!("WARNING: Building already has a
