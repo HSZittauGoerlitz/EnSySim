@@ -160,10 +160,12 @@ impl Building {
                     sum_apv_demand += self.agents[idx].demand_apv();
                     n_agents += 1;
                 }
-                self.pv = Some(pv::PV::new(eg, sum_coc, sum_apv_demand, hist));
+                self.pv = Some(pv::PV::new(eg, sum_coc,
+                                           sum_apv_demand/n_agents as f32,
+                                           hist));
             },
             Some(_building_pv) => print!("WARNING: Building already has a
-                                        PV plant, nothing is added"),
+                                          PV plant, nothing is added"),
         }
     }
 }
@@ -260,7 +262,7 @@ impl Building {
         }
     }
 
-    /// Calculate and return current power balance
+    /// Calculate and return current power consumption and generation
     ///
     /// # Arguments
     /// * slp_data (&[f32; 3]): Standard load Profile of all agent types
@@ -271,7 +273,8 @@ impl Building {
     /// * eg (&f32): Current irradiation on PV module [W/m^2]
     ///
     /// # Returns
-    /// * (f32, f32): Current electrical and thermal power balance [W]
+    /// * (f32, f32, f32, f32): Current electrical and thermal
+    ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
                 t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
