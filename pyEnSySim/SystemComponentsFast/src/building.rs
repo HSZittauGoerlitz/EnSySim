@@ -291,12 +291,11 @@ impl Building {
         let mut thermal_generation = 0.;
 
         // calculate loads
-        for idx in 0..self.agents.len() {
-            let (sub_load_e, sub_load_t) = self.agents[idx].
-                                                   step(slp_data, hw_profile);
+        self.agents.iter().for_each(|agent: &agent::Agent| {
+            let (sub_load_e, sub_load_t) = agent.step(slp_data, hw_profile);
             electrical_load += sub_load_e;
             thermal_load += sub_load_t;
-        }
+        });
         thermal_load += self.get_space_heating_demand(t_out, t_out_n);
 
         // calculate generation

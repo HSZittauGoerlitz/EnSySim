@@ -168,34 +168,35 @@ impl Cell {
         let mut thermal_generation = 0.;
 
         // calculate sub cells
-        for idx in 0..self.sub_cells.len() {
+        self.sub_cells.iter_mut().for_each(|sc: &mut Cell| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
-                self.sub_cells[idx].step(slp_data, hw_profile,
-                                         t_out, t_out_n, eg);
+                sc.step(slp_data, hw_profile,
+                        t_out, t_out_n, eg);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
             thermal_load += sub_load_t;
-        }
+        });
 
         // calculate buildings
-        for idx in 0..self.buildings.len() {
+        self.buildings.iter_mut().for_each(|b: &mut building::Building| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
-                self.buildings[idx].step(slp_data, hw_profile,
-                                         t_out, t_out_n, eg);
+                b.step(slp_data, hw_profile,
+                       t_out, t_out_n, eg);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
             thermal_load += sub_load_t;
-        }
+        });
 
         // calculate separate BSL agents
-        for idx in 0..self.sep_bsl_agents.len() {
-            let (sub_gen_e, sub_load_e) =
-                self.sep_bsl_agents[idx].step(slp_data, eg);
-            electrical_generation += sub_gen_e;
-            electrical_load += sub_load_e;
-        }
+        self.sep_bsl_agents.iter_mut().
+            for_each(|sbsl: &mut sep_bsl_agent::SepBSLagent| {
+                let (sub_gen_e, sub_load_e) =
+                    sbsl.step(slp_data, eg);
+                electrical_generation += sub_gen_e;
+                electrical_load += sub_load_e;
+        });
 
 
         // calculate generation
