@@ -66,7 +66,7 @@ impl CHP {
 
 /// CHP plant
 impl CHP {
-    fn save_hist_e(&mut self, pow_e: &f32) {
+    fn save_hist_e(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.gen_e {
             None => {},
             Some(gen_e) => {

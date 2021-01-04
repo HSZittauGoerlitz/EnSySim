@@ -6,12 +6,10 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct CHP {
-    pow_e: f32,  // electrical power of chp plant [W]
-    pow_t: f32,  // installed power of chp plant [W]
-    state: bool,  // on/off switch for chp plant
-    cap: f32,  // capacity of thermal storage
-    charge: f32,  // 
+pub struct CHP_System {
+    chp: CHP,  // chp plant
+    storage: ThermalStorage,  // thermal storage
+
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -19,8 +17,8 @@ pub struct CHP {
 }
 
 #[pymethods]
-impl CHP {
-    ///  Create CHP with thermal storage 
+impl CHP_System {
+    ///  Create CHP system with thermal storage and boiler
     ///  Parameters are power of CHP plant, power of peak load boiler and
     ///  capacity of thermal storage.
     ///  The technical design is based on norm heating load and hot water use.
@@ -66,7 +64,7 @@ impl CHP {
 
 /// CHP plant
 impl CHP {
-    fn save_hist_e(&mut self, pow_e: &f32) {
+    fn save_hist_e(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.gen_e {
             None => {},
             Some(gen_e) => {
