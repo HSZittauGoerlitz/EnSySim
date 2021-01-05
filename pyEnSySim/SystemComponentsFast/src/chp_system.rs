@@ -1,6 +1,5 @@
 // external
 use pyo3::prelude::*;
-use rand::Rng;
 
 use crate::hist_memory;
 
@@ -9,37 +8,40 @@ use crate::hist_memory;
 pub struct CHP_System {
     chp: CHP,  // chp plant
     storage: ThermalStorage,  // thermal storage
+    boiler: Boiler,  // peak load boiler
 
     #[pyo3(get)]
-    gen_t: Option<hist_memory::HistMemory>,
-    #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
+    #[pyo3(get)]
+    gen_t: Option<hist_memory::HistMemory>,
 }
 
 #[pymethods]
 impl CHP_System {
     ///  Create CHP system with thermal storage and boiler
-    ///  Parameters are power of CHP plant, power of peak load boiler and
-    ///  capacity of thermal storage.
-    ///  The technical design is based on norm heating load and hot water use.
+    ///  The technical design is based on norm heating load.
     ///
     /// # Arguments
-    /// * pow_e (f32): installed electrical chp power [W]
-    /// * pow_t (f32): installed electrical chp power [W]
+    /// * q_hln (f32): norm heating load of building
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(q_hln: f32, hist: usize) -> Self {
 
         // chp:
         let pow_t = 0.3 * q_hln;
-        let pow_e = 0.5 * pow_t;
-
-        let state = false;
+        let chp = Some(chp::CHP::new(pow_t, hist));
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
         let models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
+        let volume = 500; // ToDo: closest value
+        let cap = volume * 4.184*1000 * 40;
 
+        let storage = Some(storage_thermal::ThermalStorage::new(cap, hist));
+
+        // boiler
+        let pow_t = 0.7 * q_hln;
+        let boiler = Some(boiler::Boiler::new(pow_t, hist));
 
         let gen_e;
         let gen_t;
@@ -52,13 +54,13 @@ impl CHP_System {
             gen_t = None;
         }
 
-        let chp = CHP {pow_e: pow_e,
-                     pow_t: pow_t,
-                     state: state,
+        let chp_system = CHP_System {chp: chp,
+                     storage: storage,
+                     boiler: boiler,
                      gen_e: gen_e,
                      gen_t: gen_t,
                     };
-        chp
+        chp_system
     }
 }
 
@@ -87,7 +89,30 @@ impl CHP {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool) -> (f32, f32) {
+    pub fn step(&mut self, state: &bool, thermal_load: &f32) -> (f32, f32) {
+
+        if state == false {
+            self.chp.step(state);
+            self.boiler.step(state);
+            let pow_e = 0;
+        }
+        else {
+            // run chp with full power
+            let (pow_e, pow_t) = self.chp.step(state);
+            // charge storage
+            self.storage.charge(pow_t);
+            // stored enough?
+            if pow_t+self.storage.temp_charge/time_step >= thermal_load { //ToDo: time step
+                // turn boiler off this step
+                self.boiler.step(false);
+            }
+            else {
+                // turn boiler on this step
+                let pow_t = self.boiler.step(true)
+                self.storage.charge(pow_t);
+            }
+        // get thermal load from storage and update charging state
+        let pow_t = self.storage.step(thermal_load);
 
         // save data
         self.save_hist_e(&pow_e);

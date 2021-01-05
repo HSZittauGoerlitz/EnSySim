@@ -6,12 +6,9 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct CHP {
-    pow_e: f32,  // electrical power of chp plant [W]
+pub struct Boiler {
     pow_t: f32,  // installed power of chp plant [W]
-    state: bool,  // on/off switch for chp plant
-    cap: f32,  // capacity of thermal storage
-    charge: f32,  // 
+    state: bool,  // on/off switch for boiler
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -19,61 +16,39 @@ pub struct CHP {
 }
 
 #[pymethods]
-impl CHP {
-    ///  Create CHP with thermal storage 
-    ///  Parameters are power of CHP plant, power of peak load boiler and
-    ///  capacity of thermal storage.
-    ///  The technical design is based on norm heating load and hot water use.
+impl Boiler {
+    ///  Create simple thermal boiler
+    ///  Parameters are power of boiler
     ///
     /// # Arguments
-    /// * pow_e (f32): installed electrical chp power [W]
     /// * pow_t (f32): installed electrical chp power [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, hist: usize) -> Self {
+    pub fn new(pow: f32, hist: usize) -> Self {
 
-        // chp:
-        let pow_t = 0.3 * q_hln;
-        let pow_e = 0.5 * pow_t;
+        // boiler:
+        let pow_t = pow_t;
 
-        let state = false;
-
-        // thermal storage:
-        // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
-        let models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
-
-
-        let gen_e;
         let gen_t;
 
         if hist > 0 {
-            gen_e = Some(hist_memory::HistMemory::new(hist));
             gen_t = Some(hist_memory::HistMemory::new(hist));
         } else {
-            gen_e = None;
             gen_t = None;
         }
 
-        let chp = CHP {pow_e: pow_e,
+        let boiler = Boiler {pow_e: pow_e,
                      pow_t: pow_t,
                      state: state,
                      gen_e: gen_e,
                      gen_t: gen_t,
                     };
-        chp
+        boiler
     }
 }
 
-/// CHP plant
-impl CHP {
-    fn save_hist_e(&mut self, pow_e: &f32, pow_t: &f32) {
-        match &mut self.gen_e {
-            None => {},
-            Some(gen_e) => {
-                gen_e.save(*pow_e)
-            },
-        }
-    }
+/// Boiler
+impl Boiler {
     fn save_hist_t(&mut self, pow_t: &f32) {
         match &mut self.gen_t {
             None => {},
@@ -82,19 +57,23 @@ impl CHP {
             }
         }
     }
-    /// Calculate current electrical and thermal power
+    /// Calculate current thermal power
     ///
     /// # Arguments
-    /// * state (&bool): Current state of CHP plant (on/off)
+    /// * state (&bool): Current state of boiler (on/off)
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
     pub fn step(&mut self, state: &bool) -> (f32, f32) {
 
+        // update state
+        let self.state = state;
+        // calculate power output
+        let pow_t = self.state as f32 * self.pow_t;
+
         // save data
-        self.save_hist_e(&pow_e);
         self.save_hist_t(&pow_t);
 
-        return (pow_e, pow_t);
+        return pow_t;
     }
 }

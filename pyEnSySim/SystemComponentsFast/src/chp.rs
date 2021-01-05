@@ -1,6 +1,5 @@
 // external
 use pyo3::prelude::*;
-use rand::Rng;
 
 use crate::hist_memory;
 
@@ -10,8 +9,7 @@ pub struct CHP {
     pow_e: f32,  // electrical power of chp plant [W]
     pow_t: f32,  // installed power of chp plant [W]
     state: bool,  // on/off switch for chp plant
-    cap: f32,  // capacity of thermal storage
-    charge: f32,  // 
+
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -20,28 +18,21 @@ pub struct CHP {
 
 #[pymethods]
 impl CHP {
-    ///  Create CHP with thermal storage 
-    ///  Parameters are power of CHP plant, power of peak load boiler and
-    ///  capacity of thermal storage.
+    ///  Create CHP plant
+    ///  Parameters are power of CHP plant
     ///  The technical design is based on norm heating load and hot water use.
     ///
     /// # Arguments
-    /// * pow_e (f32): installed electrical chp power [W]
     /// * pow_t (f32): installed electrical chp power [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, hist: usize) -> Self {
+    pub fn new(power_t: f32, hist: usize) -> Self {
 
         // chp:
-        let pow_t = 0.3 * q_hln;
+        let pow_t = power_t
         let pow_e = 0.5 * pow_t;
 
         let state = false;
-
-        // thermal storage:
-        // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
-        let models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
-
 
         let gen_e;
         let gen_t;
@@ -90,6 +81,12 @@ impl CHP {
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
     pub fn step(&mut self, state: &bool) -> (f32, f32) {
+
+        // update state
+        let self.state = state;
+        // calculate power output
+        let power_e = self.state as f32 * self.pow_e;
+        let power_t = self.state as f32 * self.pow_t;
 
         // save data
         self.save_hist_e(&pow_e);
