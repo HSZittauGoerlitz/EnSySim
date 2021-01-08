@@ -1,5 +1,6 @@
 *.asv
 *.pyc
+*.pyd
 */__pycache__
 .vscode/.ropeproject/config.py
 **/target
