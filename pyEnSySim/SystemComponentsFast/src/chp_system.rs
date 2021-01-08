@@ -1,6 +1,9 @@
 // external
 use pyo3::prelude::*;
 
+use crate::boiler;
+use crate::chp;
+use crate::storage_thermal;
 use crate::hist_memory;
 
 #[pyclass]
@@ -29,7 +32,7 @@ impl CHP_System {
 
         // chp:
         let pow_t = 0.3 * q_hln;
-        let chp = Some(chp::CHP::new(pow_t, hist));
+        let chp = chp::CHP::new(pow_t, hist);
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
@@ -37,11 +40,11 @@ impl CHP_System {
         let volume = 500; // ToDo: closest value
         let cap = volume * 4.184*1000 * 40;
 
-        let storage = Some(storage_thermal::ThermalStorage::new(cap, hist));
+        let storage = storage_thermal::ThermalStorage::new(cap, hist);
 
         // boiler
         let pow_t = 0.7 * q_hln;
-        let boiler = Some(boiler::Boiler::new(pow_t, hist));
+        let boiler = boiler::Boiler::new(pow_t, hist);
 
         let gen_e;
         let gen_t;
@@ -108,7 +111,7 @@ impl CHP {
             }
             else {
                 // turn boiler on this step
-                let pow_t = self.boiler.step(true)
+                let pow_t = self.boiler.step(true);
                 self.storage.charge(pow_t);
             }
         // get thermal load from storage and update charging state
