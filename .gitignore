@@ -3,3 +3,4 @@
 */__pycache__
 .vscode/.ropeproject/config.py
 **/target
+settings.json
