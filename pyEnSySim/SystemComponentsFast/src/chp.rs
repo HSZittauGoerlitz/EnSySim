@@ -29,7 +29,7 @@ impl CHP {
     pub fn new(power_t: f32, hist: usize) -> Self {
 
         // chp:
-        let pow_t = power_t
+        let pow_t = power_t;
         let pow_e = 0.5 * pow_t;
 
         let state = false;
@@ -57,15 +57,13 @@ impl CHP {
 
 /// CHP plant
 impl CHP {
-    fn save_hist_e(&mut self, pow_e: &f32) {
+    fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.gen_e {
             None => {},
             Some(gen_e) => {
                 gen_e.save(*pow_e)
             },
         }
-    }
-    fn save_hist_t(&mut self, pow_t: &f32) {
         match &mut self.gen_t {
             None => {},
             Some(gen_t) => {
@@ -80,17 +78,22 @@ impl CHP {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool) -> (f32, f32) {
+    pub fn step(&mut self, state: bool) -> (f32, f32) {
 
         // update state
-        let self.state = state;
+        self.state = state;
+
         // calculate power output
-        let power_e = self.state as f32 * self.pow_e;
-        let power_t = self.state as f32 * self.pow_t;
+        let pow_t = 0.0;
+        let pow_e = 0.0;
+        if self.state {
+            pow_t = self.pow_t;
+            pow_e = self.pow_e;
+        }
+
 
         // save data
-        self.save_hist_e(&pow_e);
-        self.save_hist_t(&pow_t);
+        self.save_hist(&pow_e, &pow_t);
 
         return (pow_e, pow_t);
     }
