@@ -1,6 +1,5 @@
 // external
 use pyo3::prelude::*;
-use rand::Rng;
 
 use crate::hist_memory;
 
@@ -11,8 +10,7 @@ pub struct Boiler {
     state: bool,  // on/off switch for boiler
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
-    #[pyo3(get)]
-    gen_e: Option<hist_memory::HistMemory>,
+
 }
 
 #[pymethods]
@@ -27,9 +25,10 @@ impl Boiler {
     pub fn new(pow: f32, hist: usize) -> Self {
 
         // boiler:
-        let pow_t = pow_t;
+        let pow_t = pow;
 
         let gen_t;
+        let state = false;
 
         if hist > 0 {
             gen_t = Some(hist_memory::HistMemory::new(hist));
@@ -37,10 +36,8 @@ impl Boiler {
             gen_t = None;
         }
 
-        let boiler = Boiler {pow_e: pow_e,
-                     pow_t: pow_t,
+        let boiler = Boiler {pow_t: pow_t,
                      state: state,
-                     gen_e: gen_e,
                      gen_t: gen_t,
                     };
         boiler
@@ -64,12 +61,16 @@ impl Boiler {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool) -> (f32, f32) {
+    pub fn step(&mut self, state: bool) -> f32 {
 
         // update state
-        let self.state = state;
+        self.state = state;
+        
         // calculate power output
-        let pow_t = self.state as f32 * self.pow_t;
+        let pow_t = 0.0;
+        if self.state {
+            pow_t = self.pow_t;
+        }
 
         // save data
         self.save_hist_t(&pow_t);
