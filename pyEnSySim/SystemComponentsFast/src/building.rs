@@ -1,7 +1,7 @@
 // external
 use pyo3::prelude::*;
 
-use crate::{agent, pv, hist_memory};
+use crate::{agent, pv, hist_memory, save_e, save_t};
 
 #[pyclass]
 #[derive(Clone)]
@@ -241,34 +241,6 @@ impl Building {
         }
     }
 
-    fn save_hist(&mut self, e_gen: &f32, e_load: &f32,
-                 t_gen: &f32, t_load: &f32) {
-        match &mut self.gen_e {
-            None => {},
-            Some(gen_e) => {
-                gen_e.save(*e_gen)
-            },
-        }
-        match &mut self.gen_t {
-            None => {},
-            Some(gen_t) => {
-                gen_t.save(*t_gen)
-            },
-        }
-        match &mut self.load_e {
-            None => {},
-            Some(load_e) => {
-                load_e.save(*e_load)
-            },
-        }
-        match &mut self.load_t {
-            None => {},
-            Some(load_t) => {
-                load_t.save(*t_load)
-            },
-        }
-    }
-
     /// Calculate and return current power consumption and generation
     ///
     /// # Arguments
@@ -309,8 +281,8 @@ impl Building {
         // TODO: Storage, Controller
 
         // save data
-        self.save_hist(&electrical_generation, &electrical_load,
-                       &thermal_generation, &thermal_load);
+        save_e!(self, electrical_generation, electrical_load);
+        save_t!(self, thermal_generation, thermal_load);
 
         return (electrical_generation, electrical_load,
                 thermal_generation, thermal_load);

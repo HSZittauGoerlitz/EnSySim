@@ -62,3 +62,40 @@ impl HistMemory {
         }
     }
 }
+
+// saving -> avoid reimplementation for different types
+#[macro_export]
+macro_rules! save_e {
+    ($self:expr, $e_gen:expr, $e_load:expr) => {
+        match &mut $self.gen_e {
+            None => {},
+            Some(gen_e) => {
+                 gen_e.save($e_gen)
+            },
+        }
+        match &mut $self.load_e {
+            None => {},
+            Some(load_e) => {
+                 load_e.save($e_load)
+            },
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! save_t {
+    ($self:expr, $t_gen:expr, $t_load:expr) => {
+        match &mut $self.gen_t {
+            None => {},
+            Some(gen_t) => {
+                 gen_t.save($t_gen)
+            },
+        }
+        match &mut $self.load_t {
+            None => {},
+            Some(load_t) => {
+                 load_t.save($t_load)
+            },
+        }
+    }
+}

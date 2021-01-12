@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use rand::Rng;
 use rand_distr::{Distribution, FisherF, Gamma};
 
-use crate::{pv, hist_memory};
+use crate::{pv, hist_memory, save_e};
 
 #[pyclass]
 #[derive(Clone)]
@@ -132,21 +132,6 @@ impl SepBSLagent {
         }
     }
 
-    fn save_hist(&mut self, e_gen: &f32, e_load: &f32) {
-        match &mut self.gen_e {
-            None => {},
-            Some(gen_e) => {
-                gen_e.save(*e_gen)
-            },
-        }
-            match &mut self.load_e {
-            None => {},
-            Some(load_e) => {
-                load_e.save(*e_load)
-            },
-        }
-    }
-
     /// Calculate and return current power consumption and generation
     ///
     /// # Arguments
@@ -171,7 +156,7 @@ impl SepBSLagent {
         // TODO: Storage, Controller
 
         // save data
-        self.save_hist(&electrical_generation, &electrical_load);
+        save_e!(self, electrical_generation, electrical_load);
 
         return (electrical_generation, electrical_load);
     }
