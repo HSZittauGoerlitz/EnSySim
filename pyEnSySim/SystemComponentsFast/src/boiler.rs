@@ -61,10 +61,10 @@ impl Boiler {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: bool) -> f32 {
+    pub fn step(&mut self, state: &bool) -> f32 {
 
         // update state
-        self.state = state;
+        self.state = *state;
         
         // calculate power output
         let pow_t;
@@ -74,7 +74,7 @@ impl Boiler {
         else {
             pow_t = 0.0;
         }
-        
+
         // save and return data
         self.save_hist_t(&pow_t);
         return pow_t;

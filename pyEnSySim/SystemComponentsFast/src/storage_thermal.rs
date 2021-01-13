@@ -9,7 +9,7 @@ use crate::hist_memory;
 pub struct ThermalStorage {
     state: i8,  // charging/do nothing/uncharging (-1/0/1) switch
     cap: f32,  // capacity of thermal storage [J]
-    pub charge: f32,  // charging state of storage [J], ToDo: Get/Set?
+    charge: f32,  // charging state of storage [J], ToDo: Get/Set?
     #[pyo3(get)]
     charge_t: Option<hist_memory::HistMemory>,
 }
@@ -29,7 +29,7 @@ impl ThermalStorage {
         let state = 0;
 
         let mut rng = rand::thread_rng();
-        let mut charge = rng.gen::<f32>() * cap;
+        let charge = rng.gen::<f32>() * cap;
 
         let charge_t;
 
@@ -51,11 +51,15 @@ impl ThermalStorage {
 
 /// thermal storage
 impl ThermalStorage {
-    fn save_hist_c(&mut self, charge: f32) {
+    pub fn get_charge(& self) -> f32 {
+        return self.charge
+    }
+
+    fn save_hist_c(&mut self) {
         match &mut self.charge_t {
             None => {},
             Some(charge_t) => {
-                charge_t.save(charge)
+                charge_t.save(self.charge)
             }
         }
     }
@@ -63,21 +67,28 @@ impl ThermalStorage {
     /// Calculate thermal power and new charging state
     ///
     /// # Arguments
+    /// * thermal_generation (&f32): generation of chp system
     /// * thermal_load (&f32): load of supplied building
     ///
     /// # Returns
     /// * f32: Resulting thermal power [W]
-    pub fn step(&mut self, thermal_load: &f32) -> f32 {
+    pub fn step(&mut self, thermal_generation: &f32, thermal_load: &f32) -> f32 {
 
         let time_step = 0.25; // ToDo: time step fixed
 
         // delivered to building
         let pow_t = *thermal_load;
 
-        self.charge -= pow_t*time_step;
+        self.charge += *thermal_generation * time_step;
+        self.charge -= pow_t * time_step;
+
+        // get rid of excess heat
+        if self.charge >= self.cap {
+            self.charge = self.cap;
+        }
 
         // save data
-        self.save_hist_c(self.charge);
+        self.save_hist_c();
 
         return pow_t;
     }

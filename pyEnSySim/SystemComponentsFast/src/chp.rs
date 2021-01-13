@@ -78,10 +78,10 @@ impl CHP {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: bool) -> (f32, f32) {
+    pub fn step(&mut self, state: &bool) -> (f32, f32) {
 
         // update state
-        self.state = state;
+        self.state = *state;
 
         // calculate power output
         let pow_t;

@@ -1,7 +1,7 @@
 // external
 use pyo3::prelude::*;
 
-use crate::{agent, pv, hist_memory, save_e, save_t};
+use crate::{agent, pv, chp_system, hist_memory, save_e, save_t};
 
 #[pyclass]
 #[derive(Clone)]
@@ -23,6 +23,8 @@ pub struct Building {
     q_hln: f32,  // W
     #[pyo3(get)]
     pv: Option<pv::PV>,
+    #[pyo3(get)]
+    chp: Option<chp_system::CHP_System>,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -111,6 +113,7 @@ impl Building {
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
             pv: None,
+            chp: None,
             gen_e: gen_e,
             gen_t: gen_t,
             load_e: load_e,
@@ -138,6 +141,14 @@ impl Building {
             None => {self.pv = Some(pv);},
             Some(_building_pv) => print!("WARNING: Building already has a
                                         PV plant, nothing is added"),
+        }
+    }
+
+    fn add_chp(&mut self, chp: chp_system::CHP_System) {
+        match &self.chp {
+            None => {self.chp = Some(chp);},
+            Some(_building_chp) => print!("WARNING: Building already has a
+                                        CHP plant, nothing is added"),
         }
     }
 

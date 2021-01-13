@@ -89,35 +89,47 @@ impl CHP_System {
     ///
     /// # Arguments
     /// * state (&bool): Current state of CHP plant (on/off)
+    /// * thermal_load (&f32): thermal load of building this time step
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: bool, thermal_load: &f32) -> (f32, f32) {
+    pub fn step(&mut self, state: &bool, thermal_load: &f32) -> (f32, f32) {
 
         let time_step = 0.25; // ToDo: time step fixed
 
-        let(pow_e, mut pow_t) = self.chp.step(state);
+        // system satisfies heat demand from building
+        // this is done by emptying storage
+        // if state is true, system needs to actively produce heat
+        // first chp is turned on and adds heat to storage, 
+        // boiler only turns on, if this is not enough 
+        // excess heat is destroyed
+        // ToDo: add partial load to chp and boiler
+        // ToDo: check if chp does not over supply system -> boiler
 
-        if state == false {
-            let result = self.boiler.step(state);
+        let(pow_e, mut pow_t) = self.chp.step(&state);
+
+        if *state == false {
+            let _result = self.boiler.step(&state);
         }
         else {
             // stored enough?
-            if (pow_t + self.storage.charge/time_step) >= *thermal_load {
+            if (pow_t + self.storage.get_charge()/time_step) >= *thermal_load {
                 // turn boiler off this step
-                self.boiler.step(false);
+                self.boiler.step(&false);
             }
             else {
                 // turn boiler on this step
-                pow_t += self.boiler.step(true);
+                pow_t += self.boiler.step(&true);
             }
         }
-        // get thermal load from storage and update charging state
-        let pow_t = self.storage.step(thermal_load);
 
-        // save data
+        // save production data
         self.save_hist(&pow_e, &pow_t);
+        
+        // get thermal load from storage and update charging state
+        pow_t = self.storage.step(&pow_t, thermal_load);
 
+        // return supply data
         return (pow_e, pow_t);
     }
 }
