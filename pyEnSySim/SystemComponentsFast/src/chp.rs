@@ -84,15 +84,18 @@ impl CHP {
         self.state = state;
 
         // calculate power output
-        let pow_t = 0.0;
-        let pow_e = 0.0;
+        let pow_t;
+        let pow_e;
         if self.state {
             pow_t = self.pow_t;
             pow_e = self.pow_e;
         }
+        else {
+            pow_t = 0.0;
+            pow_e = 0.0;
+        }
 
-
-        // save data
+        // save and return data
         self.save_hist(&pow_e, &pow_t);
 
         return (pow_e, pow_t);

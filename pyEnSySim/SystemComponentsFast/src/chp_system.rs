@@ -96,31 +96,24 @@ impl CHP_System {
 
         let time_step = 0.25; // ToDo: time step fixed
 
-        let pow_e = 0.0;
-        let pow_t = 0.0;
+        let(pow_e, mut pow_t) = self.chp.step(state);
 
         if state == false {
-            self.chp.step(state);
-            self.boiler.step(state);
+            let result = self.boiler.step(state);
         }
         else {
-            // run chp with full power
-            let (pow_e, pow_t) = self.chp.step(state);
-            // charge storage
-            self.storage.charge(&pow_t);
             // stored enough?
-            if pow_t+self.storage.temp_charge/time_step >= thermal_load {
+            if (pow_t + self.storage.charge/time_step) >= *thermal_load {
                 // turn boiler off this step
                 self.boiler.step(false);
             }
             else {
                 // turn boiler on this step
-                pow_t = self.boiler.step(true);
-                self.storage.charge(pow_t);
+                pow_t += self.boiler.step(true);
             }
         }
         // get thermal load from storage and update charging state
-        pow_t = self.storage.step(thermal_load);
+        let pow_t = self.storage.step(thermal_load);
 
         // save data
         self.save_hist(&pow_e, &pow_t);

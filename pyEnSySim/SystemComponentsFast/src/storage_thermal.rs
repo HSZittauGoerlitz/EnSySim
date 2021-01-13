@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use rand::Rng;
+use rand::prelude::*;
 
 use crate::hist_memory;
 
@@ -9,8 +9,7 @@ use crate::hist_memory;
 pub struct ThermalStorage {
     state: i8,  // charging/do nothing/uncharging (-1/0/1) switch
     cap: f32,  // capacity of thermal storage [J]
-    charge: f32,  // charging state of storage [J]
-    temp_charge: f32, // variable for storing charge requests
+    pub charge: f32,  // charging state of storage [J], ToDo: Get/Set?
     #[pyo3(get)]
     charge_t: Option<hist_memory::HistMemory>,
 }
@@ -30,9 +29,8 @@ impl ThermalStorage {
         let state = 0;
 
         let mut rng = rand::thread_rng();
-        let charge = rng.gen()::f32 * cap;
+        let mut charge = rng.gen::<f32>() * cap;
 
-        let temp_charge;
         let charge_t;
 
         // history
@@ -45,7 +43,6 @@ impl ThermalStorage {
         let thermal_storage = ThermalStorage {state: state,
                      cap: cap,
                      charge: charge,
-                     temp_charge: temp_charge,
                      charge_t: charge_t,
                     };
         thermal_storage
@@ -54,48 +51,33 @@ impl ThermalStorage {
 
 /// thermal storage
 impl ThermalStorage {
-    fn save_hist_c(&mut self, charge: &f32) {
+    fn save_hist_c(&mut self, charge: f32) {
         match &mut self.charge_t {
             None => {},
             Some(charge_t) => {
-                charge_t.save(*charge)
+                charge_t.save(charge)
             }
         }
-    }
-
-    /// Charge and discharge storeage during time step
-    pub fn charge(&mut self, pow_t: &f32) {
-        // charge storage with thermal power, 
-        // charging state update happens in step()
-
-        let time_step = 0.25; // ToDo: time step fixed
-
-        self.temp_charge += pow_t*time_step;
     }
 
     /// Calculate thermal power and new charging state
     ///
     /// # Arguments
-    /// * state (&i8): Current state of storage (charging/off/discharging)
+    /// * thermal_load (&f32): load of supplied building
     ///
     /// # Returns
     /// * f32: Resulting thermal power [W]
-    pub fn step(&mut self, thermal_load: f32) -> f32 {
+    pub fn step(&mut self, thermal_load: &f32) -> f32 {
 
         let time_step = 0.25; // ToDo: time step fixed
 
         // delivered to building
-        let pow_t = thermal_load;
-        // calculate balance reset temps
-        let balance = self.temp_charge/time_step - pow_t; 
-        self.temp_charge = 0.0;
+        let pow_t = *thermal_load;
 
-        // update charge
-        self.charge = self.charge + balance*time_step;
-        // ToDo!: handling full and empty cases
+        self.charge -= pow_t*time_step;
 
         // save data
-        self.save_hist_c(&self.charge);
+        self.save_hist_c(self.charge);
 
         return pow_t;
     }

@@ -9,12 +9,12 @@ mod agent;
 mod building;
 mod cell;
 // Components
-// mod boiler;
-// mod chp;
-// mod chp_system;
+mod boiler;
+mod chp;
+mod chp_system;
 mod pv;
 mod sep_bsl_agent;
-// mod storage_thermal;
+mod storage_thermal;
 // Misc
 mod hist_memory;
 

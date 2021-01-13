@@ -67,14 +67,16 @@ impl Boiler {
         self.state = state;
         
         // calculate power output
-        let pow_t = 0.0;
+        let pow_t;
         if self.state {
             pow_t = self.pow_t;
         }
-
-        // save data
+        else {
+            pow_t = 0.0;
+        }
+        
+        // save and return data
         self.save_hist_t(&pow_t);
-
         return pow_t;
     }
 }
