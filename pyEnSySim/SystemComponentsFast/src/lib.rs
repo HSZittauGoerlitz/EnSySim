@@ -19,6 +19,7 @@ mod storage_thermal;
 mod hist_memory;
 
 #[pymodule]
+#[allow(non_snake_case)] // for python binding
 fn SystemComponentsFast(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<agent::Agent>()?;
     m.add_class::<building::Building>()?;

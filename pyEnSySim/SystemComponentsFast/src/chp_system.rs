@@ -8,6 +8,7 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
+#[allow(non_snake_case)]  // for python binding
 pub struct CHP_System {
     chp: CHP,  // chp plant
     storage: ThermalStorage,  // thermal storage
@@ -20,6 +21,7 @@ pub struct CHP_System {
 }
 
 #[pymethods]
+#[allow(non_snake_case)]  // for python binding
 impl CHP_System {
     ///  Create CHP system with thermal storage and boiler
     ///  The technical design is based on norm heating load.
