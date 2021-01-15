@@ -38,9 +38,30 @@ impl CHP_System {
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
-        let models = [200,300,400,500,600,750,950,1500,2000,3000,5000];
-        let volume = 500.0; // ToDo: closest value
-        let cap = volume * 4.184*1000.0 * 40.0;
+        let models: [f32;11] = [200.,300.,400.,500.,600.,750.,950.,1500.,2000.,3000.,5000.];
+        let mut diffs: [f32;11] = [0.;11];
+        let exact = 25.0 * 75.0; // kW * l/kW
+    
+    
+        for (pos, model) in models.iter().enumerate() {
+            diffs[pos] = (exact - model).abs();
+        }
+        
+        let index = min_index(&diffs);
+        // ToDo: bring to helper.rs file
+        fn min_index(array: &[f32]) -> usize {
+            let mut i = 0;
+        
+            for (j, &value) in array.iter().enumerate() {
+                if value < array[i] {
+                    i = j;
+                }
+            }
+        
+            i
+        }
+        let volume = models[index];
+        let cap = volume * 4.184*1000. * 40.;
 
         let storage = ThermalStorage::new(cap, hist);
 
