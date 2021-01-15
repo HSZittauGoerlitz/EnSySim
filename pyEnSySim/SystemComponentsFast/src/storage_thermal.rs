@@ -7,9 +7,8 @@ use crate::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct ThermalStorage {
-    state: i8,  // charging/do nothing/uncharging (-1/0/1) switch
     cap: f32,  // capacity of thermal storage [J]
-    charge: f32,  // charging state of storage [J], ToDo: Get/Set?
+    charge: f32,  // charging state of storage [J] -> get_charge()
     #[pyo3(get)]
     charge_t: Option<hist_memory::HistMemory>,
 }
@@ -17,6 +16,9 @@ pub struct ThermalStorage {
 #[pymethods]
 impl ThermalStorage {
     ///  Create thermal storage with specific capacity
+    ///  This simplest model accounts only for the energy balance,
+    ///  no mass flows/temperatures are considered.
+    ///  Loading state is randomly initialized.
     ///
     /// # Arguments
     /// * cap (f32): installed capacity [J]
@@ -24,24 +26,22 @@ impl ThermalStorage {
     #[new]
     pub fn new(cap: f32, hist: usize) -> Self {
 
-        // storage:
         let cap = cap;
-        let state = 0;
 
+        // random loading state
         let mut rng = rand::thread_rng();
         let charge = rng.gen::<f32>() * cap;
 
+        // history
         let charge_t;
 
-        // history
         if hist > 0 {
             charge_t = Some(hist_memory::HistMemory::new(hist));
         } else {
             charge_t = None;
         }
 
-        let thermal_storage = ThermalStorage {state: state,
-                     cap: cap,
+        let thermal_storage = ThermalStorage {cap: cap,
                      charge: charge,
                      charge_t: charge_t,
                     };
@@ -77,14 +77,19 @@ impl ThermalStorage {
         let time_step = 0.25; // ToDo: time step fixed
 
         // delivered to building
-        let pow_t = *thermal_load;
+        let mut pow_t = *thermal_load;
 
         self.charge += *thermal_generation * time_step;
         self.charge -= pow_t * time_step;
 
         // get rid of excess heat
-        if self.charge >= self.cap {
+        if self.charge > self.cap {
             self.charge = self.cap;
+        }
+        // ToDo: handle empty case 
+        if self.charge < 0. {
+            println!("storage is empty and could not supply enough heat!");
+            self.charge = 0.;
         }
 
         // save data
