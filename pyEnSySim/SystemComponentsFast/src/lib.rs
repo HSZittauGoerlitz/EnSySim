@@ -9,6 +9,7 @@ mod agent;
 mod building;
 mod cell;
 // Components
+mod controller;
 mod boiler;
 mod chp;
 mod chp_system;

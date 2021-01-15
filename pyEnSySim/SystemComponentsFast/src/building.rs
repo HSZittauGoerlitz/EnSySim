@@ -1,7 +1,7 @@
 // external
 use pyo3::prelude::*;
 
-use crate::{agent, pv, chp_system, hist_memory, save_e, save_t};
+use crate::{agent, controller, pv, chp_system, hist_memory, save_e, save_t};
 
 #[pyclass]
 #[derive(Clone)]
@@ -21,6 +21,8 @@ pub struct Building {
     v: f32,  // m3
     #[pyo3(get)]
     q_hln: f32,  // W
+    #[pyo3(get)]
+    controller: controller::Controller,
     #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
@@ -100,6 +102,8 @@ impl Building {
             load_t = None;
         }
 
+        let defaultController = controller::Controller::new(hist);
+
         // Create object
         let mut building = Building {
             n_max_agents: n_max_agents,
@@ -112,6 +116,7 @@ impl Building {
             v: volume,
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
+            controller: defaultController,
             pv: None,
             chp: None,
             gen_e: gen_e,
@@ -186,6 +191,17 @@ impl Building {
                                           PV plant, nothing is added"),
         }
     }
+
+    fn add_dimensioned_chp(&mut self, hist: usize) {
+        match &self.chp {
+            None => {
+                 self.chp = Some(chp_system::CHP_System::new(self.q_hln,
+                                                             hist));
+            }
+            Some(_building_chp) => print!("WARNING: Building already has a 
+                                           CHP plant, nothing is added"),
+        }
+    }
 }
 
 impl Building {
@@ -223,6 +239,16 @@ impl Building {
             None => 0.,
             Some(building_pv) => {
                 building_pv.step(eg)
+            },
+        }
+    }
+
+    fn get_chp_generation(&mut self, thermal_load: &f32) -> (f32, f32) {
+        match &mut self.chp {
+            None => (0., 0.),
+            Some(building_chp) => {
+                building_chp.step(&self.controller.get_chp_state(),
+                                  &thermal_load)
             },
         }
     }
