@@ -77,7 +77,7 @@ impl ThermalStorage {
         let time_step = 0.25; // ToDo: time step fixed
 
         // delivered to building
-        let mut pow_t = *thermal_load;
+        let pow_t = *thermal_load;
 
         self.charge += *thermal_generation * time_step;
         self.charge -= pow_t * time_step;
