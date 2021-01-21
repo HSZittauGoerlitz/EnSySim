@@ -122,12 +122,30 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
 
     return cell
 
+def addCHPtoBiludings(cell, hist=0):
+    """Add CHP to buildings
+
+    Args:
+        cell (Cell): cell where CHPs shall be added
+        hist (int): Size of history for power balance/energy level of chp, storage etc.
+                    (Default: 0)
+    """
+    COC = 0
+    for building in cell.buildings:
+        for agent in building.agents
+            COC += agent.coc
+    # chp shall provide 2.1% of electrical energy
+    # installed power gets scaled by hours/year / full load hours
+    # 1.75 = 8750h / 5000h
+    instPower = COC * 0.021 * 1.75
+        # add chp based on q_hln of building
+    
 
 def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
     """ Add separate BSL Agent to cell
 
     Args:
-        cell (Cell): ell where to add Agent
+        cell (Cell): cell where to add Agent
         nAgents (uint32): Number of agents to add
         pAgriculture (float32): Propotion of BSL agents which are
                                 agricultural
