@@ -122,24 +122,63 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
 
     return cell
 
-def addCHPtoBiludings(cell, hist=0):
+def addCHPtoCell(cell, pCHP, hist=0): 
     """Add CHP to buildings
 
     Args:
         cell (Cell): cell where CHPs shall be added
+        pCHP (float32): percentage of electricity production delivered by CHP
         hist (int): Size of history for power balance/energy level of chp, storage etc.
                     (Default: 0)
     """
+    # percentage of chp generated electricity
+    pCHP = 0.021
+    # default thermal-to-electrical facor
+    th_el = 2.
+    # default full run time in h
+    full = 5000. 
+    # best ratio power_th to q_hln (maximum or 'norm' heat load)
+    relPow = 0.4
+    # upper and lower limit for ratio power_th to q_hln
+    upLim = 0.25
+    lowLim = 0.45
+
+    # this is maybe not the fastest way to do this, could be moved to rust
+    buildings_q_hln = []
     COC = 0
     for building in cell.buildings:
-        for agent in building.agents
+        for agent in building.agents:
             COC += agent.coc
+        buildings_q_hln.append(building.q_hln)
+
     # chp shall provide 2.1% of electrical energy
     # installed power gets scaled by hours/year / full load hours
     # 1.75 = 8750h / 5000h
-    instPower = COC * 0.021 * 1.75
-        # add chp based on q_hln of building
-    
+    instPower_el = COC * pCHP * 8750./full
+
+    # generate CHP powers from ...
+    # ... distribution:
+    mu =  -4.894316543131761
+    sigma = 1.281345974473205
+    _sum = 0
+    # ... and make sure to match cell demand
+    powers_el = []
+    while _sum < instPower_el:
+        powers_el.append(np.random.lognormal(mu, sigma))
+
+    # convert to thermal power by thermal-to-electrical facor
+    powers_th = powers_el * th_el
+
+    # find first building with matching heat need
+    for power in enumerate(powers_th):
+        idx, q_hln = min(enumerate(buildings_q_hln), key=lambda x: abs(x[1]*relPow-power))
+        # add chp to building if difference is below threshold
+        if upLim*q_hln < power < lowLim*q_hln:
+            cell.buildings[idx].add_dimensioned_chp(power)
+            # ToDo: What if building already has e.g. heat pump?
+        else:
+            print("for chp with power {}kW closest building had {}kW maximum heat load.".format(power, q_hln))
+            print("chp was dismissed!")
 
 def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
     """ Add separate BSL Agent to cell
