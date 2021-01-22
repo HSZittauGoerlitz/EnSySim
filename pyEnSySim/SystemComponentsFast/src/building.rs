@@ -278,6 +278,10 @@ impl Building {
         }
     }
 
+    pub fn q_hln(&self) -> &f32 {
+        &self.q_hln
+    }
+
     /// Calculate and return current power consumption and generation
     ///
     /// # Arguments
