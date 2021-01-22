@@ -131,8 +131,6 @@ def addCHPtoCell(cell, pCHP, hist=0):
         hist (int): Size of history for power balance/energy level of chp, storage etc.
                     (Default: 0)
     """
-    # percentage of chp generated electricity
-    pCHP = 0.021
     # default thermal-to-electrical facor
     th_el = 2.
     # default full run time in h
@@ -150,11 +148,9 @@ def addCHPtoCell(cell, pCHP, hist=0):
         for agent in building.agents:
             COC += agent.coc
         buildings_q_hln.append(building.q_hln)
-
-    # chp shall provide 2.1% of electrical energy
+    
     # installed power gets scaled by hours/year / full load hours
-    # 1.75 = 8750h / 5000h
-    instPower_el = COC * pCHP * 8750./full
+    instPower_el = 1000000. * COC * pCHP / full
 
     # generate CHP powers from ...
     # ... distribution:
@@ -164,21 +160,31 @@ def addCHPtoCell(cell, pCHP, hist=0):
     # ... and make sure to match cell demand
     powers_el = []
     while _sum < instPower_el:
-        powers_el.append(np.random.lognormal(mu, sigma))
-
+        powers_el.append(np.random.lognormal(mu, sigma)*1000000.) # MW to W conversion
+        if powers_el[-1] < 3000 or powers_el[-1] > 6000: 
+            powers_el.pop()
+            continue
+        _sum += powers_el[-1]
     # convert to thermal power by thermal-to-electrical facor
-    powers_th = powers_el * th_el
+    powers_th = [power*th_el for power in powers_el] 
 
     # find first building with matching heat need
-    for power in enumerate(powers_th):
+    instPower_th = 0
+    for power in powers_th:
         idx, q_hln = min(enumerate(buildings_q_hln), key=lambda x: abs(x[1]*relPow-power))
         # add chp to building if difference is below threshold
-        if upLim*q_hln < power < lowLim*q_hln:
-            cell.buildings[idx].add_dimensioned_chp(power)
+        if upLim < power/q_hln < lowLim:
+            cell.buildings[idx].add_dimensioned_chp(hist)
+            instPower_th += power
             # ToDo: What if building already has e.g. heat pump?
+            #print("for chp with thermal power {}W building with {}W heat load was found ({})".format(power, q_hln, power/q_hln))
         else:
-            print("for chp with power {}kW closest building had {}kW maximum heat load.".format(power, q_hln))
-            print("chp was dismissed!")
+            print("!!!for chp with thermal power {}W closest building had {}W maximum heat load.".format(power, q_hln))
+            print("!!!chp was dismissed, because pCHP would be {}!!!".format(q_hln/power))
+    print("installed {}kW thermal chp generation".format(instPower_th/1000))
+    print("corresponds to {}kW electrical generation".format(instPower_th/1000/2))
+    print("electrical demand is {}kWh".format(COC*1000))
+    print("5000h full load generate {}%".format(instPower_th/2*5000/(COC*1000000)))
 
 def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
     """ Add separate BSL Agent to cell
@@ -292,7 +298,7 @@ def _loadBuildingData(bType):
 
 
 def generateGenericCell(nBuildings, pAgents, pPHHagents,
-                        pAgriculture, pDHN, pPVplants, pBTypes,
+                        pAgriculture, pDHN, pPVplants, pCHP, pBTypes,
                         nSepBSLAgents, pAgricultureBSLsep,
                         region, hist=0):
     """ Create a cell of a generic energy system
@@ -334,6 +340,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
                      with connection to the district heating network
                      (0 to 1 each) ({string: float32})
         pPVplants (float32): Proportion of buildings with PV-Plants (0 to 1)
+        pCHP (float32): Proportion of electricity produced by chp (0 to 1)
         pBTypes (dict): Dictionary of proportions for all reference building
                         types (0 to 1 each, Types: FSH, REH, SAH, BAH)
                           . Class for age classes
@@ -406,5 +413,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
 
     # init sep BSL agents
     addSepBSLAgents(cell, nSepBSLAgents, pAgricultureBSLsep, pPVplants, hist)
+
+    addCHPtoCell(cell, pCHP)
 
     return cell
