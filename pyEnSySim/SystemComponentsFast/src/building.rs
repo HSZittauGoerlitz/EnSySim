@@ -312,14 +312,17 @@ impl Building {
         thermal_load += self.get_space_heating_demand(t_out, t_out_n);
 
         // calculate generation
-        // TODO: CHP
+        let(sub_gen_e, sub_gen_t) = self.get_chp_generation(&thermal_load);
+        electrical_generation += sub_gen_e;
+        thermal_generation += sub_gen_t;
+
         electrical_generation += self.get_pv_generation(eg);
 
-        if !self.is_at_dhn {
+/*         if !self.is_at_dhn {
             // Building is self-supplied
             thermal_generation = thermal_load;
-        }
-        // TODO: Storage, Controller
+        } */
+        // TODO : Storage, Controller
 
         // save data
         save_e!(self, electrical_generation, electrical_load);
