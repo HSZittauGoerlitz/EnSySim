@@ -179,12 +179,12 @@ def addCHPtoCell(cell, pCHP, hist=0):
             # ToDo: What if building already has e.g. heat pump?
             #print("for chp with thermal power {}W building with {}W heat load was found ({})".format(power, q_hln, power/q_hln))
         else:
-            print("!!!for chp with thermal power {}W closest building had {}W maximum heat load.".format(power, q_hln))
-            print("!!!chp was dismissed, because pCHP would be {}!!!".format(q_hln/power))
-    print("installed {}kW thermal chp generation".format(instPower_th/1000))
-    print("corresponds to {}kW electrical generation".format(instPower_th/1000/2))
-    print("electrical demand is {}kWh".format(COC*1000))
-    print("5000h full load generate {}%".format(instPower_th/2*5000/(COC*1000000)))
+            print("!!!for chp with thermal power {:.2f}W closest building had {:.2f}W maximum heat load.".format(power, q_hln))
+            print("!!!chp was dismissed, because pCHP would be {:.2f}!!!".format(q_hln/power))
+    print("installed {:.2f}kW thermal chp generation".format(instPower_th/1000))
+    print("corresponds to {:.2f}kW electrical generation".format(instPower_th/1000/2))
+    print("electrical demand is {:.2f}kWh".format(COC*1000))
+    print("5000h full load generate {:.2f}% of electrical supply".format(instPower_th/2*5000/(COC*1000000)))
 
 def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
     """ Add separate BSL Agent to cell
