@@ -166,41 +166,31 @@ impl Building {
     ///             for simulated region [kWh/m^2]
     /// * hist (usize): Size of history memory for pv plant (0 for no memory)
     fn add_dimensioned_pv(&mut self, eg: f32, hist: usize) {
-        match &self.pv {
-            None => {
-                let mut sum_coc = 0.;
-                let mut sum_apv_demand = 0.;
-                let mut n_agents = 0;
-                for idx in 0..self.agents.len() {
-                    sum_coc += self.agents[idx].coc();
-                    sum_apv_demand += self.agents[idx].demand_apv();
-                    n_agents += 1;
-                }
-
-                if n_agents == 0 {
-                    sum_apv_demand = 0.;
-                } else {
-                    sum_apv_demand /= n_agents as f32;
-                }
-
-                self.pv = Some(pv::PV::new(eg, sum_coc,
-                                           sum_apv_demand,
-                                           hist));
-            },
-            Some(_building_pv) => print!("WARNING: Building already has a
-                                          PV plant, nothing is added"),
+        let mut sum_coc = 0.;
+        let mut sum_apv_demand = 0.;
+        let mut n_agents = 0;
+        for idx in 0..self.agents.len() {
+            sum_coc += self.agents[idx].coc();
+            sum_apv_demand += self.agents[idx].demand_apv();
+            n_agents += 1;
         }
+
+        if n_agents == 0 {
+            sum_apv_demand = 0.;
+        } else {
+            sum_apv_demand /= n_agents as f32;
+        }
+
+        self.add_pv(pv::PV::new(eg, sum_coc,
+                                sum_apv_demand,
+                                hist)
+                    );
     }
 
     fn add_dimensioned_chp(&mut self, hist: usize) {
-        match &self.chp {
-            None => {
-                 self.chp = Some(chp_system::CHP_System::new(self.q_hln,
-                                                             hist));
-            }
-            Some(_building_chp) => print!("WARNING: Building already has a 
-                                           CHP plant, nothing is added"),
-        }
+        self.add_chp(chp_system::CHP_System::new(self.q_hln,
+                                                 hist)
+                     );
     }
 }
 
