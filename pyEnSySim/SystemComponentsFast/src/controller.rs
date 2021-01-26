@@ -1,13 +1,13 @@
 // external
 use pyo3::prelude::*;
 
-use crate::hist_memory;
+use crate::{hist_memory, building};
 
 #[pyclass]
 #[derive(Clone)]
 pub struct Controller {
     #[pyo3(get)]
-    gen_e: Option<hist_memory::HistMemory>,
+    chp_state: bool,
 }
 
 #[pymethods]
@@ -15,17 +15,12 @@ impl Controller {
 
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(hist: usize) -> Self {
+    pub fn new() -> Self {
 
-        let gen_e;
+        let chp_state = false;
 
-        if hist > 0 {
-            gen_e = Some(hist_memory::HistMemory::new(hist));
-        } else {
-            gen_e = None;
-        }
 
-        let controller = Controller {gen_e: gen_e,
+        let controller = Controller {chp_state: chp_state,
                     };
         controller
     }
@@ -33,18 +28,16 @@ impl Controller {
 
 /// Controller
 impl Controller {
-    pub fn get_chp_state(&mut self) -> bool {
-        let state = true;
-        state
-    }
-    /// Calculate current electrical power
-    ///
-    /// # Arguments
-    /// * eg (&f32): Current irradiation on PV module [W/m^2]
-    ///
-    /// # Returns
-    /// * f32: Resulting electrical power [W]
-    pub fn step(&mut self) {
 
+    pub fn get_chp_state(&mut self) -> bool {
+        return self.chp_state
+    }
+
+    /// Decide for chp state for next time step
+    /// With this implementation, chp is heat-operated, meaning it produces 
+    /// a) if storage content is not enough to deliver enough heat
+    /// b) if it ran current time step, but storage is not full yet
+    pub fn step(&mut self, building: building::Building) {
+        self.chp_state = true;
     }
 }
