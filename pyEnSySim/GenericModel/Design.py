@@ -132,7 +132,7 @@ def addCHPtoCell(cell, pCHP, hist=0):
         hist (int): Size of history for power balance/energy level of chp,
                     storage etc. (Default: 0)
     """
-    # default thermal-to-electrical facor
+    # default thermal-to-electrical factor
     th_el = 2.
     # default full run time in h
     full = 5000.
@@ -166,7 +166,7 @@ def addCHPtoCell(cell, pCHP, hist=0):
             powers_el.pop()
             continue
         _sum += powers_el[-1]
-    # convert to thermal power by thermal-to-electrical facor
+    # convert to thermal power by thermal-to-electrical factor
     powers_th = [power*th_el for power in powers_el]
 
     # find first building with matching heat need
