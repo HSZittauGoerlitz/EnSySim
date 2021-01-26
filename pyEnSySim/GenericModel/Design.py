@@ -5,6 +5,7 @@
 """
 import numpy as np
 import pandas as pd
+import logging as lg
 from SystemComponentsFast import Agent, Building, Cell, SepBSLagent
 
 
@@ -150,7 +151,7 @@ def addCHPtoCell(cell, pCHP, hist=0):
             COC += agent.coc
         buildings_q_hln.append(building.q_hln)
 
-    # installed power gets scaled by hours/year / full load hours
+    # installed power gets scaled by hours/year
     instPower_el = 1000000. * COC * pCHP / full
 
     # generate CHP powers from ...
@@ -179,14 +180,22 @@ def addCHPtoCell(cell, pCHP, hist=0):
             cell.buildings[idx].add_dimensioned_chp(hist)
             instPower_th += power
             # ToDo: What if building already has e.g. heat pump?
-            #print("for chp with thermal power {}W building with {}W heat load was found ({})".format(power, q_hln, power/q_hln))
+            # print("for chp with thermal power {}W building with {}W heat
+            #  load was found ({})".format(power, q_hln, power/q_hln))
         else:
-            print("!!!for chp with thermal power {:.2f}W closest building had {:.2f}W maximum heat load.".format(power, q_hln))
-            print("!!!chp was dismissed, because pCHP would be {:.2f}!!!".format(q_hln/power))
-    print("installed {:.2f}kW thermal chp generation".format(instPower_th/1000))
-    print("corresponds to {:.2f}kW electrical generation".format(instPower_th/1000/2))
-    print("electrical demand is {:.2f}kWh".format(COC*1000))
-    print("5000h full load generate {:.2f}% of electrical supply".format(instPower_th/2*5000/(COC*1000000)))
+            lg.warning("for chp with thermal power {:.2f}W closest "
+                            "building had {:.2f}W maximum heat load."
+                            "chp was dismissed, because pCHP for building "
+                            "would be {:.2f}!!!"
+                            .format(power, q_hln, q_hln/power))
+    lg.debug("installed {:.2f}kW thermal chp generation"
+             .format(instPower_th/1000))
+    lg.debug("corresponds to {:.2f}kW electrical generation"
+             .format(instPower_th/1000/2))
+    lg.debug("electrical demand is {:.2f}kWh"
+             .format(COC*1000))
+    lg.debug("5000h full load generate {:.2f}% of electrical supply"
+             .format(instPower_th/2*5000/(COC*1000000)))
 
 
 def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
