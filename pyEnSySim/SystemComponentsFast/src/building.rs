@@ -103,7 +103,7 @@ impl Building {
             load_t = None;
         }
 
-        let defaultController = controller::Controller::new(hist);
+        let defaultController = controller::Controller::new();
 
         // Create object
         let mut building = Building {
@@ -305,10 +305,11 @@ impl Building {
         thermal_load += self.get_space_heating_demand(t_out, t_out_n);
 
         // calculate generation
+        // chp
         let(sub_gen_e, sub_gen_t) = self.get_chp_generation(&thermal_load);
         electrical_generation += sub_gen_e;
         thermal_generation += sub_gen_t;
-
+        // pv
         electrical_generation += self.get_pv_generation(eg);
 
         if self.is_self_supplied_t {

@@ -147,7 +147,7 @@ impl CHP_System {
         }
 
         // save production data
-        //self.save_hist(&pow_e, &pow_t);
+        self.save_hist(&pow_e, &pow_t);
         
         // get thermal load from storage and update charging state
         pow_t = self.storage.step(&pow_t, thermal_load);
