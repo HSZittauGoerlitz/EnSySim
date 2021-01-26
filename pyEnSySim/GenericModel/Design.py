@@ -122,19 +122,20 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
 
     return cell
 
-def addCHPtoCell(cell, pCHP, hist=0): 
+
+def addCHPtoCell(cell, pCHP, hist=0):
     """Add CHP to buildings
 
     Args:
         cell (Cell): cell where CHPs shall be added
         pCHP (float32): percentage of electricity production delivered by CHP
-        hist (int): Size of history for power balance/energy level of chp, storage etc.
-                    (Default: 0)
+        hist (int): Size of history for power balance/energy level of chp,
+                    storage etc. (Default: 0)
     """
     # default thermal-to-electrical facor
     th_el = 2.
     # default full run time in h
-    full = 5000. 
+    full = 5000.
     # best ratio power_th to q_hln (maximum or 'norm' heat load)
     relPow = 0.4
     # upper and lower limit for ratio power_th to q_hln
@@ -148,30 +149,31 @@ def addCHPtoCell(cell, pCHP, hist=0):
         for agent in building.agents:
             COC += agent.coc
         buildings_q_hln.append(building.q_hln)
-    
+
     # installed power gets scaled by hours/year / full load hours
     instPower_el = 1000000. * COC * pCHP / full
 
     # generate CHP powers from ...
     # ... distribution:
-    mu =  -4.894316543131761
+    mu = -4.894316543131761
     sigma = 1.281345974473205
     _sum = 0
     # ... and make sure to match cell demand
     powers_el = []
     while _sum < instPower_el:
-        powers_el.append(np.random.lognormal(mu, sigma)*1000000.) # MW to W conversion
-        if powers_el[-1] < 3000 or powers_el[-1] > 6000: 
+        powers_el.append(np.random.lognormal(mu, sigma)*1000000.)  # MW to W
+        if powers_el[-1] < 3000 or powers_el[-1] > 6000:
             powers_el.pop()
             continue
         _sum += powers_el[-1]
     # convert to thermal power by thermal-to-electrical facor
-    powers_th = [power*th_el for power in powers_el] 
+    powers_th = [power*th_el for power in powers_el]
 
     # find first building with matching heat need
     instPower_th = 0
     for power in powers_th:
-        idx, q_hln = min(enumerate(buildings_q_hln), key=lambda x: abs(x[1]*relPow-power))
+        idx, q_hln = min(enumerate(buildings_q_hln),
+                         key=lambda x: abs(x[1]*relPow-power))
         # add chp to building if difference is below threshold
         if upLim < power/q_hln < lowLim:
             cell.buildings[idx].add_dimensioned_chp(hist)
@@ -185,6 +187,7 @@ def addCHPtoCell(cell, pCHP, hist=0):
     print("corresponds to {:.2f}kW electrical generation".format(instPower_th/1000/2))
     print("electrical demand is {:.2f}kWh".format(COC*1000))
     print("5000h full load generate {:.2f}% of electrical supply".format(instPower_th/2*5000/(COC*1000000)))
+
 
 def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
     """ Add separate BSL Agent to cell
