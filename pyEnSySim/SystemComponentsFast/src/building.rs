@@ -18,6 +18,7 @@ pub struct Building {
     n_ventilation: f32,  // 1h
     #[pyo3(get)]
     is_at_dhn: bool,
+    is_self_supplied_t: bool,
     v: f32,  // m3
     #[pyo3(get)]
     q_hln: f32,  // W
@@ -116,6 +117,7 @@ impl Building {
             v: volume,
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
+            is_self_supplied_t: !is_at_dhn,
             controller: defaultController,
             pv: None,
             chp: None,
@@ -145,15 +147,16 @@ impl Building {
         match &self.pv {
             None => {self.pv = Some(pv);},
             Some(_building_pv) => print!("WARNING: Building already has a
-                                        PV plant, nothing is added"),
+                                         PV plant, nothing is added"),
         }
     }
 
     fn add_chp(&mut self, chp: chp_system::CHP_System) {
+        self.is_self_supplied_t = false;
         match &self.chp {
             None => {self.chp = Some(chp);},
             Some(_building_chp) => print!("WARNING: Building already has a
-                                        CHP plant, nothing is added"),
+                                          CHP plant, nothing is added"),
         }
     }
 
@@ -308,10 +311,10 @@ impl Building {
 
         electrical_generation += self.get_pv_generation(eg);
 
-/*         if !self.is_at_dhn {
+        if self.is_self_supplied_t {
             // Building is self-supplied
             thermal_generation = thermal_load;
-        } */
+        }
         // TODO : Storage, Controller
 
         // save data
