@@ -4,6 +4,7 @@ classdef (Abstract) AbstractBuildingManager < handle
     % eeb: electrical energy bilance
     % dhn: district heating network
     % teb: thermal energy bilance
+    % test
 
         
     properties
