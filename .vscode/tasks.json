@@ -5,7 +5,6 @@
 	"tasks": [
 		{
 			"label": "SCfast release",
-			"type": "shell",
 			"command": ".\\build_cmd\\Release.cmd",
 			"group": {
 				"kind": "build",
@@ -40,9 +39,6 @@
 		{
 			"label": "SCfast check",
 			"command": ".\\build_cmd\\ClippyCheck.cmd",
-			"args": [
-				"clean"
-			],
 			"problemMatcher": [
 				"$rustc"
 			],
