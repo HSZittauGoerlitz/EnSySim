@@ -88,6 +88,10 @@ impl Cell {
         self.n_buildings += 1;
     }
 
+    fn update_building(&mut self, building_idx: usize, building: building::Building) {
+        self.buildings[building_idx] = building;
+    }
+
     fn add_cell(&mut self, cell:Cell) {
         self.sub_cells.push(cell);
         self.n_cells += 1;

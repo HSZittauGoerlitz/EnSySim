@@ -37,7 +37,12 @@ impl Controller {
     /// With this implementation, chp is heat-operated, meaning it produces 
     /// a) if storage content is not enough to deliver enough heat
     /// b) if it ran current time step, but storage is not full yet
-    pub fn step(&mut self, building: building::Building) {
-        self.chp_state = true;
+    pub fn step(&mut self) {
+        if self.chp_state == false {
+            self.chp_state = true;
+        }
+        else {
+            self.chp_state = false;
+        }   
     }
 }

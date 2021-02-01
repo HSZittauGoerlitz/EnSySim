@@ -145,6 +145,7 @@ def addCHPtoCell(cell, pCHP, hist=0):
     lowLim = 0.45
 
     # this is maybe not the fastest way to do this, could be moved to rust
+    # get electricity consumption of cell
     buildings_q_hln = []
     COC = 0
     for building in cell.buildings:
@@ -176,15 +177,22 @@ def addCHPtoCell(cell, pCHP, hist=0):
     for power in powers_th:
         idx, q_hln = min(enumerate(buildings_q_hln),
                          key=lambda x: abs(x[1]*relPow-power))
+
         # add chp to building if difference is below threshold
         if upLim < power/q_hln < lowLim:
-            cell.buildings[idx].add_dimensioned_chp(hist)
+            # get building
+            building = cell.buildings[idx]
+            # add chp
+            building.add_dimensioned_chp(hist)
+            # write back to buildings vec
+            cell.update_building(idx, building)
+            # keep track of already installed power
             instPower_th += power
             # ToDo: What if building already has e.g. heat pump?
-            # print("for chp with thermal power {}W building with {}W heat
-            #  load was found ({})".format(power, q_hln, power/q_hln))
             lg.debug("for chp with thermal power {:.2f}W building with {:.2f}W heat"
                      "load was found ({:.2f})".format(power, q_hln, power/q_hln))
+            # prevent doubling
+            buildings_q_hln[idx] = 0
         else:
             lg.warning("for chp with thermal power {:.2f}W closest "
                             "building had {:.2f}W maximum heat load."

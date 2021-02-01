@@ -19,6 +19,7 @@ pub struct Building {
     n_ventilation: f32,  // 1h
     #[pyo3(get)]
     is_at_dhn: bool,
+    #[pyo3(get)]
     is_self_supplied_t: bool,
     v: f32,  // m3
     #[pyo3(get)]
@@ -318,6 +319,7 @@ impl Building {
             thermal_generation = thermal_load;
         }
         // TODO : Storage, Controller
+        self.controller.step();
 
         // save data
         save_e!(self, electrical_generation, electrical_load);
