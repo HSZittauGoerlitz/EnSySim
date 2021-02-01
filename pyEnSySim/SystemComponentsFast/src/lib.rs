@@ -1,6 +1,8 @@
 // external
+use log::{debug, info, warn};
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
+use pyo3_log::{Caching, Logger};
 use numpy::PyReadonlyArrayDyn;
 // local
 #[macro_use]
@@ -21,12 +23,16 @@ mod hist_memory;
 
 #[pymodule]
 #[allow(non_snake_case)] // for python binding
-fn SystemComponentsFast(_py: Python, m: &PyModule) -> PyResult<()> {
+fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    
+    pyo3_log::init();
+
     m.add_class::<agent::Agent>()?;
     m.add_class::<building::Building>()?;
     m.add_class::<cell::Cell>()?;
     m.add_class::<sep_bsl_agent::SepBSLagent>()?;
     m.add_class::<pv::PV>()?;
+    m.add_class::<chp_system::CHP_System>()?;
     m.add_function(wrap_pyfunction!(simulate, m)?).unwrap();
     Ok(())
 

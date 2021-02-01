@@ -1,5 +1,6 @@
 // external
 use pyo3::prelude::*;
+use log::{debug, info, warn};
 
 use crate::{agent, controller, pv, chp_system, hist_memory, save_e, save_t};
 
@@ -146,7 +147,7 @@ impl Building {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(_building_pv) => print!("WARNING: Building already has a
+            Some(_building_pv) => warn!("Building already has a
                                          PV plant, nothing is added"),
         }
     }
@@ -155,7 +156,7 @@ impl Building {
         self.is_self_supplied_t = false;
         match &self.chp {
             None => {self.chp = Some(chp);},
-            Some(_building_chp) => print!("WARNING: Building already has a
+            Some(_building_chp) => warn!("Building already has a
                                           CHP plant, nothing is added"),
         }
     }

@@ -8,6 +8,7 @@ import pandas as pd
 import logging as lg
 from SystemComponentsFast import Agent, Building, Cell, SepBSLagent
 
+lg.basicConfig(level=lg.DEBUG)
 
 def _addAgents(building, pAgent, pPHH, pAgriculture):
     """ Add agents to building
@@ -182,12 +183,14 @@ def addCHPtoCell(cell, pCHP, hist=0):
             # ToDo: What if building already has e.g. heat pump?
             # print("for chp with thermal power {}W building with {}W heat
             #  load was found ({})".format(power, q_hln, power/q_hln))
+            lg.debug("for chp with thermal power {:.2f}W building with {:.2f}W heat"
+                     "load was found ({:.2f})".format(power, q_hln, power/q_hln))
         else:
             lg.warning("for chp with thermal power {:.2f}W closest "
                             "building had {:.2f}W maximum heat load."
                             "chp was dismissed, because pCHP for building "
                             "would be {:.2f}!!!"
-                            .format(power, q_hln, q_hln/power))
+                            .format(power, q_hln, power/q_hln))
     lg.debug("installed {:.2f}kW thermal chp generation"
              .format(instPower_th/1000))
     lg.debug("corresponds to {:.2f}kW electrical generation"
