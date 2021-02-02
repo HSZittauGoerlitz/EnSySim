@@ -5,63 +5,67 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct CHP {
-    pow_e: f32,  // electrical power of chp plant [W]
-    pow_t: f32,  // installed power of chp plant [W]
-    state: bool,  // on/off switch for chp plant
+pub struct Heatpump {
+    //pow_e: f32,  // electrical input power of  heatpump [W]
+    pow_t: f32,  // thermalpower of heatpump [W]
+    coeffs: Vec<[f32; 6]>, // coefficants following: Thomas Kemmler und Bernd Thomas. „Simulation von Wärmepumpensystemem auf der Grundlage von Korrelationsfunktionen für die Leistungsdaten der Wärmepumpe“, 2020.
+    t_supply: f32,  // supply temperature dependent on building
+    state: bool,  // on/off switch for heatpump
 
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
-    gen_e: Option<hist_memory::HistMemory>,
+    con_e: Option<hist_memory::HistMemory>,
 }
 
 #[pymethods]
-impl CHP {
-    ///  Create CHP plant
-    ///  Parameters are power of CHP plant
+impl Heatpump {
+    ///  Create heatpump
+    ///  Parameters are nominal power of heatpump
     ///  The technical design is based on norm heating load and hot water use.
     ///
     /// # Arguments
-    /// * pow_t (f32): installed electrical chp power [W]
+    /// * pow_t (f32): installed thermal power of heatpump [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(power_t: f32, hist: usize) -> Self {
+    pub fn new(power_t: f32, t_supply: f32, hist: usize) -> Self {
 
-        // chp:
+        // heatpump:
         let pow_t = power_t;
-        let pow_e = 0.5 * pow_t;
+        let t_supply = t_supply;
+        let coeffs = [1., -0.002, 0.03, -0.0002, 0., 0.] //ToDo: read from file, dependent on t_out, power_t
 
         let state = false;
 
-        let gen_e;
+        let con_e;
         let gen_t;
 
         if hist > 0 {
-            gen_e = Some(hist_memory::HistMemory::new(hist));
+            con_e = Some(hist_memory::HistMemory::new(hist));
             gen_t = Some(hist_memory::HistMemory::new(hist));
         } else {
-            gen_e = None;
+            con_e = None;
             gen_t = None;
         }
 
-        let chp = CHP {pow_e: pow_e,
-                     pow_t: pow_t,
+        let heatpump = Heatpump {pow_t: pow_t,
+                     coeffs: coeffs,
+                     t_supply: t_supply,
                      state: state,
-                     gen_e: gen_e,
+                     con_e: con_e,
                      gen_t: gen_t,
                     };
-        chp
+        heatpump
     }
 }
 
-/// CHP plant
-impl CHP {
+/// Heatpump
+impl Heatpump {
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.gen_e {
             None => {},
-            Some(gen_e) => {
-                gen_e.save(*pow_e)
+            Some(con_e) => {
+                con_e.save(*pow_e)
             },
         }
         match &mut self.gen_t {
@@ -78,17 +82,19 @@ impl CHP {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool) -> (f32, f32) {
+    pub fn step(&mut self, state: &bool, t_out: &f32) -> (f32, f32) {
 
         // update state
         self.state = *state;
 
         // calculate power output
-        let pow_t;
-        let pow_e;
+        let gen_t;
+        let con_e;
+        let cop;
         if self.state {
-            pow_t = self.pow_t;
-            pow_e = self.pow_e;
+            gen_t = self.pow_t * (self.coeff[0] + self.coeff[1]*self.t_supply + self.coeff[2]*t_out + self.coeff[3]*self.t_supply*t_out + self.coeff[4]*self.t_supply**2 + self.coeff[5]*t_out**2);
+            con_e = (self.coeff[0] + self.coeff[1]*self.t_supply + self.coeff[2]*t_out + self.coeff[3]*self.t_supply*t_out);
+            cop = (self.coeff[0] + self.coeff[1]*self.t_supply + self.coeff[2]*t_out + self.coeff[3]*self.t_supply*t_out + self.coeff[4]*self.t_supply**2 + self.coeff[5]*t_out**2)
         }
         else {
             pow_t = 0.0;
@@ -96,8 +102,8 @@ impl CHP {
         }
 
         // save and return data
-        self.save_hist(&pow_e, &pow_t);
+        self.save_hist(&con_e, &gen_t);
 
-        return (pow_e, pow_t);
+        return (-con_e, gen_t);
     }
 }
