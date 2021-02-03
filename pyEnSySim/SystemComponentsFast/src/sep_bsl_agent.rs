@@ -1,5 +1,6 @@
 // external
 use pyo3::prelude::*;
+use log::{debug, info, warn};
 use rand::Rng;
 use rand_distr::{Distribution, FisherF, Gamma};
 
@@ -68,7 +69,7 @@ impl SepBSLagent {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(_sep_bsl_pv) => print!("WARNING: Separate BSL agent already
+            Some(_sep_bsl_pv) => warn!("Separate BSL agent already
                                          has a PV plant, nothing is added"),
         }
     }
@@ -87,7 +88,7 @@ impl SepBSLagent {
                                                 self.demand_apv, hist)
                                     );
                      },
-            Some(_sep_bsl_pv) => print!("WARNING: Separate BSL agent already
+            Some(_sep_bsl_pv) => warn!("Separate BSL agent already
                                          has a PV plant, nothing is added"),
         }
     }

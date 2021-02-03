@@ -1,5 +1,6 @@
 // external
 use pyo3::prelude::*;
+use log::{debug, info, warn};
 
 use crate::{building, pv, sep_bsl_agent, hist_memory, save_e, save_t};
 
@@ -100,7 +101,7 @@ impl Cell {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(_cell_pv) => print!("WARNING: Cell already has a
+            Some(_cell_pv) => warn!("Cell already has a
                                      PV plant, nothing is added"),
         }
     }

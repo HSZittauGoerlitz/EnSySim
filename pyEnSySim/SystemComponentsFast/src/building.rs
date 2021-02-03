@@ -140,7 +140,7 @@ impl Building {
             self.n_agents += 1;
         }
         else {
-            print!("WARNING: Number of max. Agents reached,
+            warn!("Number of max. Agents reached,
                    no agent is added");
         }
     }
