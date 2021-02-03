@@ -8,7 +8,8 @@ use crate::hist_memory;
 pub struct Heatpump {
     //pow_e: f32,  // electrical input power of  heatpump [W]
     pow_t: f32,  // thermalpower of heatpump [W]
-    coeffs: Vec<[f32; 6]>, // coefficants following: Thomas Kemmler und Bernd Thomas. „Simulation von Wärmepumpensystemem auf der Grundlage von Korrelationsfunktionen für die Leistungsdaten der Wärmepumpe“, 2020.
+    coeffs_Q: [f32; 6], // coefficants following: Thomas Kemmler und Bernd Thomas. „Simulation von Wärmepumpensystemem auf der Grundlage von Korrelationsfunktionen für die Leistungsdaten der Wärmepumpe“, 2020.
+    coeffs_COP: [f32; 6], // coefficants following: Thomas Kemmler und Bernd Thomas. „Simulation von Wärmepumpensystemem auf der Grundlage von Korrelationsfunktionen für die Leistungsdaten der Wärmepumpe“, 2020.
     t_supply: f32,  // supply temperature dependent on building
     state: bool,  // on/off switch for heatpump
 
@@ -33,7 +34,8 @@ impl Heatpump {
         // heatpump:
         let pow_t = power_t;
         let t_supply = t_supply;
-        let coeffs = [1., -0.002, 0.03, -0.0002, 0., 0.] //ToDo: read from file, dependent on t_out, power_t
+        let coeffs_Q = [1., -0.002, 0.03, -0.0002, 0., 0.]; //ToDo: read from file, dependent on t_out, power_t
+        let coeffs_COP = [5.4, -0.06, 0.15, -0.002, 0., 0.];//do it during step(), d,e can be ignored
 
         let state = false;
 
@@ -49,7 +51,8 @@ impl Heatpump {
         }
 
         let heatpump = Heatpump {pow_t: pow_t,
-                     coeffs: coeffs,
+                     coeffs_Q: coeffs_Q,
+                     coeffs_COP: coeffs_COP,
                      t_supply: t_supply,
                      state: state,
                      con_e: con_e,
@@ -62,7 +65,7 @@ impl Heatpump {
 /// Heatpump
 impl Heatpump {
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
-        match &mut self.gen_e {
+        match &mut self.con_e {
             None => {},
             Some(con_e) => {
                 con_e.save(*pow_e)
@@ -92,13 +95,13 @@ impl Heatpump {
         let con_e;
         let cop;
         if self.state {
-            gen_t = self.pow_t * (self.coeff[0] + self.coeff[1]*self.t_supply + self.coeff[2]*t_out + self.coeff[3]*self.t_supply*t_out + self.coeff[4]*self.t_supply**2 + self.coeff[5]*t_out**2);
-            con_e = (self.coeff[0] + self.coeff[1]*self.t_supply + self.coeff[2]*t_out + self.coeff[3]*self.t_supply*t_out);
-            cop = (self.coeff[0] + self.coeff[1]*self.t_supply + self.coeff[2]*t_out + self.coeff[3]*self.t_supply*t_out + self.coeff[4]*self.t_supply**2 + self.coeff[5]*t_out**2)
+            gen_t = self.pow_t * (self.coeffs_Q[0] + self.coeffs_Q[1]*self.t_supply + self.coeffs_Q[2]*t_out + self.coeffs_Q[3]*self.t_supply*t_out + self.coeffs_Q[4]*f32::powf(self.t_supply,2.) + self.coeffs_Q[5]*f32::powf(*t_out, 2.));
+            cop = self.coeffs_COP[0] + self.coeffs_COP[1]*self.t_supply + self.coeffs_COP[2]*t_out + self.coeffs_COP[3]*self.t_supply*t_out + self.coeffs_COP[4]*f32::powf(self.t_supply,2.) + self.coeffs_COP[5]*f32::powf(*t_out, 2.);
+            con_e = gen_t / cop;
         }
         else {
-            pow_t = 0.0;
-            pow_e = 0.0;
+            gen_t = 0.0;
+            con_e = 0.0;
         }
 
         // save and return data
