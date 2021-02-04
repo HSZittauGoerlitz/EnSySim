@@ -10,6 +10,7 @@ from SystemComponentsFast import Agent, Building, Cell, SepBSLagent
 
 lg.basicConfig(level=lg.DEBUG)
 
+
 def _addAgents(building, pAgent, pPHH, pAgriculture):
     """ Add agents to building
 
@@ -45,7 +46,7 @@ def _addAgents(building, pAgent, pPHH, pAgriculture):
 
 
 def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
-                  pAgent, pPHH, pAgriculture, pPV, hist=0):
+                  pAgent, pPHH, pAgriculture, pPV, pHP, hist=0):
     """ Add Buildings of one type to cell
 
     Args:
@@ -66,6 +67,8 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         pAgriculture (float32): Propotion of BSL agents which are
                                 agricultural
         pPV (float32): Proportion of buildings with PV plants
+        pHP (dict): Mapping of proportion factor for heatpumps
+                                   in each building class (0 to 1)
         hist (int): Size of history for power balance of buildings, pv etc.
     """
     pClass = np.array(pBuilding['Class'])
@@ -119,6 +122,10 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         # add PV to buildings
         if np.random.random() <= pPV:
             building.add_dimensioned_pv(cell.eg, hist)
+        # add heatpump to building
+        if pHP[classNames[classIdx]] > np.random.random():
+            building.add_dimenensioned_heatpump(classIdx)
+
         # add building to cell
         cell.add_building(building)
 
@@ -189,16 +196,18 @@ def addCHPtoCell(cell, pCHP, hist=0):
             # keep track of already installed power
             instPower_th += power
             # ToDo: What if building already has e.g. heat pump?
-            lg.debug("for chp with thermal power {:.2f}W building with {:.2f}W heat"
-                     "load was found ({:.2f})".format(power, q_hln, power/q_hln))
+            lg.debug("for chp with thermal power {:.2f}W building with {:.2f}W"
+                     " heat load was found ({:.2f})".format(power,
+                                                            q_hln,
+                                                            power/q_hln))
             # prevent doubling
             buildings_q_hln[idx] = 0
         else:
             lg.warning("for chp with thermal power {:.2f}W closest "
-                            "building had {:.2f}W maximum heat load."
-                            "chp was dismissed, because pCHP for building "
-                            "would be {:.2f}!!!"
-                            .format(power, q_hln, power/q_hln))
+                       "building had {:.2f}W maximum heat load."
+                       "chp was dismissed, because pCHP for building "
+                       "would be {:.2f}!!!"
+                       .format(power, q_hln, power/q_hln))
     lg.debug("installed {:.2f}kW thermal chp generation"
              .format(instPower_th/1000))
     lg.debug("corresponds to {:.2f}kW electrical generation"
@@ -321,7 +330,8 @@ def _loadBuildingData(bType):
 
 
 def generateGenericCell(nBuildings, pAgents, pPHHagents,
-                        pAgriculture, pDHN, pPVplants, pCHP, pBTypes,
+                        pAgriculture, pDHN, pPVplants,
+                        pHeatpumps, pCHP, pBTypes,
                         nSepBSLAgents, pAgricultureBSLsep,
                         region, hist=0):
     """ Create a cell of a generic energy system
@@ -363,6 +373,8 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
                      with connection to the district heating network
                      (0 to 1 each) ({string: float32})
         pPVplants (float32): Proportion of buildings with PV-Plants (0 to 1)
+        pHeatpumps (dict): Mapping of proportion factor for heatpumps
+                                   in each building class (0 to 1)
         pCHP (float32): Proportion of electricity produced by chp (0 to 1)
         pBTypes (dict): Dictionary of proportions for all reference building
                         types (0 to 1 each, Types: FSH, REH, SAH, BAH)
@@ -432,7 +444,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
         _addBuildings(cell, nBuildings[bType], pBTypes[bType], pDHN[bType],
                       Geo, U, n,
                       pAgents[bType], pPHHagents[bType], pAgriculture[bType],
-                      pPVplants, hist)
+                      pPVplants, pHeatpumps, hist)
 
     # init sep BSL agents
     addSepBSLAgents(cell, nSepBSLAgents, pAgricultureBSLsep, pPVplants, hist)

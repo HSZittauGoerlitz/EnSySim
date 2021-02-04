@@ -29,10 +29,10 @@ impl Heatpump {
     /// * pow_t (f32): installed thermal power of heatpump [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(power_t: f32, t_supply: f32, hist: usize) -> Self {
+    pub fn new(q_hln: f32, t_supply: f32, hist: usize) -> Self {
 
         // heatpump:
-        let pow_t = power_t;
+        let pow_t = q_hln;
         let t_supply = t_supply;
         let coeffs_Q = [1., -0.002, 0.03, -0.0002, 0., 0.]; //ToDo: read from file, dependent on t_out, power_t
         let coeffs_COP = [5.4, -0.06, 0.15, -0.002, 0., 0.];//do it during step(), d,e can be ignored
@@ -64,6 +64,18 @@ impl Heatpump {
 
 /// Heatpump
 impl Heatpump {
+    fn get_coeffs(&mut self, t_out: &f32) {
+        if *t_out < 7. {
+            // ToDo: get coefficants from h5 file, depending on self.pow_t and t_out
+        }
+        else if *t_out < 10. {
+
+        }
+        else {
+            
+        }
+    }
+
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.con_e {
             None => {},
@@ -94,6 +106,9 @@ impl Heatpump {
         let gen_t;
         let con_e;
         let cop;
+
+        //self.get_coeffs(&t_out); // ToDo: write function
+
         if self.state {
             gen_t = self.pow_t * (self.coeffs_Q[0] + self.coeffs_Q[1]*self.t_supply + self.coeffs_Q[2]*t_out + self.coeffs_Q[3]*self.t_supply*t_out + self.coeffs_Q[4]*f32::powf(self.t_supply,2.) + self.coeffs_Q[5]*f32::powf(*t_out, 2.));
             cop = self.coeffs_COP[0] + self.coeffs_COP[1]*self.t_supply + self.coeffs_COP[2]*t_out + self.coeffs_COP[3]*self.t_supply*t_out + self.coeffs_COP[4]*f32::powf(self.t_supply,2.) + self.coeffs_COP[5]*f32::powf(*t_out, 2.);

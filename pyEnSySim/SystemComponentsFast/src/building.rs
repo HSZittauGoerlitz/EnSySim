@@ -2,7 +2,7 @@
 use pyo3::prelude::*;
 use log::{debug, info, warn};
 
-use crate::{agent, controller, pv, chp_system, hist_memory, save_e, save_t};
+use crate::{agent, controller, pv, heatpump, chp_system, hist_memory, save_e, save_t};
 
 #[pyclass]
 #[derive(Clone)]
@@ -28,6 +28,8 @@ pub struct Building {
     controller: controller::Controller,
     #[pyo3(get)]
     pv: Option<pv::PV>,
+    #[pyo3(get)]
+    heatpump: Option<heatpump::Heatpump>,
     #[pyo3(get)]
     chp: Option<chp_system::CHP_System>,
     #[pyo3(get)]
@@ -122,6 +124,7 @@ impl Building {
             is_self_supplied_t: !is_at_dhn,
             controller: defaultController,
             pv: None,
+            heatpump: None,
             chp: None,
             gen_e: gen_e,
             gen_t: gen_t,
@@ -150,6 +153,14 @@ impl Building {
             None => {self.pv = Some(pv);},
             Some(_building_pv) => warn!("Building already has a
                                          PV plant, nothing is added"),
+        }
+    }
+
+    fn add_heatpump(&mut self, heatpump: heatpump::Heatpump) {
+        match &self.heatpump {
+            None => {self.heatpump = Some(heatpump);},
+            Some(_building_heatpump) => warn!("Building already has a
+                                         heatpump, nothing is added"),
         }
     }
 
@@ -190,6 +201,26 @@ impl Building {
                                 sum_apv_demand,
                                 hist)
                     );
+    }
+
+    fn add_dimensioned_heatpump(&mut self, class: usize, hist: usize) {
+
+        let t_supply;
+
+        if class == 3 {
+            t_supply = 45.;
+        }
+        else if class == 4 {
+            t_supply = 35.;
+        }
+        else {
+            t_supply = 55.;
+        }
+
+        self.add_heatpump(heatpump::Heatpump::new(self.q_hln,
+                                                  t_supply,
+                                                  hist)
+                         );
     }
 
     fn add_dimensioned_chp(&mut self, hist: usize) {
