@@ -203,22 +203,13 @@ impl Building {
                     );
     }
 
-    fn add_dimensioned_heatpump(&mut self, class: usize, hist: usize) {
+    fn add_dimensioned_heatpump(&mut self, t_supply: f32, coeffs:  Vec<[Vec<[f32; 6]>;6]>, hist: usize) {
 
-        let t_supply;
 
-        if class == 3 {
-            t_supply = 45.;
-        }
-        else if class == 4 {
-            t_supply = 35.;
-        }
-        else {
-            t_supply = 55.;
-        }
 
         self.add_heatpump(heatpump::Heatpump::new(self.q_hln,
                                                   t_supply,
+                                                  coeffs,
                                                   hist)
                          );
     }

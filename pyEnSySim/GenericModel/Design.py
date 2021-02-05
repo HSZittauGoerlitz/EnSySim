@@ -123,8 +123,14 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         if np.random.random() <= pPV:
             building.add_dimensioned_pv(cell.eg, hist)
         # add heatpump to building
+        classTemperatures = {'class_1': 55,
+                             'class_2': 55,
+                             'class_3': 55,
+                             'class_4': 45,
+                             'class_5': 35}
         if pHP[classNames[classIdx]] > np.random.random():
-            building.add_dimenensioned_heatpump(classIdx)
+            t_supply = classTemperatures(classNames[classIdx])
+            building.add_dimensioned_heatpump(t_supply, coeffs, hist)
 
         # add building to cell
         cell.add_building(building)

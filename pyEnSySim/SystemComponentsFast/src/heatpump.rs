@@ -29,7 +29,7 @@ impl Heatpump {
     /// * pow_t (f32): installed thermal power of heatpump [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, t_supply: f32, hist: usize) -> Self {
+    pub fn new(q_hln: f32, t_supply: f32, coeffs: Vec<[Vec<[f32; 6]>;6]>, hist: usize) -> Self {
 
         // heatpump:
         let pow_t = q_hln;
