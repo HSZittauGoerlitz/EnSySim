@@ -7,9 +7,12 @@ use crate::hist_memory;
 #[derive(Clone)]
 pub struct Heatpump {
     //pow_e: f32,  // electrical input power of  heatpump [W]
+    #[pyo3(get)]
     pow_t: f32,  // thermalpower of heatpump [W]
-    coeffs_Q: [f32; 6], // coefficants following: Thomas Kemmler und Bernd Thomas. „Simulation von Wärmepumpensystemem auf der Grundlage von Korrelationsfunktionen für die Leistungsdaten der Wärmepumpe“, 2020.
-    coeffs_COP: [f32; 6], // coefficants following: Thomas Kemmler und Bernd Thomas. „Simulation von Wärmepumpensystemem auf der Grundlage von Korrelationsfunktionen für die Leistungsdaten der Wärmepumpe“, 2020.
+    #[pyo3(get)]
+    coeffs_Q: Vec<[f32; 6]>, // coefficients for Q correlation (outside temperature)
+    #[pyo3(get)]
+    coeffs_COP: Vec<[f32; 6]>, // coefficients for COP correlation
     t_supply: f32,  // supply temperature dependent on building
     state: bool,  // on/off switch for heatpump
 
@@ -29,13 +32,13 @@ impl Heatpump {
     /// * pow_t (f32): installed thermal power of heatpump [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, t_supply: f32, coeffs: Vec<[Vec<[f32; 6]>;6]>, hist: usize) -> Self {
+    pub fn new(q_hln: f32, t_supply: f32, coeffs_Q: Vec<[f32; 6]>, coeffs_COP: Vec<[f32; 6]>, hist: usize) -> Self {
 
         // heatpump:
         let pow_t = q_hln;
         let t_supply = t_supply;
-        let coeffs_Q = [1., -0.002, 0.03, -0.0002, 0., 0.]; //ToDo: read from file, dependent on t_out, power_t
-        let coeffs_COP = [5.4, -0.06, 0.15, -0.002, 0., 0.];//do it during step(), d,e can be ignored
+        let coeffs_Q = coeffs_Q;
+        let coeffs_COP = coeffs_COP;
 
         let state = false;
 
@@ -64,16 +67,24 @@ impl Heatpump {
 
 /// Heatpump
 impl Heatpump {
-    fn get_coeffs(&mut self, t_out: &f32) {
+    fn get_coefficients(&mut self, t_out: &f32) -> ([f32; 6],[f32; 6]) {
+        
+        let coeffs_Q;
+        let coeffs_COP;
+
         if *t_out < 7. {
-            // ToDo: get coefficants from h5 file, depending on self.pow_t and t_out
+            coeffs_Q = self.coeffs_Q[0];
+            coeffs_COP = self.coeffs_COP[0];
         }
         else if *t_out < 10. {
-
+            coeffs_Q = self.coeffs_Q[1];
+            coeffs_COP = self.coeffs_COP[1];
         }
         else {
-            
+            coeffs_Q = self.coeffs_Q[2];
+            coeffs_COP = self.coeffs_COP[2];
         }
+        return (coeffs_Q, coeffs_COP)
     }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
@@ -97,7 +108,7 @@ impl Heatpump {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool, t_out: &f32) -> (f32, f32) {
+    pub fn step(&mut self, state: &bool, thermal_load: &f32, t_out: &f32) -> (f32, f32) {
 
         // update state
         self.state = *state;
@@ -107,11 +118,14 @@ impl Heatpump {
         let con_e;
         let cop;
 
-        //self.get_coeffs(&t_out); // ToDo: write function
+        let (coeffs_Q, coeffs_COP) = self.get_coefficients(&t_out);
+        // ToDo: take modulation into account
+        // ToDo: this can be more efficient
 
         if self.state {
-            gen_t = self.pow_t * (self.coeffs_Q[0] + self.coeffs_Q[1]*self.t_supply + self.coeffs_Q[2]*t_out + self.coeffs_Q[3]*self.t_supply*t_out + self.coeffs_Q[4]*f32::powf(self.t_supply,2.) + self.coeffs_Q[5]*f32::powf(*t_out, 2.));
-            cop = self.coeffs_COP[0] + self.coeffs_COP[1]*self.t_supply + self.coeffs_COP[2]*t_out + self.coeffs_COP[3]*self.t_supply*t_out + self.coeffs_COP[4]*f32::powf(self.t_supply,2.) + self.coeffs_COP[5]*f32::powf(*t_out, 2.);
+            gen_t = *thermal_load;
+            // self.pow_t * (coeffs_Q[0] + coeffs_Q[1]*self.t_supply + coeffs_Q[2]*t_out + coeffs_Q[3]*self.t_supply*t_out + coeffs_Q[4]*f32::powf(self.t_supply,2.) + coeffs_Q[5]*f32::powf(*t_out, 2.));
+            cop = coeffs_COP[0] + coeffs_COP[1]*self.t_supply + coeffs_COP[2]*t_out + coeffs_COP[3]*self.t_supply*t_out + coeffs_COP[4]*f32::powf(self.t_supply,2.) + coeffs_COP[5]*f32::powf(*t_out, 2.);
             con_e = gen_t / cop;
         }
         else {
@@ -122,6 +136,6 @@ impl Heatpump {
         // save and return data
         self.save_hist(&con_e, &gen_t);
 
-        return (-con_e, gen_t);
+        return (con_e, gen_t);
     }
 }
