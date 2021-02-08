@@ -1,8 +1,6 @@
 // external
-use log::{debug, info, warn};
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
-use pyo3_log::{Caching, Logger};
 use numpy::PyReadonlyArrayDyn;
 // local
 #[macro_use]

@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{debug, info, warn};
+use log::{warn};
 use rand::Rng;
 use rand_distr::{Distribution, FisherF, Gamma};
 
