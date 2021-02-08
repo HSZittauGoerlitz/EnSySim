@@ -203,13 +203,14 @@ impl Building {
                     );
     }
 
-    fn add_dimensioned_heatpump(&mut self, t_supply: f32, coeffs:  Vec<[Vec<[f32; 6]>;6]>, hist: usize) {
+    fn add_dimensioned_heatpump(&mut self, t_supply: f32, coeffs_Q: Vec<[f32; 6]>, coeffs_COP: Vec<[f32; 6]>, hist: usize) {
 
 
 
         self.add_heatpump(heatpump::Heatpump::new(self.q_hln,
                                                   t_supply,
-                                                  coeffs,
+                                                  coeffs_Q, 
+                                                  coeffs_COP,
                                                   hist)
                          );
     }
@@ -264,8 +265,19 @@ impl Building {
         match &mut self.chp {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(&self.controller.get_chp_state(),
+                building_chp.step(&self.controller.chp_state,
                                   &thermal_load)
+            },
+        }
+    }
+
+    fn get_heatpump_generation(&mut self, thermal_load: &f32, t_out: &f32) -> (f32, f32) {
+        match &mut self.heatpump {
+            None => (0., 0.),
+            Some(building_heatpump) => {
+                building_heatpump.step(&self.controller.heatpump_state,
+                                  &thermal_load,
+                                  &t_out)
             },
         }
     }
@@ -335,6 +347,10 @@ impl Building {
         thermal_generation += sub_gen_t;
         // pv
         electrical_generation += self.get_pv_generation(eg);
+        // heatpumps
+        let(sub_load_e, sub_gen_t) = self.get_heatpump_generation(&thermal_load, &t_out);
+        electrical_load += sub_load_e;
+        thermal_generation += sub_gen_t;
 
         if self.is_self_supplied_t {
             // Building is self-supplied
