@@ -5,7 +5,9 @@ use pyo3::prelude::*;
 #[derive(Clone)]
 pub struct Controller {
     #[pyo3(get)]
-    chp_state: bool,
+    pub chp_state: bool,
+    #[pyo3(get)]
+    pub heatpump_state: bool,
 }
 
 #[pymethods]
@@ -16,9 +18,11 @@ impl Controller {
     pub fn new() -> Self {
 
         let chp_state = false;
+        let heatpump_state = true;
 
 
         let controller = Controller {chp_state: chp_state,
+                                     heatpump_state: heatpump_state
                     };
         controller
     }
@@ -26,10 +30,6 @@ impl Controller {
 
 /// Controller
 impl Controller {
-
-    pub fn get_chp_state(&mut self) -> bool {
-        return self.chp_state
-    }
 
     /// Decide for chp state for next time step
     /// With this implementation, chp is heat-operated, meaning it produces 
