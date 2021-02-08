@@ -51,16 +51,16 @@ impl Building {
     /// * nMaxAgents (u32): Number of max. possible agents
     ///                     living in this building
     /// * areas_uv: (Vec<[f32; 2]>): All building areas [m^2]
-    ///                             and corresponding
-    ///                             U-Values [W/(m^2 K)]
-    ///                             needed for norm heat load calculation
+    ///                              and corresponding
+    ///                              U-Values [W/(m^2 K)]
+    ///                              needed for norm heat load calculation
     /// * delta_u (f32): Offset for U-Value correction [W/(m^2 K)]
     ///                  (see calculateNormHeatLoad for details)
     /// * n_infiltration (f32): Air infiltration rate of building [^/h]
     /// * n_ventilation (f32): Air infiltration rate due ventilation [^/h]
     /// * v (f2): Inner building Volume [m^3]
     ///           (This Value is used for calculation
-    ///            of air renewal losses)
+    ///           of air renewal losses)
     /// * is_at_dhn (bool): If true building is connected to the
     ///                     district heating network
     /// * t_out_n (f32): Normed outside temperature for
