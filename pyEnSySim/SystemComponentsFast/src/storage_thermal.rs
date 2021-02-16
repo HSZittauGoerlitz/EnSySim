@@ -86,9 +86,9 @@ impl ThermalStorage {
         if self.charge > self.cap {
             self.charge = self.cap;
         }
-        // ToDo: handle empty case 
+        // handle empty case 
         if self.charge < 0. {
-            println!("storage is empty and could not supply enough heat!");
+            warn!("storage is empty and could not supply enough heat!");
             self.charge = 0.;
         }
 

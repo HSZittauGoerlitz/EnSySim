@@ -123,7 +123,6 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         if np.random.random() <= pPV:
             building.add_dimensioned_pv(cell.eg, hist)
         # add heatpump to building
-
         if pHP[classNames[classIdx]] > np.random.random():
             # choose supply temperature
             classTemperatures = {"class_1": 55,
@@ -132,14 +131,13 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
                                  "class_4": 45,
                                  "class_5": 35}
             t_supply = classTemperatures[classNames[classIdx]]
-
-            # get Q & COP coefficients
+            # get Q & COP coefficients from file
             cases = ['5to18kW', '18to35kW', '35to80kW']
             if building.q_hln < 5000 or building.q_hln > 80000:
                 lg.warning("for this building no heatpump data is available, "
                            "maximum heat load is {:.2f}W"
                            .format(building.q_hln))
-
+            # differentiate by installed power
             else:
                 if building.q_hln >= 5000 and building.q_hln < 18000:
                     case = cases[0]
@@ -152,7 +150,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
                                                    "/Thermal"
                                                    "/HeatpumpCoefficients.h5",
                                                    case)
-
+                # pack arrays
                 coeffs_Q = np.array([heatpumpCoefficients['Qth -5 < 7°C'],
                                      heatpumpCoefficients['Qth 7 - 10°C'],
                                      heatpumpCoefficients['Qth >10 - 25°C']])
