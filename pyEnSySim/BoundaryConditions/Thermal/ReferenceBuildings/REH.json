@@ -1,0 +1,121 @@
+{
+  "Geometry": {
+    "Aliving": 120,
+    "Awall": 106.2,
+    "Awindow": 21.7,
+    "Adoor": 2.1,
+    "Abasement": 85.5,
+    "Aroof": 100,
+    "V": 517,
+    "nUnits": 1
+  },
+  "Uvalues": {
+    "class_1": {
+      "original": {
+        "Roof": 0.78,
+        "Wall": 1.39,
+        "Window": 2.8,
+        "Basement": 1.6,
+        "Door": 3.5,
+        "Delta": 0.1
+      },
+      "modernised": {
+        "Roof": 0.32,
+        "Wall": 0.46,
+        "Window": 2.8,
+        "Basement": 0.51,
+        "Door": 2,
+        "Delta": 0.05
+      }
+    },
+    "class_2": {
+      "original": {
+        "Roof": 1.23,
+        "Wall": 1.44,
+        "Window": 2.57,
+        "Basement": 0.97,
+        "Door": 3.5,
+        "Delta": 0.1
+      },
+      "modernised": {
+        "Roof": 0.32,
+        "Wall": 0.46,
+        "Window": 2.57,
+        "Basement": 0.51,
+        "Door": 2,
+        "Delta": 0.05
+      }
+    },
+    "class_3": {
+      "original": {
+        "Roof": 0.3,
+        "Wall": 0.77,
+        "Window": 2.57,
+        "Basement": 0.55,
+        "Door": 3.5,
+        "Delta": 0.1
+      },
+      "modernised": {
+        "Roof": 0.27,
+        "Wall": 0.37,
+        "Window": 2.57,
+        "Basement": 0.41,
+        "Door": 2,
+        "Delta": 0.05
+      }
+    },
+    "class_4": {
+      "original": {
+        "Roof": 0.14,
+        "Wall": 0.24,
+        "Window": 1.6,
+        "Basement": 0.29,
+        "Door": 2,
+        "Delta": 0.05
+      },
+      "modernised": {
+        "Roof": 0.14,
+        "Wall": 0.24,
+        "Window": 1.6,
+        "Basement": 0.29,
+        "Door": 1.5,
+        "Delta": 0.05
+      }
+    },
+    "class_5": {
+      "original": {
+        "Roof": 0.2,
+        "Wall": 0.28,
+        "Window": 1.36,
+        "Basement": 0.35,
+        "Door": 1.5,
+        "Delta": 0.05
+      },
+      "modernised": {
+        "Roof": 0.12,
+        "Wall": 0.13,
+        "Window": 0.88,
+        "Basement": 0.17,
+        "Door": 1.5,
+        "Delta": 0.05
+      }
+    }
+  },
+  "n": {
+    "original": {
+      "Infiltration": 0.59,
+      "VentilationMech": 0,
+      "VentilationFree": 0
+    },
+    "modernised": {
+      "Infiltration": 0.15,
+      "VentilationMech": 0.25,
+      "VentilationFree": 0.13
+    },
+    "new": {
+      "Infiltration": 0.05,
+      "VentilationMech": 0.35,
+      "VentilationFree": 0.18
+    }
+  }
+}

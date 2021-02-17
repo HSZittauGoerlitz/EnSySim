@@ -1,3 +1,10 @@
 *.asv
 *.pyc
- */__pycache__
+*.pyd
+*/__pycache__
+.vscode/.ropeproject/config.py
+**/target
+.vscode/*
+
+pyEnSySim/SystemComponentsFast/build_cmd/
+!pyEnSySim/SystemComponentsFast/build_cmd/*Example*
