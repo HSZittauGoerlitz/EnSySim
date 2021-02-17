@@ -12,16 +12,23 @@ classdef CellManager < handle
     properties
         % buildings and agents
         % -------------------------
-        
+
         SUBs % List of single user building manager
         MUBs % List of multi user building manager
         BSLsepAgents % List of manager for seperate BSL agents
-        
-        % resulting balance
-        % -----------------
-        
-        currentEnergyBalance_e % Resulting eeb in current time step [Wh]
-        currentEnergyBalance_t % Resulting teb in current time step [Wh]
+
+        % Bilance
+        %--------
+        % resulting Energy load bilance at given time step
+
+        currentEnergyBalance_e  % Resulting eeb in current time step [Wh]
+        currentEnergyBalance_t  % Resulting teb in current time step [Wh]
+
+        % Generation
+        %-----------
+
+        Generation_e  % resulting electrical generation for each cell [W]
+        Generation_t  % resulting thermal generation for each cell [W]
     end
 
     methods
@@ -36,16 +43,18 @@ classdef CellManager < handle
             self.MUBs = MUB;
             self.BSLsepAgents = BSLsepAgents;
         end
-        
+
         function self = update(self, timeIdx, Eg, Tout)
             % reset energy balances
+            self.Generation_e = 0;
+            self.Generation_t = 0;
             self.currentEnergyBalance_e = 0;
             self.currentEnergyBalance_t = 0;
-            % go threw single user buildings
+            % go through single user buildings
             for sub = self.SUBs
                sub.update(timeIdx, Eg, Tout);
                self.currentEnergyBalance_e = self.currentEnergyBalance_e + ...
-                                             sub.currentEnergyBalance_e; 
+                                             sub.currentEnergyBalance_e;
                self.currentEnergyBalance_t = self.currentEnergyBalance_t + ...
                                              sub.currentEnergyBalance_t;
             end
@@ -53,23 +62,23 @@ classdef CellManager < handle
             for mub = self.MUBs
                mub.update(timeIdx, Eg, Tout);
                self.currentEnergyBalance_e = self.currentEnergyBalance_e + ...
-                                             mub.currentEnergyBalance_e; 
+                                             mub.currentEnergyBalance_e;
                self.currentEnergyBalance_t = self.currentEnergyBalance_t + ...
                                              mub.currentEnergyBalance_t;
             end
-            % go threw seperate BSL agents
+            % go through seperate BSL agents
             for BSLsep = self.BSLsepAgents
                BSLsep.update(timeIdx, Eg);
                self.currentEnergyBalance_e = self.currentEnergyBalance_e + ...
-                                             BSLsep.currentEnergyBalance_e; 
+                                             BSLsep.currentEnergyBalance_e;
             end
         end
     end
-    
+
     methods(Static)
         function Cell = initDefaultCell(time, nBAgents, nBSLsepAgents, ...
                                         nBuildings, pPHHagents, pAgriculture, ...
-                                        pThermal, pPVplants, pBTypes, ...
+                                        pThermal, pCHPplants, pPVplants, pBTypes, ...
                                         normSLP, Eg, ToutN, refBuildingData, ...
                                         HotWaterProfilePHH, ...
                                         BSL_COC, PHH_COC, ...
@@ -101,7 +110,9 @@ classdef CellManager < handle
             %   pThermal - Proportions of buildings with connection to the
             %              district heating network (0 to 1 each)
             %              [Free Standing, Row End, Small, Big Multi User]
-            %   pPVplants - Proportion of buildings with PV-Plants (0 to 1)
+            %   pCHPplants - Portion of buildings with combined heat and
+            %                power generation plants (0 to 1 each)
+            %   pPVplants - Propotion of buildings with PV-Plants (0 to 1)
             %   pBTypes - Structure of proportions for all reference building
             %             types (0 to 1 each, Types: FSH, REH, SAH, BAH)
             %               . Class for age classes
@@ -137,13 +148,13 @@ classdef CellManager < handle
             if pAgriculture < 0 || pAgriculture > 1
                error("pAgriculture must be a number between 0 and 1");
             end
-            
+
             if length(pPHHagents) == 1
-                pPHHagents = ones(1, 4) * pPHHagents; 
+                pPHHagents = ones(1, 4) * pPHHagents;
             elseif length(pPHHagents) ~= 4
                 error("Length of pPHHagents must be 1 or 4");
             end
-            
+
             % free standing houses %
             %----------------------%
             PHHfree = AgentManager(time, round(nBAgents(1)*pPHHagents(1)), ...
@@ -161,7 +172,7 @@ classdef CellManager < handle
                                     BSL_COC.function, BSL_COC.min, ...
                                     BSL_COC.scale, normSLP.G0, ...
                                     HotWaterProfilePHH);
-            FSH = SUBmanager(nBuildings(1), pThermal(1), pPVplants, Eg, ...
+            FSH = SUBmanager(nBuildings(1), pThermal(1), pCHPplants(1), pPVplants, Eg, ...
                              PHH_PV_APDdist, BSL_PV_APDdist, ...
                              pBTypes.FSH.Class, pBTypes.FSH.Modern, ...
                              pBTypes.FSH.AirMech, ...
@@ -184,7 +195,7 @@ classdef CellManager < handle
                                  BSL_COC.function, BSL_COC.min, ...
                                  BSL_COC.scale, normSLP.G0, ...
                                  HotWaterProfilePHH);
-           REH = SUBmanager(nBuildings(2), pThermal(2), pPVplants, Eg, ...
+           REH = SUBmanager(nBuildings(2), pThermal(2), pCHPplants(2), pPVplants, Eg, ...
                             PHH_PV_APDdist, BSL_PV_APDdist, ...
                             pBTypes.REH.Class, pBTypes.REH.Modern, ...
                             pBTypes.REH.AirMech, ...
@@ -201,7 +212,7 @@ classdef CellManager < handle
                                   BSL_COC.function, BSL_COC.min, ...
                                   BSL_COC.scale, normSLP.G0, ...
                                   HotWaterProfilePHH);
-           SAH = MUBmanager(nBuildings(3), 6, pThermal(3), pPVplants, Eg, ...
+           SAH = MUBmanager(nBuildings(3), 6, pThermal(3), pCHPplants(3), pPVplants, Eg, ...
                             BSL_PV_APDdist, ...
                             pBTypes.SAH.Class, pBTypes.SAH.Modern, ...
                             pBTypes.SAH.AirMech, ...
@@ -218,12 +229,12 @@ classdef CellManager < handle
                                   BSL_COC.function, BSL_COC.min, ...
                                   BSL_COC.scale, normSLP.G0, ...
                                   HotWaterProfilePHH);
-           BAH = MUBmanager(nBuildings(4), 48, pThermal(4), pPVplants, Eg, ...
+           BAH = MUBmanager(nBuildings(4), 48, pThermal(4), pCHPplants(4), pPVplants, Eg, ...
                             BSL_PV_APDdist, ...
                             pBTypes.BAH.Class, pBTypes.BAH.Modern, ...
                             pBTypes.BAH.AirMech, ...
                             refBuildingData.BAH, ToutN, ...
-                            PHHbah, BSLcBAH);                            
+                            PHHbah, BSLcBAH);
            % seperate BSL agents %
            %---------------------%
            BSLsepA = BSLseperateManager(time, round(nBSLsepAgents * ...
@@ -236,7 +247,7 @@ classdef CellManager < handle
                                         BSL_COC.function, BSL_COC.min, ...
                                         BSL_COC.scale, normSLP.G0, ...
                                         pPVplants, Eg, BSL_PV_APDdist);
-                                    
+
             % init cell
             Cell = CellManager([FSH, REH], [SAH, BAH], [BSLsepA, BSLsepC]);
         end

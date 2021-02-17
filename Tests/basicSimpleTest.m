@@ -5,10 +5,10 @@ endTime = datetime("31.12.2020 23:45:00");
 load BoundaryConditions.mat
 
 % agents [Free Standing, Row End, Small, Big Multi User]
-nBAgents = [500, 1000, 4000, 4500]; %agents per building class
+nBAgents = [10, 0, 0, 0]; %agents per building class
 nBSLsepAgents = 1000;
-nBuildings = [505, 1010, 680, 100]; %number of buildings
-pPHHagents = [0.8, 0.8, 0.6, 0.9]; % private household proportion per building type
+nBuildings = [10, 0, 0, 0]; %number of buildings
+pPHHagents = [1, 0, 0, 0];
 pAgriculture = 0.2;
 % agents - COC
 BSL_COC.function = BSL_COC_distribution;
@@ -18,16 +18,16 @@ PHH_COC.function = PHH_COC_distribution;
 PHH_COC.min = 1;
 PHH_COC.scale = 5;
 % district heating, CHP and PV
-pThermal = [0.07, 0.07, 0.14, 0.14]; % percentage from all with district heating
-pCHPplants = [0.5, 0.5, 0, 0]; % percentage from not with district heating with CHP
-pPVplants = 0.4;
+pThermal = [0.0, 0.07, 0.14, 0.14]; % percentage from all with district heating
+pCHPplants = [1, 0, 0, 0]; % percentage from not with district heating with CHP
+pPVplants = 0;
 % buildings
 FSH.Class = [0.2587, 0.383, 0.1767, 0.1816, 0.0];
 FSH.Modern = [0.4704, 0.4712, 0.2897, 0.0485, 0.0];
 FSH.AirMech = [0.02, 0.05, 0.05, 0.1, 0.0];
 REH.Class = [0.2409, 0.3788, 0.2032, 0.1771, 0.0];
 REH.Modern = [0.4758, 0.4712, 0.2928, 0.0492, 0.0];
-REH.AirMech = [0.02, 0.05, 0.05, 0.1, 0.0];
+REH.AirMech = [0.02, 0.05, 0.05, 0.1, 0.0];   
 SAH.Class = [0.2589, 0.4371, 0.1443, 0.1597, 0.0];
 SAH.Modern = [0.4797, 0.4815, 0.3798, 0.1363, 0.0];
 SAH.AirMech = [0.02, 0.05, 0.05, 0.1, 0.0];
@@ -86,15 +86,15 @@ for t = time
     Generation_e(idx) = (sum(horzcat(TestCell.SUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.MUBs.Generation_e)) + ...
                          sum(horzcat(TestCell.BSLsepAgents.Generation_e))) * 0.25;
-
+    
     Balance_t(idx) = TestCell.currentEnergyBalance_t;
     Load_t(idx) = (sum(horzcat(TestCell.SUBs.Load_t)) + ...
                    sum(horzcat(TestCell.MUBs.Load_t)) ) * 0.25;
     Generation_t(idx) = (sum(horzcat(TestCell.SUBs.Generation_t)) + ...
-                         sum(horzcat(TestCell.MUBs.Generation_t))) * 0.25;
-
-
-
+                         sum(horzcat(TestCell.MUBs.Generation_t))) * 0.25;          
+                     
+                     
+                     
     temp = horzcat(TestCell.SUBs.maskWasOn);
     CHP_state(:,idx) = temp(horzcat(TestCell.SUBs.maskCHP));
     Storage_t(:,idx) = horzcat(TestCell.SUBs.pStorage_t);
@@ -149,3 +149,19 @@ grid on
 xlabel("Time")
 ylabel("Cumulative Energy in MWh")
 linkaxes([s1 s2 s3 s4],'x');
+
+f = figure();
+nStorage = size(Storage_t);
+nStorage = nStorage(1);
+s1 = subplot(3, 1, 1);
+surface(time, 1:nStorage, Storage_t, 'EdgeColor', 'none');
+ylim([1 nStorage]);
+set(gca,'XColor', 'none')
+s2 = subplot(3, 1, 2);
+surface(time, 1:nStorage, CHP_state, 'EdgeColor', 'none');
+ylim([1 nStorage]);
+set(gca,'XColor', 'none');
+s3 = subplot(3,1,3);
+plot(time, weatherBC.T, 'Color', [0, 0, 0]);
+ 
+linkaxes([s1 s2 s3],'x');

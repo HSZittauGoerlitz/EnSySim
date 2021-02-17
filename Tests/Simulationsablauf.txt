@@ -9,7 +9,7 @@ Ablauf einer Simulation
 -> berechnet G0, L0 und PHH Lastprofile
 
 4. getWeatherBC(start, end, region)
--> gibt Einstrahlungs- und Temperaturwerte zurück
+-> gibt Einstrahlungs- und Temperaturwerte zurï¿½ck
 
 5. define all statisitic distributions
 -> agents distro
@@ -18,23 +18,23 @@ Ablauf einer Simulation
 -> COC distros
 -> district heating portions
 -> PV portion
--> building type distribution 
+-> building type distribution
 
 5. initialize CellManager
 -> create AgentManagers for free standing houses (PHHfree, BSLaFree, BSLcFree)
 	-> getCOC()
-		-> berechnet COC-Werte für nAgents
+		-> berechnet COC-Werte fï¿½r nAgents
 		-> schreibt COCfactor array
-	-> berechnet LoadProfile_e = SLP * COC * (0,8 + rand(timesteps, nAgents)=0...1)   % hier werden alle Profile nur größer?!
+	-> berechnet LoadProfile_e = SLP * COC * (0,8 + rand(timesteps, nAgents) * 0,4)
 	-> schreibt LoadProfile_e
 	-> GetHotWaterDemand()
 		-> berechnet LoadProfile_t = (684.7 * self.COCfactor + 314.4) * 1e3 / 8760 .* (0.8 + rand(length(time), self.nAgents) * 0.4) .* HotWaterProfile(time.Hour+1)   % COCfactor[1,nAgents]*random[time,nAgents]*[24,1]
 -> create SUBmanager
 	- intialize abstract class
 		-> choose PV buildings (PVmask)
-		-> calculate PV area APV = (rand(1, self.nPV) * 0.4 + 0.8) * 1e3 / Eg
+		-> calculate PV area APV = (0,8 + rand(1, self.nPV) * 0.4) * 1e3 / Eg
 	- get thermal load: for classIdx = 1:length(fieldnames(refData.Uvalues)) ???
-	
+
 	- map agents to buildings: get masks with length nBuildings (only FSH)
 	- calculate APV array ??? versteh die Syntax einfach nicht
 
@@ -55,5 +55,5 @@ MUB ... multi user building
 
 
 
-ToutN = -13,8°C ???
-% Häuser bleiben leer?
+ToutN = -13,8ï¿½C ???
+% Hï¿½user bleiben leer?
