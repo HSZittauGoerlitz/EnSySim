@@ -1,6 +1,7 @@
 // external
 use pyo3::prelude::*;
 use rand::prelude::*;
+use log::{warn};
 
 use crate::hist_memory;
 
