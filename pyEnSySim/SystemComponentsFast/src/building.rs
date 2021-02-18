@@ -157,9 +157,9 @@ impl Building {
     }
 
     fn add_heatpump(&mut self, heatpump: heatpump::Heatpump) {
-        /// building can have either chp or heatpump
+        // building can have either chp or heatpump
         match &self.chp {
-            /// for now only one heatpump per building is allowed
+            // for now only one heatpump per building is allowed
             None => {match &self.heatpump {
                     None => {self.heatpump = Some(heatpump);},
                     Some(_building_heatpump) => warn!("Building already has a
