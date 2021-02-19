@@ -9,6 +9,10 @@ use crate::hist_memory;
 pub struct ElectricalStorage {
     cap: f32,  // capacity of electrcal storage [J]
     charge: f32,  // charging state of storage [J] -> get_charge()
+    state: bool,  // working state of storage
+    charging_efficiency: f32,  // 0..1
+    discharging_efficiency: f32,  // 0..1
+    self_discharge: f32,  // 0..1 percent per ?
     #[pyo3(get)]
     charge_e: Option<hist_memory::HistMemory>,
 }
@@ -30,6 +34,11 @@ impl ElectricalStorage {
         let mut rng = rand::thread_rng();
         let charge = rng.gen::<f32>() * cap;
 
+        let state = false;
+        let charging_efficiency = 1.;
+        let discharging_efficiency = 1.;
+        let self_discharge = 0.;
+
         // history
         let charge_e;
 
@@ -41,6 +50,10 @@ impl ElectricalStorage {
 
         let electrical_storage = ElectricalStorage {cap: cap,
                      charge: charge,
+                     state: state,
+                     charging_efficiency: charging_efficiency,
+                     discharging_efficiency: discharging_efficiency,
+                     self_discharge: self_discharge,
                      charge_e: charge_e,
                     };
         electrical_storage
