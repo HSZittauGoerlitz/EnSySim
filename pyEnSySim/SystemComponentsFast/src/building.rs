@@ -18,6 +18,7 @@ pub struct Building {
     n_infiltration: f32,  // 1h
     n_ventilation: f32,  // 1h
     res_u_trans: f32,  // resulting heat transmission coefficient W/K
+    cp_eff: f32,  // effective heat storage coefficient Wh/K
     temperature: f32, // estimation of mean building temperature degC
     #[pyo3(get)]
     is_at_dhn: bool,
@@ -58,11 +59,12 @@ impl Building {
     ///                              needed for norm heat load calculation
     /// * delta_u (f32): Offset for U-Value correction [W/(m^2 K)]
     ///                  (see calculateNormHeatLoad for details)
-    /// * n_infiltration (f32): Air infiltration rate of building [^/h]
-    /// * n_ventilation (f32): Air infiltration rate due ventilation [^/h]
-    /// * v (f2): Inner building Volume [m^3]
-    ///           (This Value is used for calculation
-    ///           of air renewal losses)
+    /// * n_infiltration (f32): Air infiltration rate of building [1/h]
+    /// * n_ventilation (f32): Air infiltration rate due ventilation [1/h]
+    /// * cp_eff (f32): Effective heat storage coefficient of building [Wh/K]
+    /// * volume (f32): Inner building Volume [m^3]
+    ///                 (This Value is used for calculation
+    ///                 of air renewal losses)
     /// * is_at_dhn (bool): If true building is connected to the
     ///                     district heating network
     /// * t_out_n (f32): Normed outside temperature for
@@ -70,7 +72,7 @@ impl Building {
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     fn new(n_max_agents: u32, areas_uv: Vec<[f32; 2]>, delta_u: f32,
-           n_infiltration: f32, n_ventilation: f32, volume: f32,
+           n_infiltration: f32, n_ventilation: f32, cp_eff: f32, volume: f32,
            is_at_dhn: bool, t_out_n: f32, hist: usize) -> Self {
         // check parameter
         if n_max_agents <= 0 {
@@ -121,6 +123,7 @@ impl Building {
             n_infiltration: n_infiltration,
             n_ventilation: n_ventilation,
             res_u_trans: 0.,
+            cp_eff: cp_eff,
             temperature:20.,
             v: volume,
             q_hln: 0.,
@@ -294,22 +297,35 @@ impl Building {
 
     /// Calculate space heating demand in W
     ///
-    /// The space heating demand is calculated in relation to outside
-    /// temperature using the buildings heat transmission coefficient. As
-    /// reference temperature the buildings temperature is used.
+    /// At first the building temperature is calculated by the following DGL:
+    ///
+    ///     cp_eff*dT/dt = Q_in - u_eff*(T-T_out)
+    ///
+    /// The space heating demand is a function of the building temperature
+    ///
+    ///     Q_out = u_eff(T-T_out)
     ///
     /// # Arguments
-    /// * t_out (f32): Current (daily mean) outside temperature [°C]
+    /// * q_in (&f32): Current thermal power delivered from heating system [W]
+    /// * t_out (&f32): Current (daily mean) outside temperature [°C]
     ///
     /// # Returns
     /// * f32: Space heating demand [W]
-    fn get_space_heating_demand(&self, t_out: &f32) -> f32 {
+    fn get_space_heating_demand(&mut self, q_in: &f32, t_out: &f32) -> f32 {
+        // TODO: variable step size
+        let quot_c_dt = self.cp_eff / 0.25;  // step size 0.25h
+
+        self.temperature = 1 / (quot_c_dt + self.u_eff) *
+                           (q_in + self.u_eff * t_out +
+                            quot_c_dt * self.temperature);
+
         return self.res_u_trans * (self.temperature - t_out);
     }
 
     pub fn q_hln(&self) -> &f32 {
         &self.q_hln
     }
+
 
     /// Calculate and return current power consumption and generation
     ///
@@ -338,24 +354,33 @@ impl Building {
             electrical_load += sub_load_e;
             thermal_load += sub_load_t;
         });
-        thermal_load += self.get_space_heating_demand(t_out);
+        // predict heat losses by temperature of last time step
+        let thermal_load_pred = thermal_load +
+                                self.res_u_trans * (self.temperature - t_out);
 
         // calculate generation
         // chp
-        let(sub_gen_e, sub_gen_t) = self.get_chp_generation(&thermal_load);
+        let(sub_gen_e, sub_gen_t) =
+            self.get_chp_generation(&thermal_load_pred);
         electrical_generation += sub_gen_e;
         thermal_generation += sub_gen_t;
         // pv
         electrical_generation += self.get_pv_generation(eg);
         // heatpumps
-        let(sub_load_e, sub_gen_t) = self.get_heatpump_generation(&thermal_load, &t_out);
+        let(sub_load_e, sub_gen_t) =
+            self.get_heatpump_generation(&thermal_load_pred, &t_out);
         electrical_load += sub_load_e;
         thermal_generation += sub_gen_t;
 
         if self.is_self_supplied_t {
             // Building is self-supplied
-            thermal_generation = thermal_load;
+            thermal_generation = thermal_load_pred;
         }
+
+        // Update building temperature and resulting thermal load
+        thermal_load += self.get_space_heating_demand(&thermal_generation,
+                                                      &t_out);
+
         // TODO : Storage, Controller
         self.controller.step();
 
