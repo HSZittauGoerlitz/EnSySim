@@ -295,26 +295,16 @@ impl Building {
     /// Calculate space heating demand in W
     ///
     /// The space heating demand is calculated in relation to outside
-    /// temperature and a building specific heating load.
-    /// Based on a linear regression model the mean daily heating power is
-    /// calculated. The space heating energy demand is determined by
-    /// multiplicating this power with 24h.
+    /// temperature using the buildings heat transmission coefficient. As
+    /// reference temperature the buildings temperature is used.
     ///
     /// # Arguments
     /// * t_out (f32): Current (daily mean) outside temperature [°C]
-    /// * t_out_n (f32): Normed outside temperature for
-    ///                   region of building [°C]
     ///
     /// # Returns
     /// * f32: Space heating demand [W]
-    fn get_space_heating_demand(&self, t_out: &f32, t_out_n: &f32) -> f32 {
-
-        if *t_out < 15. {
-            return self.q_hln * (t_out_n-t_out) / (15.-t_out_n) + self.q_hln;
-        }
-        else {
-            return 0.;
-        }
+    fn get_space_heating_demand(&self, t_out: &f32) -> f32 {
+        return self.res_u_trans * (self.temperature - t_out);
     }
 
     pub fn q_hln(&self) -> &f32 {
@@ -348,7 +338,7 @@ impl Building {
             electrical_load += sub_load_e;
             thermal_load += sub_load_t;
         });
-        thermal_load += self.get_space_heating_demand(t_out, t_out_n);
+        thermal_load += self.get_space_heating_demand(t_out);
 
         // calculate generation
         // chp
