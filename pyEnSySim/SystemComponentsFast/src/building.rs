@@ -13,10 +13,12 @@ pub struct Building {
     n_max_agents: u32,
     #[pyo3(get)]
     n_agents: u32,
-    areas_uv: Vec<[f32; 2]>,  // m2; W / (K m^)
-    delta_u: f32,  // W / (K m^)
+    areas_uv: Vec<[f32; 2]>,  // m^2; W / (K m^2)
+    delta_u: f32,  // W / (K m^2)
     n_infiltration: f32,  // 1h
     n_ventilation: f32,  // 1h
+    res_u_trans: f32,  // resulting heat transmission coefficient W/K
+    temperature: f32, // estimation of mean building temperature degC
     #[pyo3(get)]
     is_at_dhn: bool,
     #[pyo3(get)]
@@ -118,6 +120,8 @@ impl Building {
             delta_u: delta_u,
             n_infiltration: n_infiltration,
             n_ventilation: n_ventilation,
+            res_u_trans: 0.,
+            temperature:20.,
             v: volume,
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
@@ -239,23 +243,23 @@ impl Building {
     ///         o temperature matching coefficient is set to 1
     ///     - Normed air heat losses include infiltration losses
     ///
+    /// The DIN Formulas are also use to determine the resulting
+    /// heat transmission coefficient of the building.
+    ///
     /// # Arguments
     ///     t_out_n (f32): Normed outside temperature for
     ///                    region of building [°C]
     fn add_norm_heating_load(&mut self, t_out_n: &f32) {
-        // Temperature Difference
-        let d_t = 20. - t_out_n;
-        // Transmission losses
-        let mut phi_t = 0.;
+        // Calculate resulting transmission coefficient
+        // Losses of Walls, Windows, Doors, Bridges, Floor / Roof
         for a_uv in self.areas_uv.iter() {
-            phi_t += a_uv[0] * (a_uv[1] + self.delta_u);
+            self.res_u_trans += a_uv[0] * (a_uv[1] + self.delta_u);
         }
-        phi_t *= d_t;
         // Air renewal losses
-        let phi_a = self.v * (self.n_infiltration + self.n_ventilation) *
-                    0.3378 * d_t;
-
-        self.q_hln = phi_t + phi_a;
+        self.res_u_trans += = self.v * 0.3378 *
+                              (self.n_infiltration + self.n_ventilation);
+        // Calculate normed heating load
+        self.q_hln = self.res_u_trans * (20. - t_out_n);
     }
 
     fn get_pv_generation(&mut self, eg: &f32) -> f32 {
