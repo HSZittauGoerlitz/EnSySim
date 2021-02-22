@@ -96,6 +96,7 @@ for file_ in refFiles:
         Geo = pd.DataFrame(A, index=GeoIdx, columns=['Value'])
         Geo.loc[('Volume', ''), 'Value'] = V
         Geo.loc[('nUnits', ''), 'Value'] = nUnits
+        Geo.loc[('A_living', ''), 'Value'] = data['Geometry']['Aliving']
         U = pd.DataFrame(U,
                          index=pd.MultiIndex.from_tuples(CMnames),
                          columns=['UValues', 'DeltaU']).T
