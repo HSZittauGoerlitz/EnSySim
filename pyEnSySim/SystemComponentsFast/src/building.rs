@@ -2,7 +2,8 @@
 use pyo3::prelude::*;
 use log::{warn};
 
-use crate::{agent, controller, pv, heatpump, chp_system, hist_memory, save_e, save_t};
+use crate::{agent, controller, pv, heatpump, chp_system, hist_memory,
+            save_e, save_t};
 
 #[pyclass]
 #[derive(Clone)]
@@ -43,6 +44,8 @@ pub struct Building {
     load_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
     load_t: Option<hist_memory::HistMemory>,
+    #[pyo3(get)]
+    temperature_hist: Option<hist_memory::HistMemory>,
 }
 
 /// Class simulate buildings energy demand
@@ -97,18 +100,20 @@ impl Building {
             panic!("Building volume must not be negative");
         }
 
-        let (gen_e, gen_t, load_e, load_t);
+        let (gen_e, gen_t, load_e, load_t, temperature_hist);
 
         if hist > 0 {
             gen_e = Some(hist_memory::HistMemory::new(hist));
             gen_t = Some(hist_memory::HistMemory::new(hist));
             load_e = Some(hist_memory::HistMemory::new(hist));
             load_t = Some(hist_memory::HistMemory::new(hist));
+            temperature_hist = Some(hist_memory::HistMemory::new(hist));
         } else {
             gen_e = None;
             gen_t = None;
             load_e = None;
             load_t = None;
+            temperature_hist = None;
         }
 
         let defaultController = controller::Controller::new();
@@ -137,6 +142,7 @@ impl Building {
             gen_t: gen_t,
             load_e: load_e,
             load_t: load_t,
+            temperature_hist: temperature_hist,
         };
         building.add_norm_heating_load(&t_out_n);
         // all other possible components are empty
@@ -259,8 +265,8 @@ impl Building {
             self.res_u_trans += a_uv[0] * (a_uv[1] + self.delta_u);
         }
         // Air renewal losses
-        self.res_u_trans += = self.v * 0.3378 *
-                              (self.n_infiltration + self.n_ventilation);
+        self.res_u_trans += self.v * 0.3378 *
+                            (self.n_infiltration + self.n_ventilation);
         // Calculate normed heating load
         self.q_hln = self.res_u_trans * (20. - t_out_n);
     }
@@ -315,9 +321,17 @@ impl Building {
         // TODO: variable step size
         let quot_c_dt = self.cp_eff / 0.25;  // step size 0.25h
 
-        self.temperature = 1 / (quot_c_dt + self.u_eff) *
-                           (q_in + self.u_eff * t_out +
+        self.temperature = 1. / (quot_c_dt + self.res_u_trans) *
+                           (q_in + self.res_u_trans * t_out +
                             quot_c_dt * self.temperature);
+
+        // save temperature history if available
+        match &mut self.temperature_hist {
+            None => {},
+            Some(temperature_hist) => {
+                temperature_hist.save(self.temperature)
+            },
+        }
 
         return self.res_u_trans * (self.temperature - t_out);
     }
