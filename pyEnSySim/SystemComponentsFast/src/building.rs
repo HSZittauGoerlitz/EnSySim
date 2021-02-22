@@ -166,7 +166,7 @@ impl Building {
                                                 heatpump, nothing is added"),
                 };
             },
-            Some(_bulding_chp) => warn!("Building already has a chp, 
+            Some(_bulding_chp) => warn!("Building already has a chp,
                                         heatpump is not added"),
         }
     }
@@ -210,16 +210,15 @@ impl Building {
                     );
     }
 
-    fn add_dimensioned_heatpump(&mut self, t_supply: f32, coeffs_Q: Vec<[f32; 6]>, coeffs_COP: Vec<[f32; 6]>, hist: usize) {
-
-
-
+    fn add_dimensioned_heatpump(&mut self, t_supply: f32,
+                                coeffs_Q: Vec<[f32; 6]>,
+                                coeffs_COP: Vec<[f32; 6]>, hist: usize) {
         self.add_heatpump(heatpump::Heatpump::new(self.q_hln,
                                                   t_supply,
-                                                  coeffs_Q, 
+                                                  coeffs_Q,
                                                   coeffs_COP,
                                                   hist)
-                         );
+                          );
     }
 
     fn add_dimensioned_chp(&mut self, hist: usize) {
