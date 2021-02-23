@@ -1,7 +1,7 @@
 // external
 use pyo3::prelude::*;
 use rand::prelude::*;
-use log::{warn};
+use log::{debug};
 
 use crate::hist_memory;
 
@@ -87,9 +87,9 @@ impl ThermalStorage {
         if self.charge > self.cap {
             self.charge = self.cap;
         }
-        // handle empty case 
+        // handle empty case
         if self.charge < 0. {
-            warn!("storage is empty and could not supply enough heat!");
+            debug!("storage is empty and could not supply enough heat!");
             self.charge = 0.;
         }
 
