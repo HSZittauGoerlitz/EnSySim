@@ -163,3 +163,25 @@ def cellEnergyBalance(cell, time, step=0.25):
     fig.update_yaxes(title_text="Thermal Energy [MWh]", row=2, col=1)
     # show figure
     fig.show()
+
+
+def buildingTemperature(building, time, step=0.25):
+    """ Plot the temperature course for given building
+
+    Args:
+          building (Building): Building for which the temperature course
+                               should be plotted
+          time (pd series of datetime): Time
+          step (float): Time step of time data [h] (Default: 0.25h)
+    """
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=time, y=building.temperature_hist.get_memory(),
+                             line={'color': COL_CON,
+                                   'width': 1},
+                             )
+                  )
+    fig.update_layout(height=600, width=1000,
+                      title_text="Building Temperature Course")
+    fig.update_xaxes(title_text="Time")
+    fig.update_yaxes(title_text="Temperature degC")
+    fig.show()
