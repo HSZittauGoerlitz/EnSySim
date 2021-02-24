@@ -358,7 +358,9 @@ impl Building {
                 t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
-        let mut thermal_load = 0.;
+        let mut thermal_load_heat = 0.;  // space heating demand
+        let mut thermal_load_hw = 0.;  // hot water demand
+        let mut thermal_load = 0.;  // complete thermal demand
         let mut electrical_generation = 0.;
         let mut thermal_generation = 0.;
 
@@ -366,34 +368,39 @@ impl Building {
         self.agents.iter().for_each(|agent: &agent::Agent| {
             let (sub_load_e, sub_load_t) = agent.step(slp_data, hw_profile);
             electrical_load += sub_load_e;
-            thermal_load += sub_load_t;
+            thermal_load_hw += sub_load_t;
         });
         // predict heat losses by temperature of last time step
-        let thermal_load_pred = thermal_load +
-                                self.res_u_trans * (self.temperature - t_out);
+        thermal_load = thermal_load_hw +
+                       self.res_u_trans * (self.temperature - t_out);
 
         // calculate generation
         // chp
         let(sub_gen_e, sub_gen_t) =
-            self.get_chp_generation(&thermal_load_pred);
+            self.get_chp_generation(&thermal_load);
         electrical_generation += sub_gen_e;
         thermal_generation += sub_gen_t;
         // pv
         electrical_generation += self.get_pv_generation(eg);
         // heatpumps
         let(sub_load_e, sub_gen_t) =
-            self.get_heatpump_generation(&thermal_load_pred, &t_out);
+            self.get_heatpump_generation(&thermal_load, &t_out);
         electrical_load += sub_load_e;
         thermal_generation += sub_gen_t;
 
         if self.is_self_supplied_t {
             // Building is self-supplied
-            thermal_generation = thermal_load_pred;
+            thermal_generation = thermal_load;
         }
 
         // Update building temperature and resulting thermal load
-        thermal_load += self.get_space_heating_demand(&thermal_generation,
-                                                      &t_out);
+        // For space heating generation, the hot water generation must be
+        // subtracted from complete thermal generation.
+        thermal_load_heat = self.get_space_heating_demand(&(thermal_generation -
+                                                            thermal_load_hw),
+                                                          &t_out);
+        // Update complete thermal demand by correct space heating demand
+        thermal_load = thermal_load_heat + thermal_load_hw;
 
         // TODO : Storage, Controller
         self.controller.step();
