@@ -404,7 +404,7 @@ impl Building {
         electrical_load += sub_load_e;
         thermal_generation += sub_gen_t;
 
-        if (self.is_self_supplied_t || self.is_at_dhn) {
+        if self.is_self_supplied_t || self.is_at_dhn {
             // Building is self-supplied
             if self.temperature > 20. {
                 thermal_generation = thermal_load_hw;
