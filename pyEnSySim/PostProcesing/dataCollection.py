@@ -1,4 +1,7 @@
+import logging as lg
 import numpy as np
+
+lg.basicConfig(level=lg.WARNING)
 
 
 def getCellsPVgeneration(cell):
@@ -8,33 +11,33 @@ def getCellsPVgeneration(cell):
     If the hist-Size of pv plants differ, the data must be handled with caution
 
     Args:
-        cell (Cell): Cell for which the pv power is calculated
+        cell {Cell} -- Cell for which the pv power is calculated
 
     Returns:
-        (np array): Curve of cells PV power [W]
+        np array -- Curve of cells PV power [W]
     """
     PV = None
 
     if cell.pv is not None:
         if cell.pv.gen_e is None:
-            print("WARNING: The pv plant of cell has no history record")
+            lg.warning("The pv plant of cell has no history record")
         else:
             PV = np.array(cell.pv.gen_e.get_memory())
 
     for bNr, building in enumerate(cell.buildings):
         if building.pv is not None:
             if building.pv.gen_e is None:
-                print("WARNING: The pv plant of building {} "
-                      "has no history record".format(bNr))
+                lg.warning("The pv plant of building {} "
+                           "has no history record".format(bNr))
             else:
                 if PV is None:
                     PV = np.array(building.pv.gen_e.get_memory())
                 else:
                     bPV = np.array(building.pv.gen_e.get_memory())
                     if PV.size != bPV.size:
-                        print("WARNING: Hist size for pv plant of building {} "
-                              "is different to other sizes, "
-                              "data is ignored".format(bNr))
+                        lg.warning("Hist size for pv plant of building {} "
+                                   "is different to other sizes, "
+                                   "data is ignored".format(bNr))
                     else:
                         PV += bPV
 
