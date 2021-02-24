@@ -333,7 +333,14 @@ impl Building {
             },
         }
 
-        return self.res_u_trans * (self.temperature - t_out);
+        let demand = self.res_u_trans * (self.temperature - t_out);
+
+        // Cooling is not considered here
+        if demand > 0. {
+            return demand;
+        } else {
+            return 0.;
+        }
     }
 
     pub fn q_hln(&self) -> &f32 {
@@ -371,8 +378,14 @@ impl Building {
             thermal_load_hw += sub_load_t;
         });
         // predict heat losses by temperature of last time step
-        thermal_load = thermal_load_hw +
-                       self.res_u_trans * (self.temperature - t_out);
+        thermal_load_heat = self.res_u_trans * (self.temperature - t_out);
+
+        // only consider thermal load for heating
+        if thermal_load_heat > 0. {
+            thermal_load = thermal_load_hw + thermal_load_heat;
+        } else {
+            thermal_load = thermal_load_hw;
+        }
 
         // calculate generation
         // chp
@@ -390,7 +403,11 @@ impl Building {
 
         if self.is_self_supplied_t {
             // Building is self-supplied
-            thermal_generation = thermal_load;
+            if self.temperature > 20. {
+                thermal_generation = thermal_load_hw;
+            } else {
+                thermal_generation = thermal_load;
+            }
         }
 
         // Update building temperature and resulting thermal load
