@@ -165,19 +165,27 @@ def cellEnergyBalance(cell, time, step=0.25):
     fig.show()
 
 
-def buildingTemperature(building, time, step=0.25):
+def buildingTemperature(building, time, T, step=0.25):
     """ Plot the temperature course for given building
 
     Args:
           building (Building): Building for which the temperature course
                                should be plotted
           time (pd series of datetime): Time
+          T (np array): Outside Temperature during Simulation [degC]
           step (float): Time step of time data [h] (Default: 0.25h)
     """
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time, y=building.temperature_hist.get_memory(),
                              line={'color': COL_CON,
                                    'width': 1},
+                             name="building",
+                             )
+                  )
+    fig.add_trace(go.Scatter(x=time, y=T,
+                             line={'color': COL_BAL,
+                                   'width': 1},
+                             name="outside",
                              )
                   )
     fig.update_layout(height=600, width=1000,

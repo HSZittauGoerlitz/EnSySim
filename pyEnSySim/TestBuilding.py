@@ -85,7 +85,7 @@ plots.cellEnergyBalance(cell, time)
 
 # %%
 b = cell.buildings[0]
-plots.buildingTemperature(b, time)
+plots.buildingTemperature(b, time, T)
 
 
 # %%
