@@ -413,6 +413,11 @@ impl Building {
             }
         }
 
+        // add load for dhn
+        if self.is_at_dhn {
+            dhn_load = thermal_generation;
+        }
+
         // Update building temperature and resulting thermal load
         // For space heating generation, the hot water generation must be
         // subtracted from complete thermal generation.
@@ -430,6 +435,6 @@ impl Building {
         save_t!(self, thermal_generation, thermal_load);
 
         return (electrical_generation, electrical_load,
-                thermal_generation, thermal_load);
+                0., dhn_load);
     }
 }
