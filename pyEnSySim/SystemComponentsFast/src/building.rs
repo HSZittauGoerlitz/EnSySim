@@ -170,6 +170,7 @@ impl Building {
     }
 
     fn add_heatpump(&mut self, heatpump: heatpump::Heatpump) {
+        self.is_self_supplied_t = false;
         // building can have either chp or heatpump
         match &self.chp {
             // for now only one heatpump per building is allowed
@@ -368,8 +369,10 @@ impl Building {
         let mut thermal_load_heat = 0.;  // space heating demand
         let mut thermal_load_hw = 0.;  // hot water demand
         let mut thermal_load = 0.;  // complete thermal demand
+        let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
         let mut thermal_generation = 0.;
+
 
         // calculate loads
         self.agents.iter().for_each(|agent: &agent::Agent| {
@@ -401,7 +404,7 @@ impl Building {
         electrical_load += sub_load_e;
         thermal_generation += sub_gen_t;
 
-        if self.is_self_supplied_t {
+        if (self.is_self_supplied_t || self.is_at_dhn) {
             // Building is self-supplied
             if self.temperature > 20. {
                 thermal_generation = thermal_load_hw;
