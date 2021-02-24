@@ -109,7 +109,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
                                 ]).T
 
         # create building
-        # effective heat capacity with fixed C_eff of 15. (Wh)/(m^2K)
+        # effective heat capacity with fixed C_eff of 15. (Wh)/(m^3K)
         building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
                             a_uv_values,
                             U.loc['DeltaU', (classNames[classIdx], mState)],
