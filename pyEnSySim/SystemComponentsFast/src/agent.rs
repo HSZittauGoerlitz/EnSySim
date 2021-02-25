@@ -116,7 +116,7 @@ impl Agent {
         let mut rng = rand::thread_rng();
         let r_f: f32 = rng.gen_range(0.8, 1.2);
 
-        (684.7 * hw_profile + 314.4) * r_f
+        (684.7 * hw_profile * self.coc + 314.4) * r_f
     }
 
     /// Calculate and return current power load
@@ -130,7 +130,8 @@ impl Agent {
     pub fn step(&self, slp_data: &[f32; 3], hw_profile: &f32) -> (f32, f32) {
         let mut rng = rand::thread_rng();
 
-        let electrical = slp_data[self.a_type] * rng.gen_range(0.8, 1.2);
+        let electrical = self.coc * slp_data[self.a_type] *
+                         rng.gen_range(0.8, 1.2);
         let thermal = self.get_hot_water_demand(hw_profile);
 
         (electrical, thermal)
