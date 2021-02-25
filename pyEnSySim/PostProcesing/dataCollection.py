@@ -35,10 +35,68 @@ def getCellsPVgeneration(cell):
                 else:
                     bPV = np.array(building.pv.gen_e.get_memory())
                     if PV.size != bPV.size:
-                        lg.warning("Hist size for pv plant of building {} "
-                                   "is different to other sizes, "
+                        lg.warning("Record size for pv plant of building {} "
+                                   "is different from other sizes, "
                                    "data is ignored".format(bNr))
                     else:
                         PV += bPV
 
     return PV
+
+
+def getBuildingsThermalBalance(cell, subCells=True):
+    """ Get thermal load and generation of each building in given cell.
+
+    Arguments:
+        cell {Cell} -- Cell for which the pv power is calculated
+
+    Keyword Arguments:
+        subCells {bool} -- When True also buildings of sub cells are
+                           considered.(default: {True})
+
+    Returns:
+        (np array, np array) -- Curve of cells PV power [W]
+    """
+    gen = None
+    load = None
+
+    # at first collect sub cell balances
+    if subCells:
+        for scNr, sc in enumerate(cell.sub_cells):
+            new_gen, new_load = getBuildingsThermalBalance(sc, subCells)
+            # it's enough to check one array for existence
+            if new_gen is None:
+                lg.warning("No records found in sub cell {}".format(scNr))
+                continue
+
+            if gen is not None:
+                gen += np.array(new_gen)
+                load += np.array(new_load)
+            else:
+                if gen.size == len(new_gen):
+                    gen = np.array(new_gen)
+                    load = np.array(new_load)
+                else:
+                    lg.warning("Record size of sub cell {} "
+                               "is different from other sizes, "
+                               "data is ignored".format(scNr))
+
+    for bNr, building in enumerate(cell.buildings):
+        if building.gen_t is None:
+            lg.warning("Building {} has no history record.".format(bNr))
+            continue
+
+        if gen is not None:
+            new_gen = np.array(building.gen_t.get_memory())
+            if gen.size == new_gen.size:
+                gen += new_gen
+                load += np.array(building.load_t.get_memory())
+            else:
+                lg.warning("Record size of building {} "
+                           "is different from other sizes, "
+                           "data is ignored".format(bNr))
+        else:
+            gen = np.array(building.gen_t.get_memory())
+            load = np.array(building.load_t.get_memory())
+
+    return (gen, load)
