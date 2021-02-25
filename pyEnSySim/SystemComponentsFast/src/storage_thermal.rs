@@ -92,7 +92,7 @@ impl ThermalStorage {
             debug!("storage is empty and could not supply enough heat!");
             self.charge = 0.;
         }
-
+        
         // save data
         self.save_hist_c();
 
