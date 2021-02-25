@@ -160,30 +160,29 @@ def cellPowerBalance(cell, time):
     fig.show()
 
 
-def cellEnergyBalance(cell, time, step=0.25):
+def cellEnergyBalance(cell, time):
     """ Plot the electrical and thermal cumulative energy balance of a cell
         for a simulation with known simulation time.
 
     Args:
         cell (Cell): Cell for which the data is plotted
         time (pd series of datetime): Time
-        step (float): Time step of time data [h] (Default: 0.25h)
     """
-    # TODO: Use steps of given time data
+    dt = time.diff().dt.seconds / 3600.  # time difference in h
     # get data
     gen_e = np.array(cell.gen_e.get_memory()) * 1e-6
     gen_t = np.array(cell.gen_t.get_memory()) * 1e-6
     load_e = np.array(cell.load_e.get_memory()) * 1e-6
     load_t = np.array(cell.load_t.get_memory()) * 1e-6
     # calculate energy
-    gen_e *= step
     gen_e = gen_e.cumsum()
-    gen_t *= step
+    gen_e[1:] *= dt[1:]
     gen_t = gen_t.cumsum()
-    load_e *= step
+    gen_t[1:] *= dt[1:]
     load_e = load_e.cumsum()
-    load_t *= step
+    load_e[1:] *= dt[1:]
     load_t = load_t.cumsum()
+    load_t[1:] *= dt[1:]
     # calculate balance
     bal_e = gen_e - load_e
     bal_t = gen_t - load_t
