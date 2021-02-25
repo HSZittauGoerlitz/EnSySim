@@ -4,7 +4,7 @@ from GenericModel.Design import _addAgents, _loadBuildingData
 import numpy as np
 import pandas as pd
 from SystemComponentsFast import simulate, Building, Cell
-from PostProcesing import plots
+from PostProcesing import dataCollection, plots
 import logging
 
 
@@ -84,8 +84,10 @@ plots.cellEnergyBalance(cell, time)
 
 
 # %%
-b = cell.buildings[0]
-plots.buildingTemperature(b, time, T)
-
+gen_t, load_t = dataCollection.getBuildingsThermalBalance(cell)
+plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
+                       'Thermal balance in test building')
 
 # %%
+b = cell.buildings[0]
+plots.buildingTemperature(b, time, T)
