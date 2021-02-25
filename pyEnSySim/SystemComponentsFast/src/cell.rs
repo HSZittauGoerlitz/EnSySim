@@ -89,7 +89,8 @@ impl Cell {
         self.n_buildings += 1;
     }
 
-    fn update_building(&mut self, building_idx: usize, building: building::Building) {
+    fn update_building(&mut self, building_idx: usize,
+                       building: building::Building) {
         self.buildings[building_idx] = building;
     }
 
@@ -106,7 +107,8 @@ impl Cell {
         }
     }
 
-    fn add_sep_bsl_agent(&mut self, sep_bsl_agent: sep_bsl_agent::SepBSLagent) {
+    fn add_sep_bsl_agent(&mut self,
+                         sep_bsl_agent: sep_bsl_agent::SepBSLagent) {
         self.sep_bsl_agents.push(sep_bsl_agent);
         self.n_sep_bsl_agents += 1;
     }
@@ -137,7 +139,7 @@ impl Cell {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-            t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
+                t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
         let mut thermal_load = 0.;
