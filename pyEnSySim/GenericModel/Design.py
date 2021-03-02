@@ -471,8 +471,8 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
                           'Standard')
 
     # init cell
-    cell = Cell(climate.loc['Eg', 'standard data'],
-                climate.loc['T', 'standard data'],
+    cell = Cell(climate.loc['EgNorm kWh', 'Value'],
+                climate.loc['ToutNorm degC', 'Value'],
                 hist)
 
     # init buildings and agents
