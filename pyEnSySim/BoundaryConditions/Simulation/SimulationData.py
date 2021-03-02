@@ -306,8 +306,8 @@ def _getWeather(simData, region):
                     mask_new = maskY & (simData.doy == DOY_LEAPDAY)
                     mask_old = maskY & (simData.doy == DOY_LEAPDAY-1)
                     simData.loc[mask_new, ['T', 'Eg']] = (
-                      w[0] * simData.loc[mask_new, ['T', 'Eg']] +
-                      w[1] * simData.loc[mask_old, ['T', 'Eg']]).values
+                      w[0] * simData.loc[mask_new, ['T', 'Eg']].values +
+                      w[1] * simData.loc[mask_old, ['T', 'Eg']].values)
                 elif doyStart >= DOY_LEAPDAY:
                     # just add missing data to last day of year
                     # since information is missing for time before doyStart,
@@ -316,8 +316,8 @@ def _getWeather(simData, region):
                     mask_old_1 = maskY & (simData.doy == 364)
                     mask_old_2 = maskY & (simData.doy == 365)
                     simData.loc[mask_new, ['T', 'Eg']] = (
-                      w[0] * simData.loc[mask_old_1, ['T', 'Eg']] +
-                      w[1] * simData.loc[mask_old_2, ['T', 'Eg']]).values
+                      w[0] * simData.loc[mask_old_1, ['T', 'Eg']].values +
+                      w[1] * simData.loc[mask_old_2, ['T', 'Eg']].values)
 
     return simData
 
