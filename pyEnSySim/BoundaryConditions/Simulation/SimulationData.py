@@ -267,7 +267,8 @@ def _getWeather(simData, region):
 
         # get time for interpolation
         t = simData.loc[maskY, 'time']
-        t = (t - t[0]).dt.total_seconds() / 3600.  # in h
+        t = ((t - pd.to_datetime("01.01.{}".format(year)))
+             .dt.total_seconds() / 3600.)  # in h
         # add new Data
         simData.loc[maskY, 'T'] = fT(t)
         simData.loc[maskY, 'Eg'] = fEg(t)
