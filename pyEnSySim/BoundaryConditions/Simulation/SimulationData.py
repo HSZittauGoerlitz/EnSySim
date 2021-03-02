@@ -1,6 +1,10 @@
 import numpy as np
 import numpy.matlib
 import pandas as pd
+from scipy.interpolate import interp1d
+
+
+DOY_LEAPDAY = 60
 
 
 def _addHotwater(simData):
@@ -208,91 +212,89 @@ def _getSimTime(startDate, endDate):
 
 
 def _getWeather(simData, region):
-    """ Calculate temperature and irradiation curve for
+    """Calculate temperature and irradiation curve for
         given simulation time and region
 
-    The caracteristic data is modified by an uniformly distributed random
-    number in range from 0.8 to 1.2.
+    Test reference year data of DWD consist out of:
+        - Data for reference year
+        - Data for year with extreme summer
+        - Data for extreme winter
 
-    Args:
-        simData (pandas data frame): Simulation data
-        region (string): Location of simulation (determines climate / weather)
-                         Supported regions:
-                            East, West, South, North
+    By randomly weighting those curves a new weather curve is generated. The
+    random weights are updated per simulated year.
 
+    Arguments:
+        simData {pandas data frame} -- Simulation data
+        region {string} -- Location of simulation
+                           (determines climate / weather)
+                           Supported regions:
+                             East, West, South, North
+
+    Returns:
+        pandas data frame -- Simulation data extended by weather course
     """
-    weatherBC = pd.read_hdf("./BoundaryConditions/Weather/" +
-                            region + ".h5", 'Weather')
+    RefWeather = pd.read_hdf("./BoundaryConditions/Weather/" +
+                             region + ".h5", 'Weather')
     # add columns for weather
     simData['T'] = 0.
     simData['Eg'] = 0.
 
+    # get mask of all non leap year days once -> keep out doy 366
+    maskDoy = (simData.doy >= 1) & (simData.doy <= 365)
+
     # Split up Eg data generation into linked doy sequences
     for year in range(simData.time.dt.year.min(),
                       simData.time.dt.year.max()+1):
-        maskY = simData.time.dt.year == year
-        # for years with leap day
+        # for now ignore the possibility of leap year
+        maskY = ((simData.time.dt.year == year) & maskDoy)
+
+        # get weighting factors
+        w = np.random.random(3)
+        w /= w.sum()  # sum of all factors must be 1
+        # Create Weather functions
+        t = (RefWeather.date_time - RefWeather.date_time[0]).dt.total_seconds()
+        t /= 3600.  # in [h]
+        fT = interp1d(t,
+                      (RefWeather.reference['T [degC]']*w[0] +
+                       RefWeather.winter_extreme['T [degC]']*w[1] +
+                       RefWeather.summer_extreme['T [degC]']*w[2]).values,
+                      'linear', bounds_error=False, fill_value='extrapolate')
+        fEg = interp1d(t,
+                       (RefWeather.reference['Eg [kW]']*w[0] +
+                        RefWeather.winter_extreme['Eg [kW]']*w[1] +
+                        RefWeather.summer_extreme['Eg [kW]']*w[2]).values,
+                       'linear', bounds_error=False, fill_value='extrapolate')
+
+        # get time for interpolation
+        t = simData.loc[maskY, 'time']
+        t = (t - t[0]).dt.total_seconds() / 3600.  # in h
+        # add new Data
+        simData.loc[maskY, 'T'] = fT(t)
+        simData.loc[maskY, 'Eg'] = fEg(t)
+
+        # leap day treatment
         if simData.time[maskY].dt.is_leap_year.any():
-            leapDay = 60
-            # first time before leap day, if existing
-            minDay = simData.doy[maskY].min()
-            maxDay = simData.doy[maskY].max()
-            if minDay < leapDay:
-                if maxDay > leapDay-1:
-                    maxDay = leapDay-1
-                    nextPeriod = True
-                else:
-                    nextPeriod = False
-                # time before
-                maskBC = ((weatherBC.doy >= minDay) &
-                          (weatherBC.doy <= maxDay))
-                subMaskY = (maskY &
-                            (simData.doy[maskY] >= minDay) &
-                            (simData.doy[maskY] < leapDay))
-                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
-                                                            'Eg'].values
-                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
-                # set min day to leapDay
-                if nextPeriod:
-                    minDay = leapDay
-                else:
-                    break
-
-            # second is leap day
-            if minDay == leapDay:
-                maskBC = (weatherBC.doy == 0)  # leap day in BC is at doy 0
-                subMaskY = (maskY & (simData.doy[maskY] == leapDay))
-                simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
-                                                            'Eg'].values
-                simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
-                # set min day to one after leapDay
-                minDay = leapDay + 1
-
-            # third is time after leap day
-            maxDay = simData.doy[maskY].max()
-            maskBC = ((weatherBC.doy >= minDay-1) &  # 60 is normal day
-                      (weatherBC.doy <= maxDay))
-            subMaskY = (maskY &
-                        (simData.doy[maskY] >= minDay) &
-                        (simData.doy[maskY] <= maxDay))
-            simData.loc[subMaskY, 'Eg'] = weatherBC.loc[maskBC,
-                                                        'Eg'].values
-            simData.loc[subMaskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
-
-        else:  # no leap dy
-            # get mask for BC data
-            maskBC = ((weatherBC.doy >= simData.doy[maskY].min()) &
-                      (weatherBC.doy <= simData.doy[maskY].max()))
-            # fill up data for actual year
-            # only use values to ignore indices
-            simData.loc[maskY, 'Eg'] = weatherBC.loc[maskBC, 'Eg'].values
-            simData.loc[maskY, 'T'] = weatherBC.loc[maskBC, 'T'].values
-
-    # add an sligthly randomisation
-    simData.loc[:, 'T'] *= (np.random.random(simData.loc[:, 'T'].size) *
-                            0.4 + 0.8)
-    simData.loc[:, 'Eg'] *= (np.random.random(simData.loc[:, 'T'].size) *
-                             0.4 + 0.8)
+            # update year mask
+            maskY = simData.time.dt.year == year
+            # move data beginning from leap day
+            mask_new = maskY & ((simData.doy >= DOY_LEAPDAY) &
+                                (simData.doy <= 366))
+            mask_old = maskY & ((simData.doy >= DOY_LEAPDAY-1) &
+                                (simData.doy <= 365))
+            simData.loc[mask_new, ['T', 'Eg']] = simData.loc[mask_old,
+                                                             ['T', 'Eg']
+                                                             ].values
+            # interpolate leap day data with surrounding days
+            # leap day has March 1st for know -> add Feb 28th
+            mask_new = maskY & (simData.doy == DOY_LEAPDAY)
+            mask_old = maskY & (simData.doy == DOY_LEAPDAY-1)
+            simData.loc[mask_new, ['T', 'Eg']] = (0.5 *
+                                                  simData.loc[mask_new,
+                                                              ['T', 'Eg']] +
+                                                  0.5 *
+                                                  simData.loc[mask_old,
+                                                              ['T', 'Eg']]
+                                                  )
 
     return simData
 
