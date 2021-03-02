@@ -276,25 +276,47 @@ def _getWeather(simData, region):
         if simData.time[maskY].dt.is_leap_year.any():
             # update year mask
             maskY = simData.time.dt.year == year
-            # move data beginning from leap day
-            mask_new = maskY & ((simData.doy >= DOY_LEAPDAY) &
-                                (simData.doy <= 366))
-            mask_old = maskY & ((simData.doy >= DOY_LEAPDAY-1) &
-                                (simData.doy <= 365))
-            simData.loc[mask_new, ['T', 'Eg']] = simData.loc[mask_old,
-                                                             ['T', 'Eg']
-                                                             ].values
-            # interpolate leap day data with surrounding days
-            # leap day has March 1st for know -> add Feb 28th
-            mask_new = maskY & (simData.doy == DOY_LEAPDAY)
-            mask_old = maskY & (simData.doy == DOY_LEAPDAY-1)
-            simData.loc[mask_new, ['T', 'Eg']] = (0.5 *
-                                                  simData.loc[mask_new,
-                                                              ['T', 'Eg']] +
-                                                  0.5 *
-                                                  simData.loc[mask_old,
-                                                              ['T', 'Eg']]
-                                                  )
+            # handle different cases
+            doyEnd = simData.doy[maskY].max()
+
+            # there is missing data, only if last day of year is considered
+            if doyEnd == 366:
+                # prepare
+                doyStart = simData.doy[maskY].min()
+                # random weights for inter-/extrapolation
+                w = np.random.random(2)
+                w /= w.sum()
+
+                # two cases:
+                # 1. Start before leap -> interpolate leap
+                # 2. Start after leap -> extrapolate end pf year
+                if doyStart < DOY_LEAPDAY:
+                    # move data beginning from leap day
+                    mask_new = maskY & ((simData.doy >= DOY_LEAPDAY+1) &
+                                        (simData.doy <= 366))
+                    mask_old = maskY & ((simData.doy >= DOY_LEAPDAY) &
+                                        (simData.doy <= 365))
+                    simData.loc[mask_new, ['T', 'Eg']] = simData.loc[mask_old,
+                                                                     ['T',
+                                                                      'Eg']
+                                                                     ].values
+                    # interpolate leap day data with surrounding days
+                    # leap day has March 1st for know -> add Feb 28th
+                    mask_new = maskY & (simData.doy == DOY_LEAPDAY)
+                    mask_old = maskY & (simData.doy == DOY_LEAPDAY-1)
+                    simData.loc[mask_new, ['T', 'Eg']] = (
+                      w[0] * simData.loc[mask_new, ['T', 'Eg']] +
+                      w[1] * simData.loc[mask_old, ['T', 'Eg']])
+                elif doyStart >= DOY_LEAPDAY:
+                    # just add missing data to last day of year
+                    # since information is missing for time before doyStart,
+                    # the last two known days will be extrapolated
+                    mask_new = maskY & (simData.doy == 366)
+                    mask_old_1 = maskY & (simData.doy == 364)
+                    mask_old_2 = maskY & (simData.doy == 365)
+                    simData.loc[mask_new, ['T', 'Eg']] = (
+                      w[0] * simData.loc[mask_old_1, ['T', 'Eg']] +
+                      w[1] * simData.loc[mask_old_2, ['T', 'Eg']])
 
     return simData
 
