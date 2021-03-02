@@ -222,16 +222,17 @@ def _saveData(data, ToutNorm, name):
     store = pd.HDFStore(name + '.h5')
     store['Weather'] = data
     # calculate and store standard data
-    sd = pd.DataFrame()
+    sd = pd.DataFrame(columns=['Value'])
     # in case of unequally spaced data get time steps
     dt = data.date_time.diff()
     # calculate yearly Eg Energy and store it
-    sd['EgNorm kWh'] = (data.reference['Eg [kW]'].values[0] +
-                        (data.reference['Eg [kW]'][1:].cumsum() *
-                         dt.dt.total_seconds()[1:] / 3600.).values[-1]
-                        )
-    sd['ToutNorm degC'] = ToutNorm
+    sd.loc['EgNorm kWh', 'Value'] = (data.reference['Eg [kW]'].values[0] +
+                                     (data.reference['Eg [kW]'][1:].cumsum() *
+                                     dt.dt.total_seconds()[1:] / 3600.)
+                                     .values[-1])
+    sd.loc['ToutNorm degC', 'Value'] = ToutNorm
     store['Standard'] = sd
+    print(sd)
     store.close()
 
 
