@@ -32,8 +32,8 @@ climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
 Geo, U, n = _loadBuildingData(bType)
 
-cell = Cell(climate.loc['Eg', 'standard data'],
-            climate.loc['T', 'standard data'],
+cell = Cell(climate.loc['EgNorm kWh', 'standard data'],
+            climate.loc['ToutNorm degC', 'standard data'],
             nSteps)
 
 
