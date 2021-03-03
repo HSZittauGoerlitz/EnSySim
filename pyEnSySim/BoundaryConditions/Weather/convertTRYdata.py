@@ -8,7 +8,7 @@ file_name = "TRY2015_508912148089_Jahr.dat"
 
 file = open(file_name)
 all_lines = file.readlines()
-chars = list(all_lines[36])
+chars = list(all_lines[36]) # better search for ***
 file.close()
 
 extends = []
@@ -53,11 +53,3 @@ dfmi = pd.DataFrame(np.array([df15.t.values, df45.t.values]).transpose(),
 store = pd.HDFStore("TRY2015.h5")
 store['TRY'] = dfmi
 store.close()
-
-
-# %%Tagesmitteltemperatur
-DMT = dfmi.groupby(level=[0, 1]).mean()
-DMT.plot()
-
-
-# %%

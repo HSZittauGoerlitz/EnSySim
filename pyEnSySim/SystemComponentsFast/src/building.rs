@@ -2,7 +2,7 @@
 use pyo3::prelude::*;
 use log::{warn};
 
-use crate::{agent, controller, pv, heatpump, chp_system, hist_memory,
+use crate::{agent, controller, pv, heatpump_system, chp_system, hist_memory,
             save_e, save_t};
 
 #[pyclass]
@@ -33,7 +33,7 @@ pub struct Building {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
-    heatpump: Option<heatpump::Heatpump>,
+    heatpump: Option<heatpump_system::HeatpumpSystem>,
     #[pyo3(get)]
     chp: Option<chp_system::ChpSystem>,
     #[pyo3(get)]
@@ -169,7 +169,7 @@ impl Building {
         }
     }
 
-    fn add_heatpump(&mut self, heatpump: heatpump::Heatpump) {
+    fn add_heatpump(&mut self, heatpump: heatpump_system::HeatpumpSystem) {
         self.is_self_supplied_t = false;
         // building can have either chp or heatpump
         match &self.chp {
@@ -180,7 +180,7 @@ impl Building {
                                                 heatpump, nothing is added"),
                 };
             },
-            Some(_bulding_chp) => warn!("Building already has a chp,
+            Some(_building_chp) => warn!("Building already has a chp,
                                         heatpump is not added"),
         }
     }
@@ -224,15 +224,16 @@ impl Building {
                     );
     }
 
-    fn add_dimensioned_heatpump(&mut self, t_supply: f32,
-                                coeffs_q: Vec<[f32; 6]>,
-                                coeffs_cop: Vec<[f32; 6]>, hist: usize) {
-        self.add_heatpump(heatpump::Heatpump::new(self.q_hln,
-                                                  t_supply,
-                                                  coeffs_q,
-                                                  coeffs_cop,
-                                                  hist)
-                          );
+    fn add_dimensioned_heatpump(&mut self, q_hln: f32,
+                                seas_perf_fac: f32,
+                                t_supply: f32,
+                                t_ref: Vec<[f32; 8760]>,
+                                hist: usize) {
+        self.add_heatpump(heatpump_system::HeatpumpSystem::new(q_hln,
+                                                               seas_perf_fac,
+                                                               t_supply,
+                                                               &t_ref,
+                                                               hist));
     }
 
     fn add_dimensioned_chp(&mut self, hist: usize) {

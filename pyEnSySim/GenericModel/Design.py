@@ -173,7 +173,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
     return cell
 
 
-def addCHPtoCell(cell, pCHP, hist=0):
+def addCHPtoCellBuildings(cell, pCHP, hist=0):
     """Add CHP to buildings
 
     Args:
@@ -490,6 +490,6 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
     # init sep BSL agents
     addSepBSLAgents(cell, nSepBSLAgents, pAgricultureBSLsep, pPVplants, hist)
 
-    addCHPtoCell(cell, pCHP)
+    addCHPtoCellBuildings(cell, pCHP)
 
     return cell
