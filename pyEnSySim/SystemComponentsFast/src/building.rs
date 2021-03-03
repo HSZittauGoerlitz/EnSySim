@@ -35,7 +35,7 @@ pub struct Building {
     #[pyo3(get)]
     heatpump: Option<heatpump::Heatpump>,
     #[pyo3(get)]
-    chp: Option<chp_system::CHP_System>,
+    chp: Option<chp_system::ChpSystem>,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -116,7 +116,7 @@ impl Building {
             temperature_hist = None;
         }
 
-        let defaultController = controller::Controller::new();
+        let default_controller = controller::Controller::new();
 
         // Create object
         let mut building = Building {
@@ -134,7 +134,7 @@ impl Building {
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
             is_self_supplied_t: !is_at_dhn,
-            controller: defaultController,
+            controller: default_controller,
             pv: None,
             heatpump: None,
             chp: None,
@@ -185,7 +185,7 @@ impl Building {
         }
     }
 
-    fn add_chp(&mut self, chp: chp_system::CHP_System) {
+    fn add_chp(&mut self, chp: chp_system::ChpSystem) {
         self.is_self_supplied_t = false;
         match &self.chp {
             None => {self.chp = Some(chp);},
@@ -225,18 +225,18 @@ impl Building {
     }
 
     fn add_dimensioned_heatpump(&mut self, t_supply: f32,
-                                coeffs_Q: Vec<[f32; 6]>,
-                                coeffs_COP: Vec<[f32; 6]>, hist: usize) {
+                                coeffs_q: Vec<[f32; 6]>,
+                                coeffs_cop: Vec<[f32; 6]>, hist: usize) {
         self.add_heatpump(heatpump::Heatpump::new(self.q_hln,
                                                   t_supply,
-                                                  coeffs_Q,
-                                                  coeffs_COP,
+                                                  coeffs_q,
+                                                  coeffs_cop,
                                                   hist)
                           );
     }
 
     fn add_dimensioned_chp(&mut self, hist: usize) {
-        self.add_chp(chp_system::CHP_System::new(self.q_hln,
+        self.add_chp(chp_system::ChpSystem::new(self.q_hln,
                                                  hist)
                      );
     }
@@ -363,12 +363,12 @@ impl Building {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
+                t_out: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
-        let mut thermal_load_heat = 0.;  // space heating demand
+        let mut thermal_load_heat;  // space heating demand
         let mut thermal_load_hw = 0.;  // hot water demand
-        let mut thermal_load = 0.;  // complete thermal demand
+        let mut thermal_load;  // complete thermal demand
         let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
         let mut thermal_generation = 0.;

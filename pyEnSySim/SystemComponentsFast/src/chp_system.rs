@@ -8,8 +8,7 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-#[allow(non_snake_case)]  // for python binding
-pub struct CHP_System {
+pub struct ChpSystem {
     chp: CHP,  // chp plant
     storage: ThermalStorage,  // thermal storage
     boiler: Boiler,  // peak load boiler
@@ -21,8 +20,7 @@ pub struct CHP_System {
 }
 
 #[pymethods]
-#[allow(non_snake_case)]  // for python binding
-impl CHP_System {
+impl ChpSystem {
     ///  Create CHP system with thermal storage and boiler
     ///  The technical design is based on norm heating load.
     ///
@@ -81,7 +79,7 @@ impl CHP_System {
             gen_t = None;
         }
 
-        let chp_system = CHP_System {chp: chp,
+        let chp_system = ChpSystem {chp: chp,
                      storage: storage,
                      boiler: boiler,
                      gen_e: gen_e,
@@ -92,7 +90,7 @@ impl CHP_System {
 }
 
 /// CHP plant
-impl CHP_System {
+impl ChpSystem {
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.gen_e {
             None => {},
