@@ -242,6 +242,16 @@ def _getWeather(simData, region):
     # get mask of all non leap year days once -> keep out doy 366
     maskDoy = (simData.doy >= 1) & (simData.doy <= 365)
 
+    # one-time create weight function to get smooth transistions
+    # between years or december extrapolation
+    lenDay = ((simData.time.dt.year == simData.time.dt.year[0]) &
+              (simData.doy == simData.doy[0])).sum()
+    wDay = np.arange(lenDay-1, -1., -1.) / lenDay
+    wDay = wDay**10
+    wDayInv = 1 - wDay
+
+    yearEnd = None
+
     # Split up Eg data generation into linked doy sequences
     for year in range(simData.time.dt.year.min(),
                       simData.time.dt.year.max()+1):
@@ -272,6 +282,16 @@ def _getWeather(simData, region):
         # add new Data
         simData.loc[maskY, 'T'] = fT(t)
         simData.loc[maskY, 'Eg'] = fEg(t)
+
+        # get smooth transition if there is a year before
+        if yearEnd is not None:
+            mask_new = maskY & (simData.doy == 1)
+            simData.loc[mask_new, 'T'] = (
+              wDay * yearEnd[0] +
+              wDayInv * simData.loc[maskY, 'T'].values[:lenDay])
+            simData.loc[mask_new, 'Eg'] = (
+              wDay * yearEnd[1] +
+              wDayInv * simData.loc[maskY, 'Eg'].values[:lenDay])
 
         # leap day treatment
         if simData.time[maskY].dt.is_leap_year.any():
@@ -315,9 +335,20 @@ def _getWeather(simData, region):
                     mask_new = maskY & (simData.doy == 366)
                     mask_old_1 = maskY & (simData.doy == 364)
                     mask_old_2 = maskY & (simData.doy == 365)
-                    simData.loc[mask_new, ['T', 'Eg']] = (
-                      w[0] * simData.loc[mask_old_1, ['T', 'Eg']].values +
-                      w[1] * simData.loc[mask_old_2, ['T', 'Eg']].values)
+                    # scale new temperature in relation to
+                    # last temperature of day before
+                    Last = simData.loc[mask_old_2, ['T', 'Eg']].values[-1]
+                    New = (w[0] * simData.loc[mask_old_1,
+                                              ['T', 'Eg']].values +
+                           w[1] * simData.loc[mask_old_2,
+                                              ['T', 'Eg']].values
+                           )
+                    simData.loc[mask_new, ['T']] = (wDay*Last[0] +
+                                                    wDayInv*New[:, 0])
+                    simData.loc[mask_new, ['Eg']] = (wDay*Last[1] +
+                                                     wDayInv*New[:, 1])
+        # set year Flag
+        yearEnd = simData.loc[maskY, ['T', 'Eg']].values[-1]
 
     return simData
 
