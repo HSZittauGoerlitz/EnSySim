@@ -35,14 +35,14 @@ cell = Cell(climate.loc['Eg', 'standard data'],
 
 # %% Create Building
 # Parameter
-bClass = "class_1"
+bClass = "class_5"
 mState = "original"  # "modernised"
 airState = "VentilationFree"  # "VentilationMech"
 isAtDHN = False
 a_uv_values = np.array([Geo.loc['Areas'].values.T[0],
                         U.loc['UValues', (bClass, mState)]
                         ]).T
-if bClass == 'class_5':
+if bClass == 'class_1':
     infState = 'new'
 else:
     infState = mState
@@ -62,12 +62,12 @@ _addAgents(building, 1., 1., 0.)
 
 # %% Add heatpump
 # get reference year temperatures
-path = "../BoundaryConditions/Weather/"
+path = "BoundaryConditions/Weather/"
 file_name = "TRY2015.h5"
 
 df = pd.read_hdf(path+file_name)
 
-DMT = df.groupby(level=[0, 1]).mean()  # only temperatures_15 needed
+t_ref = df['temperatures_15']
 
 # classes of buildings for heating temperatures
 classTemperatures = {"class_1": 55,
@@ -77,47 +77,20 @@ classTemperatures = {"class_1": 55,
                      "class_5": 35}
 t_supply = classTemperatures[bClass]
 
-
-# supply_factor = 0.75
-# supply_power = building.q_hln*supply_factor
-
-# classes of heatpumps by thermal power
-cases = ['5to18kW', '18to35kW', '35to80kW']
-
-
-if supply_power < 5000 or supply_power > 80000:
-    logging.warning("for this building no heatpump data is available, "
-                    "maximum heat load is {:.2f}W"
-                    .format(building.q_hln))
-
-# differentiate by installed power
+# minimum Jahresarbeitszahl for BAFA-Förderung
+if infState == 'new':
+    seas_perf_fac = 4.5
 else:
-    if supply_power >= 5000 and supply_power < 18000:
-        case = cases[0]
-    elif supply_power >= 18000 and supply_power < 35000:
-        case = cases[1]
-    elif supply_power >= 35000 and supply_power <= 80000:
-        case = cases[2]
+    seas_perf_fac = 3.5
 
-    heatpumpCoefficients = pd.read_hdf("./BoundaryConditions"
-                                       "/Thermal"
-                                       "/HeatpumpCoefficients.h5",
-                                       case)
-    # pack arrays
-    coeffs_Q = np.array([heatpumpCoefficients['Qth -5 < 7°C'],
-                         heatpumpCoefficients['Qth 7 - 10°C'],
-                         heatpumpCoefficients['Qth >10 - 25°C']])
-    coeffs_COP = np.array([heatpumpCoefficients['COP -5 < 7°C'],
-                           heatpumpCoefficients['COP 7 - 10°C'],
-                           heatpumpCoefficients['COP >10 - 25°C']])
-
-    building.add_dimensioned_heatpump(t_supply,
-                                      coeffs_Q,
-                                      coeffs_COP,
-                                      1)
-    logging.debug("installed {:.2f}W thermal heatpump generation"
-                  .format(building.q_hln))
-
+building.add_dimensioned_heatpump(seas_perf_fac,
+                                  t_supply,
+                                  t_ref,
+                                  1)
+logging.debug("installed {:.2f}W thermal heatpump generation"
+              .format(building.heatpump.heatpump.pow_t))
+logging.debug("maximum heat load is {:.2f}W"
+              .format(building.q_hln))
 
 # %% Add building to cell
 cell.add_building(building)
@@ -127,7 +100,7 @@ cell.add_building(building)
 simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
 
 
-""" # %%
+# %%
 plots.cellPowerBalance(cell, time)
 
 
@@ -142,4 +115,4 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 
 # %%
 b = cell.buildings[0]
-plots.buildingTemperature(b, time, T) """
+plots.buildingTemperature(b, time, T)

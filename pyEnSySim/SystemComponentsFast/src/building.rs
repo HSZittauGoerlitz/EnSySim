@@ -2,6 +2,7 @@
 use pyo3::prelude::*;
 use log::{warn};
 
+
 use crate::{agent, controller, pv, heatpump_system, chp_system, hist_memory,
             save_e, save_t};
 
@@ -224,16 +225,17 @@ impl Building {
                     );
     }
 
-    fn add_dimensioned_heatpump(&mut self, q_hln: f32,
+    fn add_dimensioned_heatpump(&mut self,
                                 seas_perf_fac: f32,
                                 t_supply: f32,
-                                t_ref: Vec<[f32; 8760]>,
+                                t_ref: Vec<f32>,
                                 hist: usize) {
-        self.add_heatpump(heatpump_system::HeatpumpSystem::new(q_hln,
+        self.add_heatpump(heatpump_system::HeatpumpSystem::new(self.q_hln,
                                                                seas_perf_fac,
                                                                t_supply,
-                                                               &t_ref,
-                                                               hist));
+                                                               t_ref,
+                                                               hist)
+                         );
     }
 
     fn add_dimensioned_chp(&mut self, hist: usize) {

@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{warn};
+use log::{warn, debug};
 
 use crate::boiler::Boiler;
 use crate::heatpump::Heatpump;
@@ -10,6 +10,7 @@ use crate::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct HeatpumpSystem {
+    #[pyo3(get)]
     heatpump: Heatpump,  // heatpump
     storage: ThermalStorage,  // thermal storage
     boiler: Boiler,  // peak load boiler
@@ -21,11 +22,36 @@ pub struct HeatpumpSystem {
 }
 
 fn average(numbers: &[f32]) -> f32 {
-    let average: f32 = numbers.iter().sum() / numbers.len() as f32;
+    let mut average: f32 = numbers.iter().sum();
+    average = average / numbers.len() as f32;
     average
 }
 
-fn heatpump_coefficients_cop(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
+fn average_bool_select(numbers: &[f32], bool_select: &[bool]) -> f32 {
+    let mut sum = 0.;
+    let mut count = 0;
+    for (idx, sel) in bool_select.iter().enumerate() {
+        if *sel {
+            sum += numbers[idx];
+            count += 1;
+        }
+    }
+    sum / (count as f32)
+}
+
+fn average_bool_select_weighted(numbers: &[f32], weights: &[f32], bool_select: &[bool]) -> f32 {
+    let mut sum = 0.;
+    let mut weights_sum = 0.;
+    for (idx, sel) in bool_select.iter().enumerate() {
+        if *sel {
+            sum += numbers[idx] * weights[idx];
+            weights_sum += weights[idx];
+        }
+    }
+    sum  / weights_sum
+}
+
+fn cop_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
     
     let coeffs_cop;
     if pow_t < &18000. {
@@ -39,7 +65,7 @@ fn heatpump_coefficients_cop(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
             coeffs_cop = [5.59461, -0.0671, 0.17291, -0.00097, 0., -0.00206];
         }
     }
-    else if pow_t < &35000 {
+    else if pow_t < &35000. {
         if t_out < &7. {
             coeffs_cop = [4.79304, -0.04132, 0.05651, 0., 0., 0.];
         }
@@ -68,6 +94,49 @@ fn heatpump_coefficients_cop(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
     cop
 }
 
+fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
+    
+    let coeffs_q;
+    if pow_t < &18000. {
+        if t_out < &7. {
+            coeffs_q = [1.04213, -0.00234, 0.03152, -0.00019, 0., 0.];
+        }
+        else if t_out < &10. {
+            coeffs_q = [1.02701, -0.00366, 0.03202, 0.00003, 0., 0.];
+        }
+        else {
+            coeffs_q = [0.81917, -0.00301, 0.0651, -0.00003, 0., -0.00112];
+        }
+    }
+    else if pow_t < &35000. {
+        if t_out < &7. {
+            coeffs_q = [1.03825, -0.00223, 0.02272, 0., 0., 0.];
+        }
+        else if t_out < &10. {
+            coeffs_q = [0.93526, -0.0005, 0.03926, -0.00021, 0., 0.];
+        }
+        else {
+            coeffs_q = [0.79796, 0.00005, 0.05928, -0.00026, 0., -0.00066];
+        }
+    }
+    else {
+        if t_out < &7. {
+            coeffs_q = [1.10902, -0.00478, 0.02136, 0.00019, 0., 0.];
+        }
+        else if t_out < &10. {
+            coeffs_q = [1.08294, -0.00438, 0.03386, 0., 0., 0.];
+        }
+        else {
+            coeffs_q = [1.10262, -0.00316, 0.0295, -0.00009, 0., 0.00008];
+        }
+    }
+    let q = coeffs_q[0] + coeffs_q[1]*t_supply
+              + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out 
+              + coeffs_q[4]*f32::powf(*t_supply,2.) 
+              + coeffs_q[5]*f32::powf(*t_out, 2.);
+    q
+}
+
 #[pymethods]
 impl HeatpumpSystem {
     ///  Create heatpump system with thermal storage and boiler
@@ -83,65 +152,81 @@ impl HeatpumpSystem {
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(q_hln: f32, seas_perf_fac: f32, t_supply: f32, 
-               t_ref: &Vec<[f32; 8760]>, hist: usize) -> Self {
+               t_ref: Vec<f32>, hist: usize) -> Self {
 
-        // start with maximum thermal power
+        // start with maximum thermal power -> norm heating load
         // use 6h blocking time by electricity provider
         // ToDo: water heating time
-        let pow_t = q_hln * 24. / (24.-6.);
+        let t_out_n = -13.8;
+        let mut pow_t = q_hln * 24. / (24.-6.) / cop_from_coefficients(&q_hln, &t_out_n, &t_supply);
+
+        // reference for heating days
         let t_heat = 15.;
-
-        let mut heating_days: [bool; 8760] = [false; 8760];
-
+        let reference_temperatures = t_ref.to_vec();
         // get heating days bools (hourly)
+        let mut heating_days: [bool; 8760] = [false; 8760];
         for i in 0..=364 {
             let idx = (i*24)..(i*24+24);
-            let t_day = &t_ref[idx];
+            let t_day = &reference_temperatures[idx];
+            let idx = (i*24)..(i*24+24);
             if average(t_day) < t_heat {
                 heating_days[idx].fill(true);
             }
         }
 
-        let mut cops: [f32; 8760];
-
-        // wenn true in heating days:
-        // for all remaining (heating days subtracted)
-        for (idx, t_out) in t_ref.iter().enumerate() {
+        // calculate COP for all hours in heating days
+        let mut cops: [f32; 8760] = [0.; 8760];
+        let mut qs: [f32; 8760] = [0.; 8760];
+        for (idx, t_out) in reference_temperatures.iter().enumerate() {
             if heating_days[idx] {
-                cops[idx] = heatpump_coefficients_cop(&pow_t, 
-                                                      &t_out, &t_supply);
+                cops[idx] = cop_from_coefficients(&pow_t, &t_out, &t_supply);
+                qs[idx] = q_from_coefficients(&pow_t, &t_out, &t_supply);
             }
         }
             
-        let cop_mean = average(&cops);
-        let mut _t = t_ref.iter().min();
-        let t_min;
-        match _t {
-            Some(min) => t_min = min,
-            None      => warn!("min not found"),
+        // introduce seasonal performance factor and corresponding temperature
+        let mut cop_mean = 0.;
+        let mut t_min = reference_temperatures[0];
+        for value in &reference_temperatures {
+            if *value < t_min {
+                t_min = *value;
+            }
         }
-        // coefficients are not dependend on power class for now
+        let mut pow_heat: [f32; 8760] = [0.; 8760];
+        // ignore lower temperatures till COP satisfies minimum
         while cop_mean < seas_perf_fac {
-            t_min = &(t_min + 1.);
-            for (idx, temp) in t_ref.iter().enumerate() {
-                if temp < t_min {
+            for (idx, temp) in reference_temperatures.iter().enumerate() {
+                if *temp < t_min {
                     heating_days[idx] = false;
                 }
+                if heating_days[idx] == true {
+                    pow_heat[idx] = (-q_hln / (t_heat-t_out_n)) * temp + q_hln;
+                }
             }
-            let mut i = 0;
-            let cop_values = cops.retain(|_| (heating_days[i]), i += 1).0;
-            cop_mean = average(cop_values);
+            let mut weights: [f32; 8760] = [0.; 8760];
+            pow_t = ((-q_hln / (t_heat-t_out_n)) * t_min + q_hln) / cop_from_coefficients(&pow_t, &t_min, &t_supply);
+            for (idx, value) in heating_days.iter().enumerate() {
+                let mut div = 0.;
+                if *value == true {
+                    div = pow_heat[idx] / (pow_t * qs[idx]);
+                
+                    if div > 1. {
+                        weights[idx] = 1.;
+                    }
+                    else {
+                        weights[idx] = div;
+                    }
+                    //debug!("div: {}, pow_heat: {}, pow_t: {}, qs: {}", div, pow_heat[idx], pow_t, qs[idx]);
+                }
+            }
+            cop_mean = average_bool_select_weighted(&cops, &weights, &heating_days);
+            debug!("{}", cop_mean);
+            //debug!("{}", cop_from_coefficients(&pow_t, &t_min, &t_supply));
+            debug!("{}, {}, {}", &pow_t, &t_min, &t_supply);
+            //debug!("{}", cop_from_coefficients(&7822.9, &-11.7, &35.));
+
+            t_min = t_min + 1.;
         }
-
-        // update installed power at minimal working temperature
-        pow_t = (-q_hln/t_heat) * t_min + q_hln;
-
-
-
-        // calculate predicted seasonal performance factor with
-        // - outside temperatures
-        // - supply temperature
-        // - coefficients of performance
 
         // heatpump
         let heatpump = Heatpump::new(pow_t, t_supply, hist);
@@ -194,6 +279,7 @@ impl HeatpumpSystem {
         let heatpump_system = HeatpumpSystem {heatpump: heatpump,
                      storage: storage,
                      boiler: boiler,
+
                      gen_e: gen_e,
                      gen_t: gen_t,
                     };
@@ -231,5 +317,33 @@ impl HeatpumpSystem {
                 thermal_load: &f32,
                 t_out: &f32) -> (f32, f32) {
 
+        let time_step = 0.25; // ToDo: time step fixed
+
+        let(con_e, mut pow_t) = self.heatpump.step(&state, &t_out);
+
+        if *state == false {
+            let _result = self.boiler.step(&state);
+        }
+        else {
+            // stored enough?
+            if (pow_t + self.storage.get_charge()/time_step) >= *thermal_load {
+                // turn boiler off this step
+                self.boiler.step(&false);
+            }
+            else {
+                // turn boiler on this step
+                pow_t += self.boiler.step(&true);
+            }
+        }
+
+        // save production data
+        self.save_hist(&con_e, &pow_t);
+        
+        // get thermal load from storage and update charging state
+        pow_t = self.storage.step(&pow_t, thermal_load);
+
+        // return supply data
+        return (con_e, pow_t);
+        
     }
 }
