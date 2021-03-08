@@ -35,14 +35,14 @@ cell = Cell(climate.loc['Eg', 'standard data'],
 
 # %% Create Building
 # Parameter
-bClass = "class_5"
+bClass = "class_4"
 mState = "original"  # "modernised"
 airState = "VentilationFree"  # "VentilationMech"
 isAtDHN = False
 a_uv_values = np.array([Geo.loc['Areas'].values.T[0],
                         U.loc['UValues', (bClass, mState)]
                         ]).T
-if bClass == 'class_1':
+if bClass == 'class_5':
     infState = 'new'
 else:
     infState = mState
@@ -79,7 +79,7 @@ t_supply = classTemperatures[bClass]
 
 # minimum Jahresarbeitszahl for BAFA-Förderung
 if infState == 'new':
-    seas_perf_fac = 4.5
+    seas_perf_fac = 4.
 else:
     seas_perf_fac = 3.5
 

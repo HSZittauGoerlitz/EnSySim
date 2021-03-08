@@ -141,8 +141,10 @@ impl HeatpumpSystem {
         // start with full building supply
         // use 6h blocking time by electricity provider
         // ToDo: account for drinking water heating time
-        let t_out_n = -13.8;
-        let mut pow_t = q_hln * 24. / (24.-6.) / cop_from_coefficients(&q_hln, &t_out_n, &t_supply);
+        // account for blocking times in final result
+        let t_out_n = -13.8; // East
+        let mut pow_t = q_hln * 24. / (24.-6.) /
+                        cop_from_coefficients(&q_hln, &t_out_n, &t_supply);
 
         // reference temperature for heating days
         let t_heat = 15.;
@@ -179,31 +181,41 @@ impl HeatpumpSystem {
         }
 
         // introduce seasonal performance factor as mean of COPS
-        let mut cop_mean = 0.;
+        let mut cop_mean = -1.;
+        // needed heating power for each hour
         let mut pow_heat: [f32; 8760] = [0.; 8760];
+        let intercept = (t_heat/(t_heat-t_out_n)) * q_hln;
 
         // increase lower bound of heatpump working temperatures till mean 
         // COP satisfies minimum seasonal performance factor
+        let mut iter_count = 0.;
         while cop_mean < seas_perf_fac {
             // update bool vector for hour selection
+            debug!("iteration {}", iter_count);
+            // increase lower bound of heatpump working temperature
+            if iter_count > 0. {
+                t_min = t_min + 1.;
+            }
+
             for (idx, temp) in reference_temperatures.iter().enumerate() {
                 if *temp < t_min {
                     heating_days[idx] = false;
                 }
                 if heating_days[idx] == true {
                     // calculate needed heating power for this hour
-                    pow_heat[idx] = (-q_hln / (t_heat-t_out_n)) * temp + q_hln;
+                    pow_heat[idx] = (-q_hln / (t_heat-t_out_n)) *
+                                     temp + intercept;
                 }
             }
             // introduce weights to take into account over- and undersupply 
             // during this hour
-            let mut weights: [f32; 8760] = [0.; 8760];
-            // calculate installed heatpump power based on minimum working 
-            // temperature 
-            pow_t = ((-q_hln / (t_heat-t_out_n)) * t_min + q_hln) / 
-                    cop_from_coefficients(&pow_t, &t_min, &t_supply);
+            let mut weights: [f32; 8760] = [1.; 8760];
+            // calculate installed heatpump power based on heat needed at
+            //  minimum working temperature and power factor
+            pow_t = ((-q_hln / (t_heat-t_out_n)) * t_min + intercept) /
+                      q_from_coefficients(&pow_t, &t_min, &t_supply);
             // calculate weights
-            for (idx, value) in heating_days.iter().enumerate() {
+/*             for (idx, value) in heating_days.iter().enumerate() {
                 let mut div = 0.;
                 if *value == true {
                     div = pow_heat[idx] / (pow_t * qs[idx]);
@@ -215,29 +227,48 @@ impl HeatpumpSystem {
                         weights[idx] = div;
                     }
                 }
-            }
+            } */
             // calculate mean cop
             cop_mean = average_bool_select_weighted(&cops, &weights,
                                                     &heating_days);
-            debug!("calculated mean cop: {}", cop_mean);
-            //debug!("{}", cop_from_coefficients(&pow_t, &t_min, &t_supply));
-            debug!("net power: {}, for minimum temperature: {}°C and supply 
-                   temperature: {}°C", &pow_t, &t_min, &t_supply);
-            //debug!("{}", cop_from_coefficients(&7822.9, &-11.7, &35.));
+            iter_count += 1.;
 
-            // increase lower bound of heatpump working temperature
-            t_min = t_min + 1.;
+            let min_cop = cop_from_coefficients(&pow_t, &t_min, &t_supply);
+            let min_q = q_from_coefficients(&pow_t, &t_min, &t_supply);
+            debug!("calculated mean cop: {},
+                    minimum cop: {},
+                    minimum power factor: {}",
+                    cop_mean, min_cop, min_q);
+    
+            debug!("net power: {}W, for 
+                   minimum temperature: {}°C and 
+                   supply temperature: {}°C
+                   max heating load: {}W,
+                   corresponding heating power: {}W",
+                   &pow_t, &t_min, &t_supply, &q_hln,
+                   &(pow_t * min_q));
         }
+        let min_cop = cop_from_coefficients(&pow_t, &t_min, &t_supply);
+        let min_q = q_from_coefficients(&pow_t, &t_min, &t_supply);
+        debug!("calculated mean cop: {},
+                minimum cop: {},
+                minimum power factor: {}",
+                cop_mean, min_cop, min_q);
+
+        debug!("net power: {}W, for 
+               minimum temperature: {}°C and 
+               supply temperature: {}°C
+               max heating load: {}W,
+               corresponding heating power: {}W",
+               &pow_t, &t_min, &t_supply, &q_hln,
+               &(pow_t * min_q));
+ //debug!("{}", cop_from_coefficients(&7822.9, &-11.7, &35.));
 
         // create heatpump
         let heatpump = Heatpump::new(pow_t, t_supply, hist);
 
         // create boiler based on missing power
-        let boiler = Boiler::new(q_hln -
-                                (pow_t * cop_from_coefficients(&pow_t,
-                                                               &(t_min - 1.),
-                                                               &t_supply)),
-                                 hist);
+        let boiler = Boiler::new(q_hln - pow_t * min_q, hist);
 
         // thermal storage:
         // 50l~kg per kW thermal generation, 40K difference 
