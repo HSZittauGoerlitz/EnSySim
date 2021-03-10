@@ -23,7 +23,7 @@ mod hist_memory;
 #[pymodule]
 #[allow(non_snake_case)] // for python binding
 fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    
+
     pyo3_log::init();
 
     m.add_class::<agent::Agent>()?;
@@ -50,7 +50,7 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 ///                           agriculture business agents
 /// * slp_bslc (&f32): Standard load profile data for
 ///                           common business agents
-/// * hot_water_data (&f32): Hot water profile data
+/// * hot_water_data (&f32): Actual hot water day profile factors [-]
 /// * t (&f32): Temperature curve
 /// * eg (&f32): Global irradiation curve
 #[pyfunction]

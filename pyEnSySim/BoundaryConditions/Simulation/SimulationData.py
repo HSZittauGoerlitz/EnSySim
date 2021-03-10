@@ -16,15 +16,14 @@ def _addHotwater(simData):
         simData (pandas data frame): Simulation time and data
 
     Returns:
-        pandas data frame: simData complemented by hot water profile
+        pandas data frame: simData complemented by hot water day profile factor
     """
     # all agents are using PHH profile,
     # since there is no statistic to business hot water demand available
     HWP = pd.read_hdf("./BoundaryConditions/Thermal/"
                       "HotWaterDayProfile.h5", key='PHH')
-    simData.loc[:, 'HWP_in_W'] = (HWP.loc[simData.time.dt.hour,
-                                  'fProportion'].values *
-                                  1e3 / 8760.)  # kW -> W; 8760h = 1 year
+    simData.loc[:, 'HWPfactor'] = (HWP.loc[simData.time.dt.hour,
+                                   'fProportion'].values)
 
     return simData
 
@@ -401,7 +400,7 @@ def getSimData(startDate, endDate, region):
             data.SLP_PHH.to_numpy(dtype=np.float32),
             data.SLP_BSLa.to_numpy(dtype=np.float32),
             data.SLP_BSLc.to_numpy(dtype=np.float32),
-            data.HWP_in_W.to_numpy(dtype=np.float32),
+            data.HWPfactor.to_numpy(dtype=np.float32),
             data.loc[:, 'T'].to_numpy(dtype=np.float32),
             data.Eg.to_numpy(dtype=np.float32)
             )

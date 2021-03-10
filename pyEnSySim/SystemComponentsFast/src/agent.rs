@@ -11,6 +11,8 @@ pub struct Agent {
     coc: f32,
     #[pyo3(get)]
     demand_apv: f32,
+    #[pyo3(get)]
+    hw_demand: f32,  // mean yearly hot water demand in [W]
 }
 
 #[pymethods]
@@ -35,10 +37,12 @@ impl Agent {
 
         let mut agent = Agent {a_type: a_type,
                                coc: 0.,
-                               demand_apv: 0.
+                               demand_apv: 0.,
+                               hw_demand: 0.
                                };
         agent.get_apv_demand();
         agent.get_coc();
+        agent.get_yearly_hot_water_demand();
         agent
     }
 }
@@ -102,13 +106,22 @@ impl Agent {
         }
     }
 
+    /// Calculation of the yearly mean hot water demand for this agent.
+    /// For the calculation a regression model, deviated off destatis data,
+    /// is used. This model estimates the yearly thermal energy needed for
+    /// hot water by a household coc factor. Since the energy is given in kWh,
+    /// but the simulation builds on power, a conversion from kWh -> W is
+    /// necessary. This is done by the multiplication with 1e3/8760h.
+    fn get_yearly_hot_water_demand(&mut self) {
+        self.hw_demand = (684.7 * self.coc + 314.4) * 1e3 / 8760.;
+    }
+
+
     /// Calculate agents actual hot water demand
     /// in relation to current hot water profile value.
-    /// For the calculation a regression model,
-    /// deviated off destatis data, is used.
     ///
     /// # Arguments
-    /// * hw_profile (f32): Actual hw profile value [W]
+    /// * hw_profile (&f32): Actual hot water day profile factor [-]
     ///
     /// # Returns
     /// * f32: agents hot water demand [W]
@@ -116,14 +129,14 @@ impl Agent {
         let mut rng = rand::thread_rng();
         let r_f: f32 = rng.gen_range(0.8, 1.2);
 
-        (684.7 * hw_profile * self.coc + 314.4) * r_f
+        self.hw_demand * r_f * hw_profile
     }
 
     /// Calculate and return current power load
     ///
     /// # Arguments
     ///    slp_data ([f32; 3]): Standard load Profile of all agent types
-    ///    hw_profile (f32): Actual hw profile value [W]
+    /// * hw_profile (&f32): Actual hot water day profile factor [-]
     ///
     /// # Returns
     /// * (f32, f32): Currend electrical and thermal power demand [W]
