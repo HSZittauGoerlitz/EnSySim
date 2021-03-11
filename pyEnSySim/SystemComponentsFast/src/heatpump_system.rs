@@ -27,7 +27,7 @@ fn average(numbers: &[f32]) -> f32 {
     average
 }
 
-fn average_bool_select(numbers: &[f32], bool_select: &[bool]) -> f32 {
+/* fn average_bool_select(numbers: &[f32], bool_select: &[bool]) -> f32 {
     let mut sum = 0.;
     let mut count = 0;
     for (idx, sel) in bool_select.iter().enumerate() {
@@ -37,7 +37,7 @@ fn average_bool_select(numbers: &[f32], bool_select: &[bool]) -> f32 {
         }
     }
     sum / (count as f32)
-}
+} */
 
 fn average_bool_select_weighted(numbers: &[f32], weights: &[f32],
                                 bool_select: &[bool]) -> f32 {
