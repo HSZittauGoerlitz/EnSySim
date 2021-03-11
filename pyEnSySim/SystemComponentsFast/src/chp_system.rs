@@ -40,7 +40,6 @@ impl ChpSystem {
         let mut diffs: [f32;11] = [0.;11];
         let exact = 25.0 * 75.0; // kW * l/kW
     
-    
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
         }
