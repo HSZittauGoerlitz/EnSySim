@@ -16,6 +16,8 @@ pub struct Heatpump {
     gen_t: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
     con_e: Option<hist_memory::HistMemory>,
+    #[pyo3(get)]
+    cop_hist: Option<hist_memory::HistMemory>,
 }
 
 fn cop_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
@@ -100,7 +102,7 @@ fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
     let q = (coeffs_q[0] + coeffs_q[1]*t_supply
               + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out 
               + coeffs_q[4]*f32::powf(*t_supply,2.) 
-              + coeffs_q[5]*f32::powf(*t_out, 2.)) * pow_t;
+              + coeffs_q[5]*f32::powf(*t_out, 2.));
     q
 }
 
@@ -123,13 +125,16 @@ impl Heatpump {
 
         let con_e;
         let gen_t;
+        let cop_hist;
 
         if hist > 0 {
             con_e = Some(hist_memory::HistMemory::new(hist));
             gen_t = Some(hist_memory::HistMemory::new(hist));
+            cop_hist = Some(hist_memory::HistMemory::new(hist));
         } else {
             con_e = None;
             gen_t = None;
+            cop_hist = None;
         }
 
         let heatpump = Heatpump {pow_t: pow_t,
@@ -137,6 +142,7 @@ impl Heatpump {
                      t_supply: t_supply,
                      con_e: con_e,
                      gen_t: gen_t,
+                     cop_hist: cop_hist,
                     };
         heatpump
     }
@@ -145,7 +151,7 @@ impl Heatpump {
 /// Heatpump
 impl Heatpump {
 
-    fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
+    fn save_hist(&mut self, pow_e: &f32, pow_t: &f32, cop: &f32) {
         match &mut self.con_e {
             None => {},
             Some(con_e) => {
@@ -158,11 +164,17 @@ impl Heatpump {
                 gen_t.save(*pow_t)
             }
         }
+        match &mut self.cop_hist {
+            None => {},
+            Some(cop_hist) => {
+                cop_hist.save(*cop)
+            }
+        }
     }
     /// Calculate current electrical and thermal power
     ///
     /// # Arguments
-    /// * state (&bool): Current state of CHP plant (on/off)
+    /// * state (&bool): Current state of heatpump (on/off)
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
@@ -178,18 +190,21 @@ impl Heatpump {
         let cop;
 
         if *state {
-            gen_t = q_from_coefficients(&self.pow_t, t_out, &self.t_supply);
+            gen_t =  self.pow_t * q_from_coefficients(&self.pow_t,
+                                                      t_out,
+                                                      &self.t_supply);
             cop = cop_from_coefficients(&self.pow_t, t_out, &self.t_supply);
             con_e = gen_t / cop;
         }
         else {
             gen_t = 0.;
             con_e = 0.;
+            cop = -1.;
         }
         // ToDo: take modulation into account
 
         // save and return data
-        self.save_hist(&con_e, &gen_t);
+        self.save_hist(&con_e, &gen_t, &cop);
 
         return (con_e, gen_t);
     }
