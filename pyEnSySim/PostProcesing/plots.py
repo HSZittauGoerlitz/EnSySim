@@ -36,43 +36,46 @@ def arbitraryBalance(generation, load, time, unitPrefix, title=""):
     fig.add_trace(go.Scatter(x=time, y=generation,
                              line={'color': COL_GEN,
                                    'width': 1},
-                             name="Generation E",
-                             legendgroup='Electrical'
+                             name="Generation",
+                             legendgroup='Power'
                              ),
                   row=1, col=1)
     fig.add_trace(go.Scatter(x=time, y=-load,
                              line={'color': COL_CON,
                                    'width': 1},
-                             name="Load E",
-                             legendgroup='Electrical'
+                             name="Load",
+                             legendgroup='Power'
                              ),
                   row=1, col=1)
     fig.add_trace(go.Scatter(x=time, y=generation-load,
                              line={'color': COL_BAL,
                                    'width': 1},
-                             name="Balance E",
-                             legendgroup='Electrical'
+                             name="Balance",
+                             legendgroup='Power'
                              ),
                   row=1, col=1)
     fig.add_trace(go.Scatter(x=time, y=energy_gen,
                              line={'color': COL_GEN,
                                    'width': 1},
-                             name="Generation T",
-                             legendgroup='Thermal'
+                             name="Generation_en",
+                             legendgroup='Energy',
+                             showlegend=False
                              ),
                   row=2, col=1)
     fig.add_trace(go.Scatter(x=time, y=-energy_load,
                              line={'color': COL_CON,
                                    'width': 1},
-                             name="Load T",
-                             legendgroup='Thermal'
+                             name="Load_en",
+                             legendgroup='Energy',
+                             showlegend=False
                              ),
                   row=2, col=1)
     fig.add_trace(go.Scatter(x=time, y=energy_gen-energy_load,
                              line={'color': COL_BAL,
                                    'width': 1},
-                             name="Balance T",
-                             legendgroup='Thermal'
+                             name="Balance_en",
+                             legendgroup='Energy',
+                             showlegend=False
                              ),
                   row=2, col=1)
     fig.update_layout(height=600, width=1000,
