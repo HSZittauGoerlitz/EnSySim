@@ -11,12 +11,12 @@ import logging
 FORMAT = ('%(levelname)s %(name)s %(asctime)-15s '
           '%(filename)s:%(lineno)d %(message)s')
 logging.basicConfig(format=FORMAT)
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.WARNING)
 
 # %% Parameter
 # time
 start = "01.01.2020"
-end = "01.01.2021"
+end = "07.01.2020"
 # environment
 region = "East"
 
@@ -35,7 +35,7 @@ cell = Cell(climate.loc['Eg', 'standard data'],
 
 # %% Create Building
 # Parameter
-bClass = "class_4"
+bClass = "class_5"
 mState = "original"  # "modernised"
 airState = "VentilationFree"  # "VentilationMech"
 isAtDHN = False
@@ -79,16 +79,16 @@ t_supply = classTemperatures[bClass]
 
 # minimum Jahresarbeitszahl for BAFA-Förderung
 if infState == 'new':
-    seas_perf_fac = 4.
+    seas_perf_fac = 3.
 else:
     seas_perf_fac = 3.5
 
 building.add_dimensioned_heatpump(seas_perf_fac,
                                   t_supply,
                                   t_ref,
-                                  1)
+                                  nSteps)
 logging.debug("installed {:.2f}W thermal heatpump generation"
-              .format(building.heatpump.heatpump.pow_t))
+              .format(building.heatpump_system.heatpump.pow_t))
 logging.debug("maximum heat load is {:.2f}W"
               .format(building.q_hln))
 
@@ -116,3 +116,4 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 # %%
 b = cell.buildings[0]
 plots.buildingTemperature(b, time, T)
+

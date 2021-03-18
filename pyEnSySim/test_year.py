@@ -29,7 +29,7 @@ df = pd.read_hdf(path+file_name)
 t_ref = df['temperatures_15'].tolist()
 
 # %% get only heating days
-t_heat = 10
+t_heat = 12
 heating_days = []
 for i in range(0, 365):
     t_day_mean = sum(t_ref[(i*24):(i*24+24)]) / 24.
@@ -51,7 +51,7 @@ count = []
 for temp in uniques:
     count.append(counts[temp])
 
-plt.plot(uniques, count)
+#plt.plot(uniques, count)
 
 # %%
 cum_count = []
