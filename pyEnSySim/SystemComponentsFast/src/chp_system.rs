@@ -38,7 +38,7 @@ impl ChpSystem {
         // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
         let models: [f32;11] = [200.,300.,400.,500.,600.,750.,950.,1500.,2000.,3000.,5000.];
         let mut diffs: [f32;11] = [0.;11];
-        let exact = 25.0 * 75.0; // kW * l/kW
+        let exact = pow_t * 75.0; // kW * l/kW
     
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
@@ -58,7 +58,7 @@ impl ChpSystem {
             i
         }
         let volume = models[index];
-        let cap = volume * 4.184*1000. * 40.;
+        let cap = volume * 4.184*1000. * 40. / 3600.; // in Wh
 
         let storage = ThermalStorage::new(cap, hist);
 

@@ -8,8 +8,9 @@ use crate::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct ThermalStorage {
-    cap: f32,  // capacity of thermal storage [J]
-    charge: f32,  // charging state of storage [J] -> get_charge()
+    #[pyo3(get)]
+    cap: f32,  // capacity of thermal storage [Wh]
+    charge: f32,  // charging state of storage [Wh] -> get_charge()
     #[pyo3(get)]
     charge_t: Option<hist_memory::HistMemory>,
 }
@@ -22,7 +23,7 @@ impl ThermalStorage {
     ///  Loading state is randomly initialized.
     ///
     /// # Arguments
-    /// * cap (f32): installed capacity [J]
+    /// * cap (f32): installed capacity [Wh]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(cap: f32, hist: usize) -> Self {
@@ -56,7 +57,7 @@ impl ThermalStorage {
         return self.charge
     }
 
-    fn save_hist_c(&mut self) {
+    fn save_hist(&mut self) {
         match &mut self.charge_t {
             None => {},
             Some(charge_t) => {
@@ -83,7 +84,7 @@ impl ThermalStorage {
         self.charge += *thermal_generation * time_step;
         self.charge -= pow_t * time_step;
 
-        // get rid of excess heat
+/*         // get rid of excess heat
         if self.charge > self.cap {
             self.charge = self.cap;
         }
@@ -91,10 +92,10 @@ impl ThermalStorage {
         if self.charge < 0. {
             debug!("storage is empty and could not supply enough heat!");
             self.charge = 0.;
-        }
+        } */
         
         // save data
-        self.save_hist_c();
+        self.save_hist();
 
         return pow_t;
     }
