@@ -21,8 +21,8 @@ def get_uniques(list_in):
 # %% get reference year temperatures
 
 
-path = "BoundaryConditions/Weather/"
-file_name = "TRY2015.h5"
+path = "../BoundaryConditions/Weather/"
+file_name = "East.h5"
 
 df = pd.read_hdf(path+file_name)
 

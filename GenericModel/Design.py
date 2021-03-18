@@ -129,7 +129,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         file_name = "TRY2015.h5"
         df = pd.read_hdf(path+file_name)
         t_ref = df['temperatures_15'].tolist()
-        
+
         if pHP[classNames[classIdx]] > np.random.random():
             # choose supply temperature
             classTemperatures = {"class_1": 55,
