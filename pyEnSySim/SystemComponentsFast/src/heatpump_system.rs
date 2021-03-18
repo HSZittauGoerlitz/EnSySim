@@ -12,11 +12,13 @@ use crate::hist_memory;
 pub struct HeatpumpSystem {
     #[pyo3(get)]
     heatpump: Heatpump,  // heatpump
+    #[pyo3(get)]
     storage: ThermalStorage,  // thermal storage
+    #[pyo3(get)]
     boiler: Boiler,  // peak load boiler
 
     #[pyo3(get)]
-    gen_e: Option<hist_memory::HistMemory>,
+    con_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
 }
@@ -276,7 +278,7 @@ impl HeatpumpSystem {
         let models: [f32;11] = [200., 300., 400., 500., 600., 750., 950., 
                                 1500., 2000., 3000., 5000.];
         let mut diffs: [f32;11] = [0.;11];
-        let exact = 25.0 * 50.0; // kW * l/kW
+        let exact = pow_t * 50.0; // kW * l/kW
         
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
@@ -295,20 +297,21 @@ impl HeatpumpSystem {
             i
         }
         let volume = models[index];
-        let cap = volume * 4.184*1000. * 40.;
+        let temp_diff = t_supply + 5. - 20.; // 5°C spread, 20°C room temperature
+        let cap = volume * 4.184*1000. * temp_diff / 3600.;
 
         let storage = ThermalStorage::new(cap, hist);
 
 
-        let gen_e;
+        let con_e;
         let gen_t;
 
         if hist > 0 {
-            gen_e = Some(hist_memory::HistMemory::new(hist));
+            con_e = Some(hist_memory::HistMemory::new(hist));
             gen_t = Some(hist_memory::HistMemory::new(hist));
         } 
         else {
-            gen_e = None;
+            con_e = None;
             gen_t = None;
         }
 
@@ -316,7 +319,7 @@ impl HeatpumpSystem {
                      storage: storage,
                      boiler: boiler,
 
-                     gen_e: gen_e,
+                     con_e: con_e,
                      gen_t: gen_t,
                     };
         heatpump_system
@@ -326,10 +329,10 @@ impl HeatpumpSystem {
 /// CHP plant
 impl HeatpumpSystem {
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
-        match &mut self.gen_e {
+        match &mut self.con_e {
             None => {},
-            Some(gen_e) => {
-                gen_e.save(*pow_e)
+            Some(con_e) => {
+                con_e.save(*pow_e)
             },
         }
         match &mut self.gen_t {
