@@ -45,7 +45,7 @@ def _addAgents(building, pAgent, pPHH, pAgriculture):
     return building
 
 
-def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
+def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, n,
                   pAgent, pPHH, pAgriculture, pPV, pHP, hist=0):
     """ Add Buildings of one type to cell
 
@@ -57,6 +57,9 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
                           ventilation method
         pDHN (float32): Proportion of buildings connected
                         to the district heating network
+        region (string): Region location of cell (determines climate / weather)
+                         Supported regions:
+                            East, West, South, North
         Geo (pd DataFrame): Geometry data of building type
         U (pd DataFrame): U-Values of building type
         n (pd DataFrame): Infiltration rates of building type
@@ -125,10 +128,8 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         if np.random.random() <= pPV:
             building.add_dimensioned_pv(cell.eg, hist)
         # add heatpump to building
-        path = "BoundaryConditions/Weather/"
-        file_name = "TRY2015.h5"
-        df = pd.read_hdf(path+file_name)
-        t_ref = df['temperatures_15'].tolist()
+        t_ref = pd.read_hdf('BoundaryConditions/Weather/{}.h5'.format(region),
+                            key='Weather').reference['T [degC]'].tolist()
 
         if pHP[classNames[classIdx]] > np.random.random():
             # choose supply temperature
@@ -469,7 +470,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
         _checkParameter(U, pBTypes[key])
 
         _addBuildings(cell, nBuildings[bType], pBTypes[bType], pDHN[bType],
-                      Geo, U, n,
+                      region, Geo, U, n,
                       pAgents[bType], pPHHagents[bType], pAgriculture[bType],
                       pPVplants, pHeatpumps, hist)
 
