@@ -125,6 +125,11 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
         if np.random.random() <= pPV:
             building.add_dimensioned_pv(cell.eg, hist)
         # add heatpump to building
+        path = "BoundaryConditions/Weather/"
+        file_name = "TRY2015.h5"
+        df = pd.read_hdf(path+file_name)
+        t_ref = df['temperatures_15'].tolist()
+        
         if pHP[classNames[classIdx]] > np.random.random():
             # choose supply temperature
             classTemperatures = {"class_1": 55,
@@ -133,36 +138,17 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, Geo, U, n,
                                  "class_4": 45,
                                  "class_5": 35}
             t_supply = classTemperatures[classNames[classIdx]]
-            # get Q & COP coefficients from file
-            cases = ['5to18kW', '18to35kW', '35to80kW']
+            seas_perf_fac = 3.
+
             if building.q_hln < 5000 or building.q_hln > 80000:
                 lg.warning("for this building no heatpump data is available, "
                            "maximum heat load is {:.2f}W"
                            .format(building.q_hln))
             # differentiate by installed power
             else:
-                if building.q_hln >= 5000 and building.q_hln < 18000:
-                    case = cases[0]
-                elif building.q_hln >= 18000 and building.q_hln < 35000:
-                    case = cases[1]
-                elif building.q_hln >= 35000 and building.q_hln <= 80000:
-                    case = cases[2]
-
-                heatpumpCoefficients = pd.read_hdf("./BoundaryConditions"
-                                                   "/Thermal"
-                                                   "/HeatpumpCoefficients.h5",
-                                                   case)
-                # pack arrays
-                coeffs_Q = np.array([heatpumpCoefficients['Qth -5 < 7°C'],
-                                     heatpumpCoefficients['Qth 7 - 10°C'],
-                                     heatpumpCoefficients['Qth >10 - 25°C']])
-                coeffs_COP = np.array([heatpumpCoefficients['COP -5 < 7°C'],
-                                       heatpumpCoefficients['COP 7 - 10°C'],
-                                       heatpumpCoefficients['COP >10 - 25°C']])
-
-                building.add_dimensioned_heatpump(t_supply,
-                                                  coeffs_Q,
-                                                  coeffs_COP,
+                building.add_dimensioned_heatpump(seas_perf_fac,
+                                                  t_supply,
+                                                  t_ref,
                                                   hist)
                 lg.debug("installed {:.2f}W thermal heatpump generation"
                          .format(building.q_hln))
