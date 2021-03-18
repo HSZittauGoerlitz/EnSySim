@@ -34,9 +34,9 @@ pub struct Building {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
-    heatpump: Option<heatpump_system::HeatpumpSystem>,
+    heatpump_system: Option<heatpump_system::HeatpumpSystem>,
     #[pyo3(get)]
-    chp: Option<chp_system::ChpSystem>,
+    chp_system: Option<chp_system::ChpSystem>,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -137,8 +137,8 @@ impl Building {
             is_self_supplied_t: !is_at_dhn,
             controller: default_controller,
             pv: None,
-            heatpump: None,
-            chp: None,
+            heatpump_system: None,
+            chp_system: None,
             gen_e: gen_e,
             gen_t: gen_t,
             load_e: load_e,
@@ -170,13 +170,13 @@ impl Building {
         }
     }
 
-    fn add_heatpump(&mut self, heatpump: heatpump_system::HeatpumpSystem) {
+    fn add_heatpump(&mut self, heatpump_sytem: heatpump_system::HeatpumpSystem) {
         self.is_self_supplied_t = false;
         // building can have either chp or heatpump
-        match &self.chp {
+        match &self.chp_system {
             // for now only one heatpump per building is allowed
-            None => {match &self.heatpump {
-                    None => {self.heatpump = Some(heatpump);},
+            None => {match &self.heatpump_system {
+                    None => {self.heatpump_system = Some(heatpump_sytem);},
                     Some(_building_heatpump) => warn!("Building already has a
                                                 heatpump, nothing is added"),
                 };
@@ -186,10 +186,10 @@ impl Building {
         }
     }
 
-    fn add_chp(&mut self, chp: chp_system::ChpSystem) {
+    fn add_chp(&mut self, chp_system: chp_system::ChpSystem) {
         self.is_self_supplied_t = false;
-        match &self.chp {
-            None => {self.chp = Some(chp);},
+        match &self.chp_system {
+            None => {self.chp_system = Some(chp_system);},
             Some(_building_chp) => warn!("Building already has a
                                           CHP plant, nothing is added"),
         }
@@ -285,7 +285,7 @@ impl Building {
     }
 
     fn get_chp_generation(&mut self, thermal_load: &f32) -> (f32, f32) {
-        match &mut self.chp {
+        match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
                 building_chp.step(&self.controller.chp_state,
@@ -295,7 +295,7 @@ impl Building {
     }
 
     fn get_heatpump_generation(&mut self, thermal_load: &f32, t_out: &f32) -> (f32, f32) {
-        match &mut self.heatpump {
+        match &mut self.heatpump_system {
             None => (0., 0.),
             Some(building_heatpump) => {
                 building_heatpump.step(&self.controller.heatpump_state,
