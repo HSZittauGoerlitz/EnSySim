@@ -5,6 +5,7 @@
 .vscode/.ropeproject/config.py
 **/target
 .vscode/*
+!.vscode/tasks.json
 
 /SystemComponentsFast/build_cmd/
 !/SystemComponentsFast/build_cmd/*Example*
