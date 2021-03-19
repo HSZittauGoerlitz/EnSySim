@@ -231,6 +231,7 @@ def _saveData(data, ToutNorm, name):
                                      dt.dt.total_seconds()[1:] / 3600.)
                                      .values[-1]) * 1e-3  # Wh -> kWh
     sd.loc['ToutNorm degC', 'Value'] = ToutNorm
+    sd.loc[:, 'Value'] = sd['Value'].apply(float)  # ensure correct data type
     store['Standard'] = sd
 
     store.close()
