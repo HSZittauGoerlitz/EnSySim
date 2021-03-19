@@ -11,7 +11,7 @@
 				"isDefault": true
 			},
 			"options": {
-				"cwd": "${workspaceFolder}/pyEnSySim/SystemComponentsFast"
+				"cwd": "${workspaceFolder}/SystemComponentsFast"
 			},
 			"presentation": {
 				"echo": true,
@@ -29,7 +29,7 @@
 				"clean"
 			],
 			"options": {
-				"cwd": "${workspaceFolder}/pyEnSySim/SystemComponentsFast"
+				"cwd": "${workspaceFolder}/SystemComponentsFast"
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -44,7 +44,7 @@
 			],
 			"group": "build",
 			"options": {
-				"cwd": "${workspaceFolder}/pyEnSySim/SystemComponentsFast"
+				"cwd": "${workspaceFolder}/SystemComponentsFast"
 			},
 			"presentation": {
 				"echo": true,
