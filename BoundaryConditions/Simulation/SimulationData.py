@@ -269,9 +269,9 @@ def _getWeather(simData, region):
                        RefWeather.summer_extreme['T [degC]']*w[2]).values,
                       'linear', bounds_error=False, fill_value='extrapolate')
         fEg = interp1d(t,
-                       (RefWeather.reference['Eg [kW]']*w[0] +
-                        RefWeather.winter_extreme['Eg [kW]']*w[1] +
-                        RefWeather.summer_extreme['Eg [kW]']*w[2]).values,
+                       (RefWeather.reference['Eg [W]']*w[0] +
+                        RefWeather.winter_extreme['Eg [W]']*w[1] +
+                        RefWeather.summer_extreme['Eg [W]']*w[2]).values,
                        'linear', bounds_error=False, fill_value='extrapolate')
 
         # get time for interpolation
