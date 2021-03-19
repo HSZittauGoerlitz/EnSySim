@@ -127,7 +127,7 @@ def _getTRY_Data_T_Eg(file_name, loc):
     direct and diffuse sun light (Columns B and D).
 
     The temperature is taken directly as [degC]
-    The radiation data is recalculated as [kw/m^2]
+    The radiation data is taken directly as [W/m^2]
     The global radiation value is calculated as [kWh/m^2 ]
     (time integral of radiation data)
 
@@ -154,7 +154,7 @@ def _getTRY_Data_T_Eg(file_name, loc):
                                        format='%Y%m%d')
     data.date_time += pd.to_timedelta(data.HH, unit='h')
 
-    data['Eg'] = (data.B + data.D) * 1e-3  # W -> kW
+    data['Eg'] = (data.B + data.D)
     data['T'] = data.t
 
     # clean up
@@ -189,7 +189,7 @@ def _loadAllTRYfiles(loc):
             if refType == 'reference':
                 data[('date_time', '')] = sub_data.date_time
 
-            data[(refType, 'Eg [kW]')] = sub_data['Eg']
+            data[(refType, 'Eg [W]')] = sub_data['Eg']
             data[(refType, 'T [degC]')] = sub_data['T']
 
     data[('doy', '')] = data[('date_time', '')].dt.day_of_year
@@ -204,7 +204,7 @@ def _saveData(data, ToutNorm, name):
     There are two kinds of data stored:
         1. Key: Weather (reference and extreme years)
             - date_time / doy for the reference year
-            - Eg (global irradiation in kW/m^2)
+            - Eg (global irradiation in W/m^2)
             - T (Air temperature in degC)
         2. Key: Standard
             - Eg (yearly global radiation in kWh/m^2)
@@ -226,13 +226,13 @@ def _saveData(data, ToutNorm, name):
     # in case of unequally spaced data get time steps
     dt = data.date_time.diff()
     # calculate yearly Eg Energy and store it
-    sd.loc['EgNorm kWh', 'Value'] = (data.reference['Eg [kW]'].values[0] +
-                                     (data.reference['Eg [kW]'][1:].cumsum() *
+    sd.loc['EgNorm kWh', 'Value'] = (data.reference['Eg [W]'].values[0] +
+                                     (data.reference['Eg [W]'][1:].cumsum() *
                                      dt.dt.total_seconds()[1:] / 3600.)
-                                     .values[-1])
+                                     .values[-1]) * 1e-3  # Wh -> kWh
     sd.loc['ToutNorm degC', 'Value'] = ToutNorm
     store['Standard'] = sd
-    print(sd)
+
     store.close()
 
 
