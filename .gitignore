@@ -6,4 +6,5 @@
 **/target
 .vscode/*
 
-/SystemComponentsFast/build_cmd/*Release*
+/SystemComponentsFast/build_cmd/
+!/SystemComponentsFast/build_cmd/*Example*
