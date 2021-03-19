@@ -34,9 +34,10 @@ pub struct Building {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
-    heatpump_system: Option<heatpump_system::HeatpumpSystem>,
-    #[pyo3(get)]
     chp_system: Option<chp_system::ChpSystem>,
+    #[pyo3(get)]
+    heatpump_system: Option<heatpump_system::HeatpumpSystem>,
+    heat_building: fn(&mut Building, &f32, &f32, &f32) -> (f32, f32),
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -137,8 +138,9 @@ impl Building {
             is_self_supplied_t: !is_at_dhn,
             controller: default_controller,
             pv: None,
-            heatpump_system: None,
             chp_system: None,
+            heatpump_system: None,
+            heat_building: Building::get_dhn_generation,
             gen_e: gen_e,
             gen_t: gen_t,
             load_e: load_e,
@@ -172,6 +174,7 @@ impl Building {
 
     fn add_heatpump(&mut self, heatpump_sytem: heatpump_system::HeatpumpSystem) {
         self.is_self_supplied_t = false;
+        self.heat_building = Building::get_heatpump_generation;
         // building can have either chp or heatpump
         match &self.chp_system {
             // for now only one heatpump per building is allowed
@@ -188,6 +191,7 @@ impl Building {
 
     fn add_chp(&mut self, chp_system: chp_system::ChpSystem) {
         self.is_self_supplied_t = false;
+        self.heat_building = Building::get_chp_generation;
         match &self.chp_system {
             None => {self.chp_system = Some(chp_system);},
             Some(_building_chp) => warn!("Building already has a
@@ -284,23 +288,74 @@ impl Building {
         }
     }
 
-    fn get_chp_generation(&mut self, thermal_load: &f32) -> (f32, f32) {
+    /// Function to calculate thermal generation of building,
+    /// if it's at district heating network or if it's self supplied.
+    ///
+    /// # Arguments
+    /// * thermal_load_heat (&f32): Space heating demand [W]
+    /// * thermal_load_hw (&f32): Hot water demand [W]
+    /// * t_out (&f32): Outside temperature [degC]
+    ///
+    /// # Returns
+    /// * (f32, f32): (electrical generation/load = 0., thermal generation)
+    fn get_dhn_generation(&mut self, thermal_load_heat: &f32,
+                          thermal_load_hw: &f32, t_out: &f32)
+    -> (f32, f32) {
+            // Building is self-supplied
+            if self.temperature > 20. {
+                return (0., *thermal_load_hw);
+            } else {
+                return (0., thermal_load_heat + thermal_load_hw);
+            }
+    }
+
+    /// Function to calculate thermal generation of building with chp plant.
+    ///
+    /// Since the chp generates electrical energy, this value is returned as
+    /// positive number.
+    ///
+    /// # Arguments
+    /// * thermal_load_heat (&f32): Space heating demand [W]
+    /// * thermal_load_hw (&f32): Hot water demand [W]
+    /// * t_out (&f32): Outside temperature [degC]
+    ///
+    /// # Returns
+    /// * (f32, f32): (electrical generation/load, thermal generation)
+    fn get_chp_generation(&mut self, thermal_load_heat: &f32,
+                          thermal_load_hw: &f32, t_out: &f32)
+    -> (f32, f32) {
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
                 building_chp.step(&self.controller.chp_state,
-                                  &thermal_load)
+                                  &(thermal_load_heat + thermal_load_hw))
             },
         }
     }
 
-    fn get_heatpump_generation(&mut self, thermal_load: &f32, t_out: &f32) -> (f32, f32) {
+    /// Function to calculate thermal generation of building with heatpump.
+    ///
+    /// Since the heatpump consumes electrical energy,
+    /// this value is returned as negative number.
+    ///
+    /// # Arguments
+    /// * thermal_load_heat (&f32): Space heating demand [W]
+    /// * thermal_load_hw (&f32): Hot water demand [W]
+    /// * t_out (&f32): Outside temperature [degC]
+    ///
+    /// # Returns
+    /// * (f32, f32): (electrical generation/load, thermal generation)
+    fn get_heatpump_generation(&mut self, thermal_load_heat: &f32,
+                               thermal_load_hw: &f32, t_out: &f32)
+    -> (f32, f32) {
         match &mut self.heatpump_system {
             None => (0., 0.),
             Some(building_heatpump) => {
-                building_heatpump.step(&self.controller.heatpump_state,
-                                  &thermal_load,
-                                  &t_out)
+                let (load_e, gen_t) = building_heatpump.step(
+                                        &self.controller.heatpump_state,
+                                        &(thermal_load_heat + thermal_load_hw),
+                                        t_out);
+                (-load_e, gen_t)
             },
         }
     }
@@ -369,9 +424,8 @@ impl Building {
                 t_out: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
-        let mut thermal_load_heat;  // space heating demand
+        let mut thermal_load_heat = 0.;  // space heating demand
         let mut thermal_load_hw = 0.;  // hot water demand
-        let mut thermal_load;  // complete thermal demand
         let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
         let mut thermal_generation = 0.;
@@ -387,33 +441,24 @@ impl Building {
         thermal_load_heat = self.res_u_trans * (self.temperature - t_out);
 
         // only consider thermal load for heating
-        if thermal_load_heat > 0. {
-            thermal_load = thermal_load_hw + thermal_load_heat;
-        } else {
-            thermal_load = thermal_load_hw;
-        }
+        if thermal_load_heat < 0. {
+            thermal_load_heat = 0.;
+        };
 
-        // calculate generation
-        // chp
-        let(sub_gen_e, sub_gen_t) =
-            self.get_chp_generation(&thermal_load);
-        electrical_generation += sub_gen_e;
-        thermal_generation += sub_gen_t;
-        // pv
+        // PV
         electrical_generation += self.get_pv_generation(eg);
-        // heatpumps
-        let(sub_load_e, sub_gen_t) =
-            self.get_heatpump_generation(&thermal_load, &t_out);
-        electrical_load += sub_load_e;
-        thermal_generation += sub_gen_t;
 
-        if self.is_self_supplied_t || self.is_at_dhn {
-            // Building is self-supplied
-            if self.temperature > 20. {
-                thermal_generation = thermal_load_hw;
-            } else {
-                thermal_generation = thermal_load;
-            }
+        // Heating
+        let (sub_e, sub_gen_t) = (self.heat_building)(self,
+                                                      &thermal_load_heat,
+                                                      &thermal_load_hw,
+                                                      t_out);
+        thermal_generation = sub_gen_t;
+
+        if (sub_e < 0.) {
+            electrical_load -= sub_e;  // sub_e is negative -> minus means plus
+        } else {
+            electrical_generation += sub_e;
         }
 
         // add load for dhn
@@ -427,15 +472,13 @@ impl Building {
         thermal_load_heat = self.get_space_heating_demand(&(thermal_generation -
                                                             thermal_load_hw),
                                                           &t_out);
-        // Update complete thermal demand by correct space heating demand
-        thermal_load = thermal_load_heat + thermal_load_hw;
 
         // TODO : Storage, Controller
         self.controller.step();
 
         // save data
         save_e!(self, electrical_generation, electrical_load);
-        save_t!(self, thermal_generation, thermal_load);
+        save_t!(self, thermal_generation, thermal_load_heat + thermal_load_hw);
 
         return (electrical_generation, electrical_load,
                 0., dhn_load);
