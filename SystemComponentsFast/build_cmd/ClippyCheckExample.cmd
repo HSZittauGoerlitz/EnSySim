@@ -1,0 +1,2 @@
+call PATH_TO_CONDA_ACTIVATE PYTHON_ENV_NAME
+cargo +nightly clippy
