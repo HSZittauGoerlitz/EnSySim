@@ -6,5 +6,4 @@
 **/target
 .vscode/*
 
-pyEnSySim/SystemComponentsFast/build_cmd/
-!pyEnSySim/SystemComponentsFast/build_cmd/*Example*
+/SystemComponentsFast/build_cmd/*Release*
