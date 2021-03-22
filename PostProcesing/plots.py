@@ -90,6 +90,35 @@ def arbitraryBalance(generation, load, time, unitPrefix, title=""):
     fig.show()
 
 
+def buildingTemperature(building, time, T):
+    """ Plot the temperature course for given building
+
+    Args:
+          building (Building): Building for which the temperature course
+                               shall be plotted
+          time (pd series of datetime): Time
+          T (np array): Outside Temperature during Simulation [degC]
+    """
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=time, y=building.temperature_hist.get_memory(),
+                             line={'color': COL_CON,
+                                   'width': 1},
+                             name="building",
+                             )
+                  )
+    fig.add_trace(go.Scatter(x=time, y=T,
+                             line={'color': COL_BAL,
+                                   'width': 1},
+                             name="outside",
+                             )
+                  )
+    fig.update_layout(height=600, width=1000,
+                      title_text="Building Temperature Course")
+    fig.update_xaxes(title_text="Time")
+    fig.update_yaxes(title_text="Temperature degC")
+    fig.show()
+
+
 def cellPowerBalance(cell, time):
     """ Plot the electrical and thermal power balance of a cell
         for a simulation with known simulation time.
@@ -247,30 +276,24 @@ def cellEnergyBalance(cell, time):
     fig.show()
 
 
-def buildingTemperature(building, time, T):
-    """ Plot the temperature course for given building
+def chargeState(storage, time):
+    """ Plot the charge state for given storage
 
     Args:
-          building (Building): Building for which the temperature course
-                               should be plotted
+          storage (Storage): Storage for which the charge course
+                             shall be plotted
           time (pd series of datetime): Time
-          T (np array): Outside Temperature during Simulation [degC]
     """
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=time, y=building.temperature_hist.get_memory(),
-                             line={'color': COL_CON,
-                                   'width': 1},
-                             name="building",
-                             )
-                  )
-    fig.add_trace(go.Scatter(x=time, y=T,
+    fig.add_trace(go.Scatter(x=time,
+                             y=np.array(storage.charge_t.get_memory())*1e-3,
                              line={'color': COL_BAL,
                                    'width': 1},
-                             name="outside",
+                             name="charge",
                              )
                   )
     fig.update_layout(height=600, width=1000,
-                      title_text="Building Temperature Course")
+                      title_text="Storage charge state")
     fig.update_xaxes(title_text="Time")
-    fig.update_yaxes(title_text="Temperature degC")
+    fig.update_yaxes(title_text="Charge [kWh]")
     fig.show()

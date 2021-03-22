@@ -93,4 +93,6 @@ b = cell.buildings[0]
 plots.buildingTemperature(b, time, T)
 
 # %%
+plots.chargeState(b.chp_system.storage, time)
 
+# %%
