@@ -53,8 +53,13 @@ impl ThermalStorage {
 /// thermal storage
 impl ThermalStorage {
     pub fn get_charge(& self) -> f32 {
-        return self.charge
+        self.charge
     }
+
+    pub fn get_relative_charge(& self) -> f32 {
+        self.charge / self.cap
+    }
+
 
     fn save_hist(&mut self) {
         match &mut self.charge_t {
@@ -92,7 +97,7 @@ impl ThermalStorage {
             debug!("storage is empty and could not supply enough heat!");
             self.charge = 0.;
         } */
-        
+
         // save data
         self.save_hist();
 
