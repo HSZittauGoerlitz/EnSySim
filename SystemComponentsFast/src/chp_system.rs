@@ -13,6 +13,10 @@ pub struct ChpSystem {
     storage: ThermalStorage,  // thermal storage
     boiler: Boiler,  // peak load boiler
 
+    // Controller variables
+    boiler_state: bool,
+    chp_state: bool,
+
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -81,6 +85,8 @@ impl ChpSystem {
         let chp_system = ChpSystem {chp: chp,
                      storage: storage,
                      boiler: boiler,
+                     boiler_state: false,
+                     chp_state: false,
                      gen_e: gen_e,
                      gen_t: gen_t,
                     };
@@ -130,13 +136,31 @@ impl ChpSystem {
         // excess heat is destroyed
         // ToDo: add partial load to chp and boiler
         // ToDo: check if chp does not over supply system -> boiler
+        let storage_state = self.storage.get_relative_charge();
 
+        if storage_state == ChpSystem::STORAGE_LEVEL_1 {
+            self.boiler_state = false;
+            self.chp_state = false;
+        } else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) |
+                  (self.boiler_state &
+                   (storage_state >= ChpSystem::STORAGE_LEVEL_2)) {
+            self.boiler_state = false;
+            self.chp_state = true;
+        } else if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
+            self.boiler_state = true;
+            self.chp_state = true;
+        }
+
+        let (pow_e, chp_t) = self.chp.step(&self.chp_state);
+        let boiler_t = self.boiler.step(&self.boiler_state);
+
+        let pow_t = chp_t + boiler_t;
 
         // save production data
         self.save_hist(&pow_e, &pow_t);
 
         // get thermal load from storage and update charging state
-        pow_t = self.storage.step(&pow_t, thermal_load);
+        let pow_t = self.storage.step(&pow_t, thermal_load);
 
         // return supply data
         return (pow_e, pow_t);
