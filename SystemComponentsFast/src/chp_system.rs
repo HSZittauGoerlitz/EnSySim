@@ -9,8 +9,11 @@ use crate::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct ChpSystem {
+    #[pyo3(get)]
     chp: CHP,  // chp plant
+    #[pyo3(get)]
     storage: ThermalStorage,  // thermal storage
+    #[pyo3(get)]
     boiler: Boiler,  // peak load boiler
 
     // Controller variables
