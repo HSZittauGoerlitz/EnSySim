@@ -9,12 +9,6 @@ use crate::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct ChpSystem {
-    // Control Parameter
-    const STORAGE_LEVEL_1: f32 = 1.;
-    const STORAGE_LEVEL_2: f32 = 0.6;
-    const STORAGE_LEVEL_3: f32 = 0.3.;
-    const STORAGE_LEVEL_4: f32 = 0.2;
-
     chp: CHP,  // chp plant
     storage: ThermalStorage,  // thermal storage
     boiler: Boiler,  // peak load boiler
@@ -96,6 +90,12 @@ impl ChpSystem {
 
 /// CHP plant
 impl ChpSystem {
+    // Control Parameter
+    const STORAGE_LEVEL_1: f32 = 1.;
+    const STORAGE_LEVEL_2: f32 = 0.6;
+    const STORAGE_LEVEL_3: f32 = 0.3;
+    const STORAGE_LEVEL_4: f32 = 0.2;
+
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.gen_e {
             None => {},
