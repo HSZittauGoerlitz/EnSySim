@@ -52,6 +52,53 @@ impl ThermalStorage {
 
 /// thermal storage
 impl ThermalStorage {
+    const TIME_STEP: f32 = 0.25; // [h] ToDo: Variable time steps
+
+    /// Charge storage with given power
+    ///
+    /// # Arguments
+    /// * charge_power (&f32): Power used for charging during time step [W]
+    ///
+    /// # Returns
+    /// * f32: Power used for charging [W]
+    fn charge_storage(&mut self, charge_power: &f32) -> f32 {
+        // calculate new charge state
+        self.charge += *charge_power * ThermalStorage::TIME_STEP;
+
+        // check if all of given power could be used
+        if self.charge > self.cap {
+            let spillover = self.charge - self.cap;
+            self.charge = self.cap;
+
+            return *charge_power - spillover / ThermalStorage::TIME_STEP;
+        }
+
+        return *charge_power;
+    }
+
+    /// Discharge storage with given power
+    ///
+    /// # Arguments
+    /// * discharge_power (&f32): Power requested during time step [W]
+    ///
+    /// # Returns
+    /// * f32: Power provided by storage [W]
+    fn discharge_storage(&mut self, discharge_power: &f32) -> f32 {
+        // DISCHARGE POWER IS NEGATIVE
+        // calculate new charge state
+        self.charge += *discharge_power * ThermalStorage::TIME_STEP;
+
+        // check if all of requested power could be delivered
+        if self.charge < 0. {
+            let deficit = -self.charge;
+            self.charge = 0.;
+
+            return *discharge_power + deficit / ThermalStorage::TIME_STEP;
+        }
+
+        return *discharge_power;
+    }
+
     pub fn get_charge(& self) -> f32 {
         self.charge
     }
@@ -70,33 +117,23 @@ impl ThermalStorage {
         }
     }
 
-    /// Calculate thermal power and new charging state
+    /// Calculate chargin / dischargin of storage depending of given power
+    ///  -> If given power is negative: discharge
+    ///  -> If given power is positive: charge
     ///
     /// # Arguments
-    /// * thermal_generation (&f32): generation of chp system
-    /// * thermal_load (&f32): load of supplied building
+    /// * power (&f32): Charge / Discharge Powert for current time step [W]
     ///
     /// # Returns
-    /// * f32: Resulting thermal power [W]
-    pub fn step(&mut self, thermal_generation: &f32, thermal_load: &f32) -> f32 {
+    /// * f32: Power used for charging / discharging [W]
+    pub fn step(&mut self, power: &f32) -> f32 {
+        let mut pow_t: f32 = 0.;
 
-        let time_step = 0.25; // ToDo: time step fixed
-
-        // delivered to building
-        let pow_t = *thermal_load;
-
-        self.charge += *thermal_generation * time_step;
-        self.charge -= pow_t * time_step;
-
-/*         // get rid of excess heat
-        if self.charge > self.cap {
-            self.charge = self.cap;
+        if *power > 0. {
+            pow_t = self.charge_storage(power);
+        } else if *power < 0. {
+            pow_t = self.discharge_storage(power);
         }
-        // handle empty case
-        if self.charge < 0. {
-            debug!("storage is empty and could not supply enough heat!");
-            self.charge = 0.;
-        } */
 
         // save data
         self.save_hist();

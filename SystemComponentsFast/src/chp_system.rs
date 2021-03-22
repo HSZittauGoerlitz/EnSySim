@@ -163,9 +163,9 @@ impl ChpSystem {
         self.save_hist(&pow_e, &pow_t);
 
         // get thermal load from storage and update charging state
-        let pow_t = self.storage.step(&pow_t, thermal_load);
+        let storage_t = self.storage.step(&diff);
 
         // return supply data
-        return (pow_e, pow_t);
+        return (pow_e, pow_t - storage_t);
     }
 }

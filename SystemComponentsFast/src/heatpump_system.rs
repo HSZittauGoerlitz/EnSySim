@@ -55,7 +55,7 @@ fn average_bool_select_weighted(numbers: &[f32], weights: &[f32],
 }
 
 fn cop_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
-    
+
     let coeffs_cop;
     if pow_t < &18000. {
         if t_out < &7. {
@@ -83,14 +83,14 @@ fn cop_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
             coeffs_cop = [5.0019, -0.04138, 0.10137, -0.00112, 0., 0.00027];}
     }
     let cop = coeffs_cop[0] + coeffs_cop[1]*t_supply
-              + coeffs_cop[2]*t_out + coeffs_cop[3]*t_supply*t_out 
-              + coeffs_cop[4]*f32::powf(*t_supply,2.) 
+              + coeffs_cop[2]*t_out + coeffs_cop[3]*t_supply*t_out
+              + coeffs_cop[4]*f32::powf(*t_supply,2.)
               + coeffs_cop[5]*f32::powf(*t_out, 2.);
     cop
 }
 
 fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
-    
+
     let coeffs_q;
     if pow_t < &18000. {
         if t_out < &7. {
@@ -117,8 +117,8 @@ fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
             coeffs_q = [1.10262, -0.00316, 0.0295, -0.00009, 0., 0.00008];}
     }
     let q = coeffs_q[0] + coeffs_q[1]*t_supply
-              + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out 
-              + coeffs_q[4]*f32::powf(*t_supply,2.) 
+              + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out
+              + coeffs_q[4]*f32::powf(*t_supply,2.)
               + coeffs_q[5]*f32::powf(*t_out, 2.);
     q
 }
@@ -130,14 +130,14 @@ impl HeatpumpSystem {
     ///
     /// # Arguments
     /// * q_hln (f32): norm heating load of building
-    /// * seas_perf_fac (f32): minimum allowed seasonal performance factor, 
+    /// * seas_perf_fac (f32): minimum allowed seasonal performance factor,
     ///                        dependent on building (3.5 or 4.5)
-    /// * t_supply (f32): supply temperature, dependent on building 
-    /// * t_ref (Vec<[f32; 365]>): temperatures of reference year 
+    /// * t_supply (f32): supply temperature, dependent on building
+    /// * t_ref (Vec<[f32; 365]>): temperatures of reference year
     ///                            (DWD, 1995-2012)
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, seas_perf_fac: f32, t_supply: f32, 
+    pub fn new(q_hln: f32, seas_perf_fac: f32, t_supply: f32,
                t_ref: Vec<f32>, hist: usize) -> Self {
 
         // start with full building supply
@@ -174,7 +174,7 @@ impl HeatpumpSystem {
             }
         }
 
-        // get minimum temperature from reference year        
+        // get minimum temperature from reference year
         let mut t_min = reference_temperatures[0];
         for value in &reference_temperatures {
             if *value < t_min {
@@ -188,7 +188,7 @@ impl HeatpumpSystem {
         let mut pow_heat: [f32; 8760] = [0.; 8760];
         let intercept = (t_heat/(t_heat-t_out_n)) * q_hln;
 
-        // increase lower bound of heatpump working temperatures till mean 
+        // increase lower bound of heatpump working temperatures till mean
         // COP satisfies minimum seasonal performance factor
         let mut iter_count = 0.;
         while cop_mean < seas_perf_fac {
@@ -209,7 +209,7 @@ impl HeatpumpSystem {
                                      temp + intercept;
                 }
             }
-            // introduce weights to take into account over- and undersupply 
+            // introduce weights to take into account over- and undersupply
             // during this hour
             let mut weights: [f32; 8760] = [1.; 8760];
             // calculate installed heatpump power based on heat needed at
@@ -221,7 +221,7 @@ impl HeatpumpSystem {
                 let mut div = 0.;
                 if *value == true {
                     div = pow_heat[idx] / (pow_t * qs[idx]);
-                
+
                     if div > 1. {
                         weights[idx] = 1.;
                     }
@@ -241,9 +241,9 @@ impl HeatpumpSystem {
                     minimum cop: {},
                     minimum power factor: {}",
                     cop_mean, min_cop, min_q);
-    
-            debug!("net power: {}W, for 
-                   minimum temperature: {}°C and 
+
+            debug!("net power: {}W, for
+                   minimum temperature: {}°C and
                    supply temperature: {}°C
                    max heating load: {}W,
                    corresponding heating power: {}W",
@@ -257,8 +257,8 @@ impl HeatpumpSystem {
                 minimum power factor: {}",
                 cop_mean, min_cop, min_q);
 
-        debug!("net power: {}W, for 
-               minimum temperature: {}°C and 
+        debug!("net power: {}W, for
+               minimum temperature: {}°C and
                supply temperature: {}°C
                max heating load: {}W,
                corresponding heating power: {}W",
@@ -273,22 +273,22 @@ impl HeatpumpSystem {
         let boiler = Boiler::new(q_hln - pow_t * min_q, hist);
 
         // thermal storage:
-        // 50l~kg per kW thermal generation, 40K difference 
+        // 50l~kg per kW thermal generation, 40K difference
         // -> 60°C, c_water = 4.184 KJ(kg*K)
-        let models: [f32;11] = [200., 300., 400., 500., 600., 750., 950., 
+        let models: [f32;11] = [200., 300., 400., 500., 600., 750., 950.,
                                 1500., 2000., 3000., 5000.];
         let mut diffs: [f32;11] = [0.;11];
         let exact = pow_t * 50.0; // kW * l/kW
-        
+
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
         }
-        
+
         let index = min_index(&diffs);
         // ToDo: bring to helper.rs file
         fn min_index(array: &[f32]) -> usize {
             let mut i = 0;
-        
+
             for (j, &value) in array.iter().enumerate() {
                 if value < array[i] {
                     i = j;
@@ -309,7 +309,7 @@ impl HeatpumpSystem {
         if hist > 0 {
             con_e = Some(hist_memory::HistMemory::new(hist));
             gen_t = Some(hist_memory::HistMemory::new(hist));
-        } 
+        }
         else {
             con_e = None;
             gen_t = None;
@@ -351,7 +351,7 @@ impl HeatpumpSystem {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, 
+    pub fn step(&mut self,
                 state: &bool,
                 thermal_load: &f32,
                 t_out: &f32) -> (f32, f32) {
@@ -377,12 +377,12 @@ impl HeatpumpSystem {
 
         // save production data
         self.save_hist(&con_e, &pow_t);
-        
+
         // get thermal load from storage and update charging state
-        pow_t = self.storage.step(&pow_t, thermal_load);
+        pow_t = self.storage.step(&pow_t);
 
         // return supply data
         return (con_e, pow_t);
-        
+
     }
 }

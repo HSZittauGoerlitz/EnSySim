@@ -65,7 +65,7 @@ building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
 _addAgents(building, 1., 1., 0.)
 
 # Add components
-
+building.add_dimensioned_chp(nSteps)
 
 # Add building to cell
 cell.add_building(building)
@@ -91,3 +91,6 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 # %%
 b = cell.buildings[0]
 plots.buildingTemperature(b, time, T)
+
+# %%
+
