@@ -155,6 +155,9 @@ impl ChpSystem {
         let boiler_t = self.boiler.step(&self.boiler_state);
 
         let pow_t = chp_t + boiler_t;
+        let diff = pow_t - thermal_load;
+
+        // call storage step -> check if all energy could be processed
 
         // save production data
         self.save_hist(&pow_e, &pow_t);
