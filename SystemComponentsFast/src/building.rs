@@ -327,8 +327,7 @@ impl Building {
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(&self.controller.chp_state,
-                                  &(thermal_load_heat + thermal_load_hw))
+                building_chp.step(&(thermal_load_heat + thermal_load_hw))
             },
         }
     }
