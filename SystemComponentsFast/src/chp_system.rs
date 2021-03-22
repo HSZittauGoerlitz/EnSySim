@@ -9,6 +9,12 @@ use crate::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct ChpSystem {
+    // Control Parameter
+    const STORAGE_LEVEL_1: f32 = 1.;
+    const STORAGE_LEVEL_2: f32 = 0.6;
+    const STORAGE_LEVEL_3: f32 = 0.3.;
+    const STORAGE_LEVEL_4: f32 = 0.2;
+
     chp: CHP,  // chp plant
     storage: ThermalStorage,  // thermal storage
     boiler: Boiler,  // peak load boiler
@@ -39,22 +45,22 @@ impl ChpSystem {
         let models: [f32;11] = [200.,300.,400.,500.,600.,750.,950.,1500.,2000.,3000.,5000.];
         let mut diffs: [f32;11] = [0.;11];
         let exact = pow_t * 75.0; // kW * l/kW
-    
+
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
         }
-        
+
         let index = min_index(&diffs);
         // ToDo: bring to helper.rs file
         fn min_index(array: &[f32]) -> usize {
             let mut i = 0;
-        
+
             for (j, &value) in array.iter().enumerate() {
                 if value < array[i] {
                     i = j;
                 }
             }
-        
+
             i
         }
         let volume = models[index];
@@ -72,7 +78,7 @@ impl ChpSystem {
         if hist > 0 {
             gen_e = Some(hist_memory::HistMemory::new(hist));
             gen_t = Some(hist_memory::HistMemory::new(hist));
-        } 
+        }
         else {
             gen_e = None;
             gen_t = None;
@@ -120,11 +126,13 @@ impl ChpSystem {
         // system satisfies heat demand from building
         // this is done by emptying storage
         // if state is true, system needs to actively produce heat
-        // first chp is turned on and adds heat to storage, 
-        // boiler only turns on, if this is not enough 
+        // first chp is turned on and adds heat to storage,
+        // boiler only turns on, if this is not enough
         // excess heat is destroyed
         // ToDo: add partial load to chp and boiler
         // ToDo: check if chp does not over supply system -> boiler
+
+        HIER DEN CONTROLLER CODE -> ERST MAL KEINE EIGENE KLASSE
 
         let(pow_e, mut pow_t) = self.chp.step(&state);
 
@@ -145,7 +153,7 @@ impl ChpSystem {
 
         // save production data
         self.save_hist(&pow_e, &pow_t);
-        
+
         // get thermal load from storage and update charging state
         pow_t = self.storage.step(&pow_t, thermal_load);
 
