@@ -32,7 +32,7 @@ impl Controller {
 impl Controller {
 
     /// Decide for chp state for next time step
-    /// With this implementation, chp is heat-operated, meaning it produces 
+    /// With this implementation, chp is heat-operated, meaning it produces
     /// a) if storage content is not enough to deliver enough heat
     /// b) if it ran current time step, but storage is not full yet
     pub fn step(&mut self) {
@@ -41,6 +41,6 @@ impl Controller {
         }
         else {
             self.chp_state = false;
-        }   
+        }
     }
 }
