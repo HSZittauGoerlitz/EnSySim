@@ -327,8 +327,7 @@ impl Building {
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(&self.controller.chp_state,
-                                  &(thermal_load_heat + thermal_load_hw))
+                building_chp.step(&(thermal_load_heat + thermal_load_hw))
             },
         }
     }
@@ -455,7 +454,7 @@ impl Building {
                                                       t_out);
         thermal_generation = sub_gen_t;
 
-        if (sub_e < 0.) {
+        if sub_e < 0. {
             electrical_load -= sub_e;  // sub_e is negative -> minus means plus
         } else {
             electrical_generation += sub_e;
