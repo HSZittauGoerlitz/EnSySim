@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{warn, debug};
+use log::{debug};
 
 use crate::boiler::Boiler;
 use crate::heatpump::Heatpump;

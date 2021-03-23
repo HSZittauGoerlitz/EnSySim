@@ -6,7 +6,7 @@ use crate::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct Boiler {
-    pow_t: f32,  // installed power of chp plant [W]
+    pow_t: f32,  // installed power of boiler [W]
     state: bool,  // on/off switch for boiler
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,

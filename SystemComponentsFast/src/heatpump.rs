@@ -99,10 +99,10 @@ fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
             coeffs_q = [1.10262, -0.00316, 0.0295, -0.00009, 0., 0.00008];
         }
     }
-    let q = (coeffs_q[0] + coeffs_q[1]*t_supply
-              + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out 
-              + coeffs_q[4]*f32::powf(*t_supply,2.) 
-              + coeffs_q[5]*f32::powf(*t_out, 2.));
+    let q = coeffs_q[0] + coeffs_q[1]*t_supply
+            + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out 
+            + coeffs_q[4]*f32::powf(*t_supply,2.) 
+            + coeffs_q[5]*f32::powf(*t_out, 2.);
     q
 }
 
