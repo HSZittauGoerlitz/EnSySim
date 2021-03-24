@@ -462,7 +462,7 @@ impl Building {
 
         // add load for dhn
         if self.is_at_dhn {
-            dhn_load = thermal_generation;
+            dhn_load = thermal_generation;//??????????????????
         }
 
         // Update building temperature and resulting thermal load
@@ -472,8 +472,6 @@ impl Building {
                                                             thermal_load_hw),
                                                           &t_out);
 
-        // TODO : Storage, Controller
-        self.controller.step();
 
         // save data
         save_e!(self, electrical_generation, electrical_load);

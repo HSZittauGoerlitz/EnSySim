@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 
 use crate::boiler::Boiler;
 use crate::chp::CHP;
-use crate::storage_thermal::ThermalStorage;
+use crate::generic_storage::GenericStorage;
 use crate::hist_memory;
 
 #[pyclass]
@@ -12,7 +12,7 @@ pub struct ChpSystem {
     #[pyo3(get)]
     chp: CHP,  // chp plant
     #[pyo3(get)]
-    storage: ThermalStorage,  // thermal storage
+    storage: GenericStorage,  // thermal storage
     #[pyo3(get)]
     boiler: Boiler,  // peak load boiler
 
@@ -67,7 +67,13 @@ impl ChpSystem {
         let volume = models[index];
         let cap = volume * 4.184*1000. * 40. / 3600.; // in Wh
 
-        let storage = ThermalStorage::new(cap, hist);
+        // dummy parameters for now
+        let storage = GenericStorage::new(cap,
+                                          0.95,
+                                          0.95,
+                                          0.05,
+                                          q_hln,
+                                          hist,);
 
         // boiler
         let pow_t = 0.7 * q_hln;
@@ -158,17 +164,15 @@ impl ChpSystem {
         let boiler_t = self.boiler.step(&self.boiler_state);
 
         let pow_t = chp_t + boiler_t;
-        let diff = pow_t - thermal_load;
+        let storage_t = pow_t - thermal_load;
 
         // call storage step -> check if all energy could be processed
+        let storage_diff = self.storage.step(&storage_t);
 
         // save production data
         self.save_hist(&pow_e, &pow_t);
 
-        // get thermal load from storage and update charging state
-        let storage_t = self.storage.step(&diff);
-
         // return supply data
-        return (pow_e, pow_t - storage_t);
+        return (pow_e, thermal_load + storage_diff);
     }
 }

@@ -286,7 +286,7 @@ def chargeState(storage, time):
     """
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time,
-                             y=np.array(storage.charge_t.get_memory())*1e-3,
+                             y=np.array(storage.charge_hist.get_memory())*1e-3,
                              line={'color': COL_BAL,
                                    'width': 1},
                              name="charge",
