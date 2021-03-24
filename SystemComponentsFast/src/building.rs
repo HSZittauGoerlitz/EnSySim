@@ -437,7 +437,13 @@ impl Building {
             thermal_load_hw += sub_load_t;
         });
         // predict heat losses by temperature of last time step
-        thermal_load_heat = self.res_u_trans * (self.temperature - t_out);
+        if *t_out < 15. {
+            thermal_load_heat = self.res_u_trans * (20. - t_out);
+        }
+        else {
+            thermal_load_heat = 0.;
+        }
+        
 
         // only consider thermal load for heating
         if thermal_load_heat < 0. {
