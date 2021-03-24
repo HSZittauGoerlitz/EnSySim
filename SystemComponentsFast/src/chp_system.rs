@@ -39,14 +39,14 @@ impl ChpSystem {
     pub fn new(q_hln: f32, hist: usize) -> Self {
 
         // chp:
-        let pow_t = 0.3 * q_hln;
+        let pow_t = 0.8 * q_hln;
         let chp = CHP::new(pow_t, hist);
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
         let models: [f32;11] = [200.,300.,400.,500.,600.,750.,950.,1500.,2000.,3000.,5000.];
         let mut diffs: [f32;11] = [0.;11];
-        let exact = pow_t * 75.0; // kW * l/kW
+        let exact = pow_t * 50.0; // kW * l/kW
 
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
@@ -77,7 +77,7 @@ impl ChpSystem {
                                           hist,);
 
         // boiler
-        let pow_t = 0.7 * q_hln;
+        let pow_t = 0.2 * q_hln;
         let boiler = Boiler::new(pow_t, hist);
 
         let gen_e;
@@ -173,7 +173,7 @@ impl ChpSystem {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if storage_state >= 0.95 {
+        else if storage_state >= 0.8 {
             self.chp_state = false;
             self.boiler_state = false;
         }
