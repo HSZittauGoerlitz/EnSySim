@@ -72,28 +72,26 @@ impl GenericStorage {
     const TIME_STEP: f32 = 0.25;
 
     pub fn get_relative_charge(& self) -> f32 {
-        return self.charge
+        return self.charge / self.cap
     }
 
     fn charge_storage(& mut self, pow: &f32) -> f32 {
         // check for a) maximum power flow and b) free storage capacity
         let mut diff = pow - self.pow_max;
 
-        if pow * self.charging_efficiency <= (1. - self.charge) / GenericStorage::TIME_STEP {
+        if pow * self.charging_efficiency <= (self.cap - self.charge) / GenericStorage::TIME_STEP {
             if diff > 0. {
-                self.charge += self.pow_max * GenericStorage::TIME_STEP * self.charging_efficiency 
-                            / self.cap;
+                self.charge += self.pow_max * GenericStorage::TIME_STEP * self.charging_efficiency;
             }
             else {
-                self.charge += pow * GenericStorage::TIME_STEP * self.charging_efficiency
-                            / self.cap;
+                self.charge += pow * GenericStorage::TIME_STEP * self.charging_efficiency;
                 diff = 0.
             }
         }
         else {
-            diff = (1. - self.charge) / GenericStorage::TIME_STEP
-                   - pow * self.charging_efficiency;
-            self.charge = 1.;
+            diff = pow * self.charging_efficiency - (self.cap - self.charge) / GenericStorage::TIME_STEP;
+
+            self.charge = self.cap;
         }
         return diff  // didn´t fit into storage, positive
     }
@@ -104,14 +102,12 @@ impl GenericStorage {
 
         if pow / self.discharging_efficiency <= self.charge / GenericStorage::TIME_STEP {
             if diff < 0. {
-                self.charge -= (self.pow_max * GenericStorage::TIME_STEP
-                               / self.discharging_efficiency) 
-                               / self.cap;
+                self.charge -= self.pow_max * GenericStorage::TIME_STEP
+                               / self.discharging_efficiency;
             }
             else {
-                self.charge -= (pow * GenericStorage::TIME_STEP 
-                               / self.discharging_efficiency)
-                               / self.cap;
+                self.charge -= pow * GenericStorage::TIME_STEP 
+                               / self.discharging_efficiency;
                 diff = 0.
             }
         }
@@ -119,7 +115,7 @@ impl GenericStorage {
             diff = self.charge / GenericStorage::TIME_STEP - pow / self.discharging_efficiency;
             self.charge = 0.;
         }
-        return diff
+        return diff  // couldn´t be supplied, negative
     }
 
     fn save_hist(&mut self) {
@@ -150,10 +146,12 @@ impl GenericStorage {
             diff = self.discharge_storage(&(-1. * pow));
         }
 
-        self.charge *= self.self_discharge * GenericStorage::TIME_STEP;
+        self.charge = self.charge - self.charge * self.self_discharge * GenericStorage::TIME_STEP;
 
         // save data
         self.save_hist();
+
+        debug!("pow: {} ,diff:{}, charge: {}", pow, diff, self.charge);
 
         return diff;
     }
