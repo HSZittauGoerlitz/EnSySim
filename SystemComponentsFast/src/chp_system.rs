@@ -1,5 +1,6 @@
 // external
 use pyo3::prelude::*;
+use log::{debug};
 
 use crate::boiler::Boiler;
 use crate::chp::CHP;
@@ -146,8 +147,8 @@ impl ChpSystem {
         // ToDo: add partial load to chp and boiler
         // ToDo: check if chp does not over supply system -> boiler
         let storage_state = self.storage.get_relative_charge();
-
-        if storage_state == ChpSystem::STORAGE_LEVEL_1 {
+        debug!("storage state: {}", storage_state);
+/*         if storage_state == ChpSystem::STORAGE_LEVEL_1 {
             self.boiler_state = false;
             self.chp_state = false;
         } else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) |
@@ -158,6 +159,23 @@ impl ChpSystem {
         } else if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
             self.boiler_state = true;
             self.chp_state = true;
+        } */
+
+        if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
+            self.boiler_state = true;
+            self.chp_state = true;
+        }
+        else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) & (self.chp_state == false) {
+            self.boiler_state = false;
+            self.chp_state = true;
+        }
+        else if (storage_state >= ChpSystem::STORAGE_LEVEL_2) & (self.boiler_state == true) {
+            self.boiler_state = false;
+            self.chp_state = true;
+        }
+        else if storage_state >= 0.95 {
+            self.chp_state = false;
+            self.boiler_state = false;
         }
 
         let (pow_e, chp_t) = self.chp.step(&self.chp_state);
