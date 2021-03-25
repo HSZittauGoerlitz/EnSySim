@@ -18,7 +18,6 @@ mod heatpump_system;
 mod pv;
 mod sep_bsl_agent;
 mod generic_storage;
-mod storage_thermal;
 // Misc
 mod hist_memory;
 
