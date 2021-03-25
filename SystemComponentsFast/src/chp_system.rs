@@ -137,9 +137,6 @@ impl ChpSystem {
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
     pub fn step(&mut self, thermal_load: &f32) -> (f32, f32) {
-
-        let time_step = 0.25; // ToDo: time step fixed
-
         // system satisfies heat demand from building
         // this is done by emptying storage
         // if state is true, system needs to actively produce heat

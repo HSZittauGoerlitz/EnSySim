@@ -299,7 +299,7 @@ impl Building {
     /// # Returns
     /// * (f32, f32): (electrical generation/load = 0., thermal generation)
     fn get_dhn_generation(&mut self, thermal_load_heat: &f32,
-                          thermal_load_hw: &f32, t_out: &f32)
+                          thermal_load_hw: &f32, _t_out: &f32)
     -> (f32, f32) {
             // Building is self-supplied
             if self.temperature > 20. {
@@ -322,7 +322,7 @@ impl Building {
     /// # Returns
     /// * (f32, f32): (electrical generation/load, thermal generation)
     fn get_chp_generation(&mut self, thermal_load_heat: &f32,
-                          thermal_load_hw: &f32, t_out: &f32)
+                          thermal_load_hw: &f32, _t_out: &f32)
     -> (f32, f32) {
         match &mut self.chp_system {
             None => (0., 0.),
@@ -434,11 +434,10 @@ impl Building {
                 t_out: &f32, eg: &f32) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
-        let mut thermal_load_heat = 0.;  // space heating demand
+        let mut thermal_load_heat;  // space heating demand
         let mut thermal_load_hw = 0.;  // hot water demand
         let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
-        let mut thermal_generation = 0.;
 
 
         // calculate loads
@@ -460,11 +459,8 @@ impl Building {
         electrical_generation += self.get_pv_generation(eg);
 
         // Heating
-        let (sub_e, sub_gen_t) = (self.heat_building)(self,
-                                                      &thermal_load_heat,
-                                                      &thermal_load_hw,
-                                                      t_out);
-        thermal_generation = sub_gen_t;
+        let (sub_e, thermal_generation) = (self.heat_building)
+            (self, &thermal_load_heat, &thermal_load_hw, t_out);
 
         if sub_e < 0. {
             electrical_load -= sub_e;  // sub_e is negative -> minus means plus

@@ -215,7 +215,7 @@ impl HeatpumpSystem {
             }
             // introduce weights to take into account over- and undersupply
             // during this hour
-            let mut weights: [f32; 8760] = [1.; 8760];
+            let weights: [f32; 8760] = [1.; 8760];
             // calculate installed heatpump power based on heat needed at
             //  minimum working temperature and power factor
             pow_t = ((-q_hln / (t_heat-t_out_n)) * t_min + intercept) /
@@ -367,12 +367,8 @@ impl HeatpumpSystem {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self,
-                thermal_load: &f32,
-                t_out: &f32) -> (f32, f32) {
-
-        let time_step = 0.25; // ToDo: time step fixed
-
+    pub fn step(&mut self, thermal_load: &f32, t_out: &f32) -> (f32, f32)
+    {
         let storage_state = self.storage.get_relative_charge();
         debug!("storage state: {}", storage_state);
 
