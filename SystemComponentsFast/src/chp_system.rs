@@ -109,7 +109,7 @@ impl ChpSystem {
 /// CHP plant
 impl ChpSystem {
     // Control Parameter
-    const STORAGE_LEVEL_1: f32 = .95;
+    const STORAGE_LEVEL_1: f32 = 0.95;
     const STORAGE_LEVEL_2: f32 = 0.6;
     const STORAGE_LEVEL_3: f32 = 0.3;
     const STORAGE_LEVEL_4: f32 = 0.2;

@@ -443,7 +443,7 @@ impl Building {
         else {
             thermal_load_heat = 0.;
         }
-        
+
 
         // only consider thermal load for heating
         if thermal_load_heat < 0. {
@@ -468,7 +468,7 @@ impl Building {
 
         // add load for dhn
         if self.is_at_dhn {
-            dhn_load = thermal_generation;//??????????????????
+            dhn_load = thermal_generation;
         }
 
         // Update building temperature and resulting thermal load

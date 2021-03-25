@@ -65,9 +65,11 @@ def getCellsHPgeneration(cell):
                            "has no history record".format(bNr))
             else:
                 if HP is None:
-                    HP = np.array(building.heatpump.heatpump.gen_t.get_memory())
+                    HP = np.array(building.heatpump.heatpump.
+                                  gen_t.get_memory())
                 else:
-                    bHP = np.array(building.heatpump.heatpump.gen_t.get_memory())
+                    bHP = np.array(building.heatpump.heatpump.
+                                   gen_t.get_memory())
                     if HP.size != bHP.size:
                         lg.warning("Record size for heatpump of building {} "
                                    "is different from other sizes, "
@@ -99,9 +101,11 @@ def getCellsHPconsumption(cell):
                            "has no history record".format(bNr))
             else:
                 if HP is None:
-                    HP = np.array(building.heatpump.heatpump.con_e.get_memory())
+                    HP = np.array(building.heatpump.heatpump.
+                                  con_e.get_memory())
                 else:
-                    bHP = np.array(building.heatpump.heatpump.con_e.get_memory())
+                    bHP = np.array(building.heatpump.heatpump.
+                                   con_e.get_memory())
                     if HP.size != bHP.size:
                         lg.warning("Record size for heatpump of building {} "
                                    "is different from other sizes, "
