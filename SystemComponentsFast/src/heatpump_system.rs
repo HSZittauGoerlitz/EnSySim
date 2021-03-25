@@ -4,7 +4,7 @@ use log::{debug};
 
 use crate::boiler::Boiler;
 use crate::heatpump::Heatpump;
-use crate::storage_thermal::ThermalStorage;
+use crate::generic_storage::GenericStorage;
 use crate::hist_memory;
 
 #[pyclass]
@@ -13,9 +13,13 @@ pub struct HeatpumpSystem {
     #[pyo3(get)]
     heatpump: Heatpump,  // heatpump
     #[pyo3(get)]
-    storage: ThermalStorage,  // thermal storage
+    storage: GenericStorage,  // thermal storage
     #[pyo3(get)]
     boiler: Boiler,  // peak load boiler
+
+    // Controller variables
+    boiler_state: bool,
+    hp_state: bool,
 
     #[pyo3(get)]
     con_e: Option<hist_memory::HistMemory>,
@@ -300,8 +304,13 @@ impl HeatpumpSystem {
         let temp_diff = t_supply + 5. - 20.; // 5°C spread, 20°C room temperature
         let cap = volume * 4.184*1000. * temp_diff / 3600.;
 
-        let storage = ThermalStorage::new(cap, hist);
-
+        // dummy parameters for now
+        let storage = GenericStorage::new(cap,
+                                          0.95,
+                                          0.95,
+                                          0.05,
+                                          q_hln,
+                                          hist);
 
         let con_e;
         let gen_t;
@@ -316,18 +325,25 @@ impl HeatpumpSystem {
         }
 
         let heatpump_system = HeatpumpSystem {heatpump: heatpump,
-                     storage: storage,
-                     boiler: boiler,
-
-                     con_e: con_e,
-                     gen_t: gen_t,
-                    };
+                                              storage: storage,
+                                              boiler: boiler,
+                                              boiler_state: false,
+                                              hp_state: false,
+                                              con_e: con_e,
+                                              gen_t: gen_t,
+                                              };
         heatpump_system
     }
 }
 
-/// CHP plant
+
 impl HeatpumpSystem {
+    // Control Parameter
+    const STORAGE_LEVEL_1: f32 = 0.95;
+    const STORAGE_LEVEL_2: f32 = 0.6;
+    const STORAGE_LEVEL_3: f32 = 0.3;
+    const STORAGE_LEVEL_4: f32 = 0.2;
+
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.con_e {
             None => {},
@@ -346,43 +362,52 @@ impl HeatpumpSystem {
     /// Calculate current electrical and thermal power
     ///
     /// # Arguments
-    /// * state (&bool): Current state of CHP plant (on/off)
     /// * thermal_load (&f32): thermal load of building this time step
+    /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
     pub fn step(&mut self,
-                state: &bool,
                 thermal_load: &f32,
                 t_out: &f32) -> (f32, f32) {
 
         let time_step = 0.25; // ToDo: time step fixed
 
-        let(con_e, mut pow_t) = self.heatpump.step(&state, &t_out);
+        let storage_state = self.storage.get_relative_charge();
+        debug!("storage state: {}", storage_state);
 
-        if *state == false {
-            let _result = self.boiler.step(&state);
+        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_4 {
+            self.boiler_state = true;
+            self.hp_state = true;
         }
-        else {
-            // stored enough?
-            if (pow_t + self.storage.get_charge()/time_step) >= *thermal_load {
-                // turn boiler off this step
-                self.boiler.step(&false);
-            }
-            else {
-                // turn boiler on this step
-                pow_t += self.boiler.step(&true);
-            }
+        else if (storage_state <= HeatpumpSystem::STORAGE_LEVEL_3) &
+                (self.hp_state == false) {
+            self.boiler_state = false;
+            self.hp_state = true;
         }
+        else if (storage_state >= HeatpumpSystem::STORAGE_LEVEL_2) &
+                (self.boiler_state == true) {
+            self.boiler_state = false;
+            self.hp_state = true;
+        }
+        else if storage_state >= HeatpumpSystem::STORAGE_LEVEL_1 {
+            self.hp_state = false;
+            self.boiler_state = false;
+        }
+
+        let (con_e, chp_t) = self.heatpump.step(&self.hp_state, t_out);
+        let boiler_t = self.boiler.step(&self.boiler_state);
+
+        let pow_t = chp_t + boiler_t;
+        let storage_t = pow_t - thermal_load;
+
+        // call storage step -> check if all energy could be processed
+        let storage_diff = self.storage.step(&storage_t);
 
         // save production data
         self.save_hist(&con_e, &pow_t);
 
-        // get thermal load from storage and update charging state
-        pow_t = self.storage.step(&pow_t);
-
         // return supply data
-        return (con_e, pow_t);
-
+        return (con_e, thermal_load + storage_diff);
     }
 }

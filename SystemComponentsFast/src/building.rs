@@ -356,13 +356,11 @@ impl Building {
             Some(building_heatpump) => {
                 if self.temperature > 20. {
                     let (load_e, gen_t) = building_heatpump.step(
-                                            &self.controller.heatpump_state,
                                             thermal_load_hw,
                                             t_out);
                     (-load_e, gen_t)
                 } else {
                     let (load_e, gen_t) = building_heatpump.step(
-                                            &self.controller.heatpump_state,
                                             &(thermal_load_heat +
                                               thermal_load_hw),
                                             t_out);
