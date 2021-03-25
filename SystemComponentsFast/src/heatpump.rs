@@ -21,7 +21,7 @@ pub struct Heatpump {
 }
 
 fn cop_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
-    
+
     let coeffs_cop;
     if pow_t < &18000. {
         if t_out < &7. {
@@ -57,14 +57,14 @@ fn cop_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
         }
     }
     let cop = coeffs_cop[0] + coeffs_cop[1]*t_supply
-              + coeffs_cop[2]*t_out + coeffs_cop[3]*t_supply*t_out 
-              + coeffs_cop[4]*f32::powf(*t_supply,2.) 
+              + coeffs_cop[2]*t_out + coeffs_cop[3]*t_supply*t_out
+              + coeffs_cop[4]*f32::powf(*t_supply,2.)
               + coeffs_cop[5]*f32::powf(*t_out, 2.);
     cop
 }
 
 fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
-    
+
     let coeffs_q;
     if pow_t < &18000. {
         if t_out < &7. {
@@ -100,8 +100,8 @@ fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
         }
     }
     let q = coeffs_q[0] + coeffs_q[1]*t_supply
-            + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out 
-            + coeffs_q[4]*f32::powf(*t_supply,2.) 
+            + coeffs_q[2]*t_out + coeffs_q[3]*t_supply*t_out
+            + coeffs_q[4]*f32::powf(*t_supply,2.)
             + coeffs_q[5]*f32::powf(*t_out, 2.);
     q
 }
@@ -175,12 +175,11 @@ impl Heatpump {
     ///
     /// # Arguments
     /// * state (&bool): Current state of heatpump (on/off)
+    /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool, t_out: &f32) 
-    -> (f32, f32) {
-
+    pub fn step(&mut self, state: &bool, t_out: &f32) -> (f32, f32) {
         // update state
         self.state = *state;
 
