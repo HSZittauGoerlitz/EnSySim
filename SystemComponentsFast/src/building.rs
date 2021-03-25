@@ -491,7 +491,7 @@ impl Building {
         let (heat_loss, heat_up);
 
         if self.temperature > self.nominal_temperature {
-            heat_up = 0.;
+            return 0.;
         } else {
             // thermal heat needed for heating up the building in one time step
             heat_up = self.cp_eff * (self.nominal_temperature -
