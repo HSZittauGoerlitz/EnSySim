@@ -159,11 +159,13 @@ impl GenericStorage {
 
         let diff;
 
-        if *pow >= 0. {
+        if *pow > 0. {
             diff = self.charge_storage(pow);
         }
         else if *pow < 0. {
             diff = self.discharge_storage(pow);
+        } else {
+            diff = 0.;
         }
 
         self.charge = self.charge - self.charge * self.self_discharge *
