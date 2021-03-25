@@ -78,7 +78,7 @@ def arbitraryBalance(generation, load, time, unitPrefix, title=""):
                              showlegend=False
                              ),
                   row=2, col=1)
-    fig.update_layout(height=600, width=1000,
+    fig.update_layout(height=600, width=600,
                       title_text=title)
     # add axis labels
     fig.update_xaxes(title_text="Time", row=2, col=1)
@@ -112,7 +112,7 @@ def buildingTemperature(building, time, T):
                              name="outside",
                              )
                   )
-    fig.update_layout(height=600, width=1000,
+    fig.update_layout(height=600, width=600,
                       title_text="Building Temperature Course")
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Temperature degC")
@@ -182,7 +182,7 @@ def cellPowerBalance(cell, time):
                              legendgroup='Thermal'
                              ),
                   row=2, col=1)
-    fig.update_layout(height=600, width=1000,
+    fig.update_layout(height=600, width=600,
                       title_text="Cell Power Balance")
     # add axis labels
     fig.update_xaxes(title_text="Time", row=2, col=1)
@@ -266,7 +266,7 @@ def cellEnergyBalance(cell, time):
                              legendgroup='Thermal'
                              ),
                   row=2, col=1)
-    fig.update_layout(height=600, width=1000,
+    fig.update_layout(height=600, width=600,
                       title_text="Cell Energy Balance")
     # add axis labels
     fig.update_xaxes(title_text="Time", row=2, col=1)
@@ -292,9 +292,14 @@ def chargeState(storage, time):
                              name="charge",
                              )
                   )
+<<<<<<< Updated upstream
     fig.update_layout(height=600, width=1000,
                       title_text="Storage with max. capacity of {}kWh"
                                  .format(storage.cap * 1e-3))
+=======
+    fig.update_layout(height=600, width=600,
+                      title_text="Storage charge state")
+>>>>>>> Stashed changes
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Charge [kWh]")
     fig.show()
