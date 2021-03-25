@@ -327,7 +327,11 @@ impl Building {
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(&(thermal_load_heat + thermal_load_hw))
+                if self.temperature > 20. {
+                    building_chp.step(thermal_load_hw)
+                } else {
+                    building_chp.step(&(thermal_load_heat + thermal_load_hw))
+                }
             },
         }
     }
@@ -437,12 +441,7 @@ impl Building {
             thermal_load_hw += sub_load_t;
         });
         // predict heat losses by temperature of last time step
-        if *t_out < 15. {
-            thermal_load_heat = self.res_u_trans * (20. - t_out);
-        }
-        else {
-            thermal_load_heat = 0.;
-        }
+        thermal_load_heat = self.res_u_trans * (self.temperature - t_out);
 
 
         // only consider thermal load for heating
