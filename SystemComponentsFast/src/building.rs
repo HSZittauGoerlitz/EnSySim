@@ -354,11 +354,20 @@ impl Building {
         match &mut self.heatpump_system {
             None => (0., 0.),
             Some(building_heatpump) => {
-                let (load_e, gen_t) = building_heatpump.step(
-                                        &self.controller.heatpump_state,
-                                        &(thermal_load_heat + thermal_load_hw),
-                                        t_out);
-                (-load_e, gen_t)
+                if self.temperature > 20. {
+                    let (load_e, gen_t) = building_heatpump.step(
+                                            &self.controller.heatpump_state,
+                                            thermal_load_hw,
+                                            t_out);
+                    (-load_e, gen_t)
+                } else {
+                    let (load_e, gen_t) = building_heatpump.step(
+                                            &self.controller.heatpump_state,
+                                            &(thermal_load_heat +
+                                              thermal_load_hw),
+                                            t_out);
+                    (-load_e, gen_t)
+                }
             },
         }
     }
