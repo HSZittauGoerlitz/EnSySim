@@ -96,12 +96,3 @@ plots.buildingTemperature(b, time, T)
 plots.chargeState(b.chp_system.storage, time)
 
 # %%
-from matplotlib import pyplot as plt
-plt.plot(time, cell.buildings[0].chp_system.chp.gen_t.get_memory())
-# %%
-plt.plot(time, cell.buildings[0].chp_system.boiler.gen_t.get_memory())
-# %%
-plt.plot(time, cell.buildings[0].chp_system.storage.charge_hist.get_memory())
-# %%
-plt.plot(time, cell.buildings[0].chp_system.gen_t.get_memory())
-# %%
