@@ -43,8 +43,10 @@ impl ChpSystem {
         let chp = CHP::new(pow_t, hist);
 
         // thermal storage:
-        // 75l~kg per kW thermal generation, 40K difference -> 60°C, c_water = 4.184 KJ(kg*K)
-        let models: [f32;11] = [200.,300.,400.,500.,600.,750.,950.,1500.,2000.,3000.,5000.];
+        // 75l~kg per kW thermal generation, 40K difference -> 60°C,
+        //c_water = 4.184 KJ(kg*K)
+        let models: [f32;11] = [200., 300., 400., 500., 600., 750.,
+                                950., 1500., 2000., 3000., 5000.];
         let mut diffs: [f32;11] = [0.;11];
         let exact = pow_t * 75.0; // kW * l/kW
 
@@ -107,7 +109,7 @@ impl ChpSystem {
 /// CHP plant
 impl ChpSystem {
     // Control Parameter
-    const STORAGE_LEVEL_1: f32 = 1.;
+    const STORAGE_LEVEL_1: f32 = .95;
     const STORAGE_LEVEL_2: f32 = 0.6;
     const STORAGE_LEVEL_3: f32 = 0.3;
     const STORAGE_LEVEL_4: f32 = 0.2;
@@ -148,32 +150,22 @@ impl ChpSystem {
         // ToDo: check if chp does not over supply system -> boiler
         let storage_state = self.storage.get_relative_charge();
         debug!("storage state: {}", storage_state);
-/*         if storage_state == ChpSystem::STORAGE_LEVEL_1 {
-            self.boiler_state = false;
-            self.chp_state = false;
-        } else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) |
-                  (self.boiler_state &
-                   (storage_state >= ChpSystem::STORAGE_LEVEL_2)) {
-            self.boiler_state = false;
-            self.chp_state = true;
-        } else if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
-            self.boiler_state = true;
-            self.chp_state = true;
-        } */
 
         if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
             self.boiler_state = true;
             self.chp_state = true;
         }
-        else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) & (self.chp_state == false) {
+        else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) &
+                (self.chp_state == false) {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if (storage_state >= ChpSystem::STORAGE_LEVEL_2) & (self.boiler_state == true) {
+        else if (storage_state >= ChpSystem::STORAGE_LEVEL_2) &
+                (self.boiler_state == true) {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if storage_state >= 0.95 {
+        else if storage_state >= ChpSystem::STORAGE_LEVEL_1 {
             self.chp_state = false;
             self.boiler_state = false;
         }
