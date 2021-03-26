@@ -153,12 +153,12 @@ impl ChpSystem {
             self.chp_state = true;
         }
         else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) &
-                (self.chp_state == false) {
+                !self.chp_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
         else if (storage_state >= ChpSystem::STORAGE_LEVEL_2) &
-                (self.boiler_state == true) {
+                self.boiler_state {
             self.boiler_state = false;
             self.chp_state = true;
         }

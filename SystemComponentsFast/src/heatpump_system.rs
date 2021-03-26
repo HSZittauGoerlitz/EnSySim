@@ -377,12 +377,12 @@ impl HeatpumpSystem {
             self.hp_state = true;
         }
         else if (storage_state <= HeatpumpSystem::STORAGE_LEVEL_3) &
-                (self.hp_state == false) {
+                !self.hp_state {
             self.boiler_state = false;
             self.hp_state = true;
         }
         else if (storage_state >= HeatpumpSystem::STORAGE_LEVEL_2) &
-                (self.boiler_state == true) {
+                self.boiler_state {
             self.boiler_state = false;
             self.hp_state = true;
         }
