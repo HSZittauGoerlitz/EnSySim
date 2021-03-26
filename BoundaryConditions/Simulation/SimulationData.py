@@ -341,7 +341,7 @@ def _getWeather(simData, region):
                     simData.loc[mask_old, ['Eg']] = (wDayInv*Last[:, 1] +
                                                      wDay*New[1])
 
-                elif doyStart >= DOY_LEAPDAY:
+                else:
                     # just add missing data to last day of year
                     # since information is missing for time before doyStart,
                     # the last two known days will be extrapolated
