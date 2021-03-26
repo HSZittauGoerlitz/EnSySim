@@ -324,9 +324,23 @@ def _getWeather(simData, region):
                     # leap day has March 1st for know -> add Feb 28th
                     mask_new = maskY & (simData.doy == DOY_LEAPDAY)
                     mask_old = maskY & (simData.doy == DOY_LEAPDAY-1)
-                    simData.loc[mask_new, ['T', 'Eg']] = (
-                      w[0] * simData.loc[mask_new, ['T', 'Eg']].values +
-                      w[1] * simData.loc[mask_old, ['T', 'Eg']].values)
+                    New = (w[0] * simData.loc[mask_new, ['T', 'Eg']].values +
+                           w[1] * simData.loc[mask_old, ['T', 'Eg']].values)
+                    Last = simData.loc[mask_old, ['T', 'Eg']].values[-1]
+                    # first transition
+                    simData.loc[mask_new, ['T']] = (wDay*Last[0] +
+                                                    wDayInv*New[:, 0])
+                    simData.loc[mask_new, ['Eg']] = (wDay*Last[1] +
+                                                     wDayInv*New[:, 1])
+                    # second transition -> new is now old
+                    mask_old = maskY & (simData.doy == DOY_LEAPDAY+1)
+                    New = simData.loc[mask_old, ['T', 'Eg']].values[-1]
+                    Last = simData.loc[mask_new, ['T', 'Eg']].values
+                    simData.loc[mask_old, ['T']] = (wDayInv*Last[:, 0] +
+                                                    wDay*New[0])
+                    simData.loc[mask_old, ['Eg']] = (wDayInv*Last[:, 1] +
+                                                     wDay*New[1])
+
                 elif doyStart >= DOY_LEAPDAY:
                     # just add missing data to last day of year
                     # since information is missing for time before doyStart,
