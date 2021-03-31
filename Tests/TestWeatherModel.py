@@ -71,7 +71,7 @@ def plotArrayTemperatures(time, nTestCases, region):
                                  name="T_{}".format(i+1)
                                  ))
     fig.update_layout(height=1300, width=2400,
-                      title_text='Reference curves for region {}'
+                      title_text='Simulated temperature curves for region {}'
                                  .format(region))
     # add axis labels
     fig.update_xaxes(title_text="Time")
