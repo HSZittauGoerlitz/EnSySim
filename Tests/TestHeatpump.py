@@ -29,8 +29,8 @@ climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
 Geo, U, n = _loadBuildingData(bType)
 
-cell = Cell(climate.loc['Eg', 'standard data'],
-            climate.loc['T', 'standard data'],
+cell = Cell(climate.loc['EgNorm kWh', 'Value'],
+            climate.loc['ToutNorm degC', 'Value'],
             nSteps)
 
 # %% Create Building
@@ -62,12 +62,10 @@ _addAgents(building, 1., 1., 0.)
 
 # %% Add heatpump
 # get reference year temperatures
-path = "BoundaryConditions/Weather/"
-file_name = "TRY2015.h5"
+refWeather = pd.read_hdf("./BoundaryConditions/Weather/" + region +
+                         ".h5", 'Weather')
 
-df = pd.read_hdf(path+file_name)
-
-t_ref = df['temperatures_15']
+t_ref = refWeather.reference['T [degC]'].values
 
 # classes of buildings for heating temperatures
 classTemperatures = {"class_1": 55,
