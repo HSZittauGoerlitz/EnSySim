@@ -114,4 +114,3 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 # %%
 b = cell.buildings[0]
 plots.buildingTemperature(b, time, T)
-

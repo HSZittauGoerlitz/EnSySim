@@ -7,13 +7,11 @@ from SystemComponentsFast import simulate, Building, Cell
 from PostProcesing import dataCollection, plots
 import logging
 
-
 # %% logger config
 FORMAT = ('%(levelname)s %(name)s %(asctime)-15s '
           '%(filename)s:%(lineno)d %(message)s')
 logging.basicConfig(format=FORMAT)
 logging.getLogger().setLevel(logging.WARNING)
-
 
 # %% Parameter
 # time
@@ -23,7 +21,6 @@ end = "01.01.2021"
 region = "East"
 
 bType = "FSH"
-
 
 # %% prepare simulation
 nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg = getSimData(start, end,
@@ -35,7 +32,6 @@ Geo, U, n = _loadBuildingData(bType)
 cell = Cell(climate.loc['EgNorm kWh', 'Value'],
             climate.loc['ToutNorm degC', 'Value'],
             nSteps)
-
 
 # %% Create Building
 # Parameter
@@ -70,18 +66,14 @@ building.add_dimensioned_chp(nSteps)
 # Add building to cell
 cell.add_building(building)
 
-
 # %% Run simulation
 simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
-
 
 # %%
 plots.cellPowerBalance(cell, time)
 
-
 # %%
 plots.cellEnergyBalance(cell, time)
-
 
 # %%
 gen_t, load_t = dataCollection.getBuildingsThermalBalance(cell)
