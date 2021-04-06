@@ -11,10 +11,14 @@ pub struct GenericStorage {
     #[pyo3(get)]
     cap: f32,  // capacity of storage [Wh]
     charge: f32,  // charging state of storage [Wh] -> get_charge()
+    #[pyo3(get)]
     charging_efficiency: f32,  // 0..1
+    #[pyo3(get)]
     discharging_efficiency: f32,  // 0..1
+    #[pyo3(get)]
     self_discharge: f32,  // 0..1 [1/h] ToDo: function of charge (only thermal)
     // ToDo: cycle dacay (only electrical)
+    #[pyo3(get)]
     pow_max: f32,  // maximum power flow in or out of storage [W]
     #[pyo3(get)]
     charge_hist: Option<hist_memory::HistMemory>,
