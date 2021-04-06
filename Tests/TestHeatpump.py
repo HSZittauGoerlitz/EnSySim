@@ -16,7 +16,7 @@ logging.getLogger().setLevel(logging.WARNING)
 # %% Parameter
 # time
 start = "01.01.2020"
-end = "07.01.2020"
+end = "01.01.2021"
 # environment
 region = "East"
 
