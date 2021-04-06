@@ -274,7 +274,8 @@ impl HeatpumpSystem {
         let heatpump = Heatpump::new(pow_t, t_supply, hist);
 
         // create boiler based on missing power
-        let boiler = Boiler::new(q_hln - pow_t * min_q, hist);
+        let pow_t_required = (q_hln - pow_t * min_q).max(0.);
+        let boiler = Boiler::new(pow_t_required, hist);
 
         // thermal storage:
         // 50l~kg per kW thermal generation, 40K difference
@@ -391,10 +392,10 @@ impl HeatpumpSystem {
             self.boiler_state = false;
         }
 
-        let (con_e, chp_t) = self.heatpump.step(&self.hp_state, t_out);
+        let (con_e, hp_t) = self.heatpump.step(&self.hp_state, t_out);
         let boiler_t = self.boiler.step(&self.boiler_state);
 
-        let pow_t = chp_t + boiler_t;
+        let pow_t = hp_t + boiler_t;
         let storage_t = pow_t - thermal_load;
 
         // call storage step -> check if all energy could be processed
