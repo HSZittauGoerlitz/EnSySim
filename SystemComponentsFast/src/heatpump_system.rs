@@ -310,7 +310,7 @@ impl HeatpumpSystem {
                                           0.95,
                                           0.95,
                                           0.05,
-                                          q_hln,
+                                          pow_t.max(q_hln),
                                           hist);
 
         let con_e;
