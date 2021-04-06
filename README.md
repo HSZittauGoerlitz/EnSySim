@@ -18,3 +18,4 @@ __At this point I'm explaining the toolchain used by us. Of course you asre free
 5. Change to nightly build with `rustup default nightly`
 6. build with `cargo +nightly build --release`, make sure to rename the compiled .dll to .pyd and move it to the \SystemComponentsFast folder. For this you can have a look at the ReleaseExample.cmd 
 7. Try to execute the TestGenericCell.ipynb to see if everything works.
+    - Set the current working directory to the root directory
