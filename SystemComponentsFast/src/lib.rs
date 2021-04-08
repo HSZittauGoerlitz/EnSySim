@@ -19,6 +19,7 @@ mod pv;
 mod sep_bsl_agent;
 mod generic_storage;
 // Misc
+mod helper;
 mod hist_memory;
 
 #[pymodule]

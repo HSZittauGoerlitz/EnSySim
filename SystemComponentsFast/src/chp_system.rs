@@ -2,6 +2,8 @@
 use pyo3::prelude::*;
 use log::{debug};
 
+use crate::helper::min_index;
+
 use crate::boiler::Boiler;
 use crate::chp::CHP;
 use crate::generic_storage::GenericStorage;
@@ -38,10 +40,10 @@ impl ChpSystem {
     ///
     /// # Arguments
     /// * q_hln (f32): norm heating load of building
-    /// * N (f32): Characteristic number for buildings hot water demand
+    /// * n (f32): Characteristic number for buildings hot water demand
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, N: f32, hist: usize) -> Self {
+    pub fn new(q_hln: f32, n: f32, hist: usize) -> Self {
 
         // chp:
         let pow_t = 0.8 * q_hln;
@@ -49,31 +51,22 @@ impl ChpSystem {
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C,
-        //c_water = 4.184 KJ(kg*K)
-        let models: [f32;11] = [200., 300., 400., 500., 600., 750.,
-                                950., 1500., 2000., 3000., 5000.];
+        let c_water = 1.162;  // (Wh) / (kg K)
+        let rho_water = 983.2;  // kg / m^3
+        // Available storage volumes in m^3
+        let models: [f32;11] = [0.2, 0.3, 0.4, 0.5, 0.6, 0.75,
+                                0.95, 1.5, 2., 3., 5.];
         let mut diffs: [f32;11] = [0.;11];
-        let exact = pow_t * 50.0; // kW * l/kW
+        let exact = pow_t * 50.0e-3; // kW * m^3/kW
 
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
         }
 
         let index = min_index(&diffs);
-        // ToDo: bring to helper.rs file
-        fn min_index(array: &[f32]) -> usize {
-            let mut i = 0;
 
-            for (j, &value) in array.iter().enumerate() {
-                if value < array[i] {
-                    i = j;
-                }
-            }
-
-            i
-        }
         let volume = models[index];
-        let cap = volume * 4.184*1000. * 40. / 3600.; // in Wh
+        let cap = volume * c_water * rho_water * 40.; // in Wh
 
         // dummy parameters for now
         let storage = GenericStorage::new(cap,
@@ -86,12 +79,10 @@ impl ChpSystem {
         // hot water storage
         // Min. capacity according to DIN
         // 5820. Wh is the energy needed to fill standard bathtub
-        let w_2tn = 5820. * N * ((1. + N.sqrt()) / N.sqrt());
+        let w_2tn = 5820. * n * ((1. + n.sqrt()) / n.sqrt());
         // Volume needed for this capacity
         // diff. between cold and hot water: 60. K
-        // spec. cap. water: 1.163 (Wh) / (kg K)
-        // dens. water: 992.21 kg / m^3
-        let min_volume_hw = w_2tn / (60. * 1.163 * 992.21);
+        let min_volume_hw = w_2tn / (60. * c_water * rho_water);
 
         // find hot water storage volume
         let mut volume_hw = *models.last().unwrap();
@@ -103,7 +94,7 @@ impl ChpSystem {
         }
 
         // dummy parameters for now
-        let cap_hw = volume_hw * 1.163 * 992.21 * 60.; // in Wh
+        let cap_hw = volume_hw * c_water * rho_water * 60.; // in Wh
         let storage_hw = GenericStorage::new(cap_hw,
                                              0.95,
                                              0.95,
