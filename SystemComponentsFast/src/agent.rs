@@ -45,6 +45,11 @@ impl Agent {
         agent.get_yearly_hot_water_demand();
         agent
     }
+
+    fn overwrite_coc(&mut self, new_coc: f32) {
+        self.coc = new_coc;
+        self.get_yearly_hot_water_demand();
+    }
 }
 
 macro_rules! sample_coc {
