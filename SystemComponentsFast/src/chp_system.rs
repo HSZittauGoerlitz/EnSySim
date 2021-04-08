@@ -171,6 +171,7 @@ impl ChpSystem {
         // ToDo: add partial load to chp and boiler
         // ToDo: check if chp does not over supply system -> boiler
         let storage_state = self.storage.get_relative_charge();
+        let storage_state_hw = self.storage_hw.get_relative_charge();
         debug!("storage state: {}", storage_state);
 
         if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
@@ -190,6 +191,14 @@ impl ChpSystem {
         else if storage_state >= ChpSystem::STORAGE_LEVEL_1 {
             self.chp_state = false;
             self.boiler_state = false;
+        }
+
+        // overwrite boiler state by hot water storage state
+        // -> higher priority for boiler operation
+        // -> Deactivation should occur in course of chp operation
+        if !self.boiler_state &
+           (storage_state_hw <= ChpSystem::STORAGE_LEVEL_4) {
+               self.boiler_state = true;
         }
 
         let (pow_e, chp_t) = self.chp.step(&self.chp_state);
