@@ -298,3 +298,47 @@ def chargeState(storage, time):
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Charge [kWh]")
     fig.show()
+
+
+def compareCurves(time, values, names, xLabel='Time', yLabel='', title=''):
+    """Create comparison plot for given curves
+
+    Arguments:
+        time {list of arrays} -- Time (abscissae) values to plot,
+                                 either one for all or each separate
+        values {list of arrays} -- Ordinate values of curves to plot
+        names {list of str} -- Name for each curve
+
+    Keyword Arguments:
+        xLabel {str} -- Label for x axis (default: {'Time'})
+        yLabel {str} -- Label for y axis (default: {''})
+        title {str} -- Plot title (default: {''})
+    """
+    nCurves = len(values)
+
+    if len(time) == nCurves:
+        idxTimeMul = 1
+    elif len(time) == 1:
+        idxTimeMul = 0
+    else:
+        raise ValueError("Number of x-arrays must be one or equal to number "
+                         "of given curves.")
+
+    if len(names) != nCurves:
+        raise ValueError("Number of namess must be equal to "
+                         "number of given curves.")
+
+    fig = go.Figure()
+
+    for i in range(nCurves):
+        fig.add_trace(go.Scatter(x=time[i*idxTimeMul],
+                                 y=values[i],
+                                 line={'width': 1},
+                                 name=names[i],
+                                 )
+                      )
+
+    fig.update_layout(height=600, width=600, title_text=title)
+    fig.update_xaxes(title_text=xLabel)
+    fig.update_yaxes(title_text=yLabel)
+    fig.show()
