@@ -246,7 +246,8 @@ impl Building {
 
     fn add_dimensioned_chp(&mut self, hist: usize) {
         self.add_chp(chp_system::ChpSystem::new(self.q_hln,
-                                                 hist)
+                                                self.n_max_agents as f32,
+                                                hist)
                      );
     }
 }

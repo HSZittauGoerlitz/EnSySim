@@ -15,6 +15,8 @@ pub struct ChpSystem {
     #[pyo3(get)]
     storage: GenericStorage,  // thermal storage
     #[pyo3(get)]
+    storage_hw: GenericStorage,  // storage of hot water system
+    #[pyo3(get)]
     boiler: Boiler,  // peak load boiler
 
     // Controller variables
@@ -29,14 +31,17 @@ pub struct ChpSystem {
 
 #[pymethods]
 impl ChpSystem {
-    ///  Create CHP system with thermal storage and boiler
-    ///  The technical design is based on norm heating load.
+    /// Create CHP system with thermal storage and boiler
+    /// The technical design is based on norm heating load.
+    ///
+    /// The hot water system is designed according to DIN 4708.
     ///
     /// # Arguments
     /// * q_hln (f32): norm heating load of building
+    /// * N (f32): Characteristic number for buildings hot water demand
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, hist: usize) -> Self {
+    pub fn new(q_hln: f32, N: f32, hist: usize) -> Self {
 
         // chp:
         let pow_t = 0.8 * q_hln;
@@ -78,6 +83,34 @@ impl ChpSystem {
                                           q_hln,
                                           hist,);
 
+        // hot water storage
+        // Min. capacity according to DIN
+        // 5820. Wh is the energy needed to fill standard bathtub
+        let w_2tn = 5820. * N * ((1. + N.sqrt()) / N.sqrt());
+        // Volume needed for this capacity
+        // diff. between cold and hot water: 60. K
+        // spec. cap. water: 1.163 (Wh) / (kg K)
+        // dens. water: 992.21 kg / m^3
+        let min_volume_hw = w_2tn / (60. * 1.163 * 992.21);
+
+        // find hot water storage volume
+        let mut volume_hw = *models.last().unwrap();
+        for model in models.iter() {
+            if min_volume_hw < *model {
+                volume_hw = *model;
+                break;
+            }
+        }
+
+        // dummy parameters for now
+        let cap_hw = volume_hw * 1.163 * 992.21 * 60.; // in Wh
+        let storage_hw = GenericStorage::new(cap_hw,
+                                             0.95,
+                                             0.95,
+                                             0.05,
+                                             q_hln,
+                                             hist,);
+
         // boiler
         let pow_t = 0.2 * q_hln;
         let boiler = Boiler::new(pow_t, hist);
@@ -95,13 +128,14 @@ impl ChpSystem {
         }
 
         let chp_system = ChpSystem {chp: chp,
-                     storage: storage,
-                     boiler: boiler,
-                     boiler_state: false,
-                     chp_state: false,
-                     gen_e: gen_e,
-                     gen_t: gen_t,
-                    };
+                                    storage: storage,
+                                    storage_hw: storage_hw,
+                                    boiler: boiler,
+                                    boiler_state: false,
+                                    chp_state: false,
+                                    gen_e: gen_e,
+                                    gen_t: gen_t,
+                                    };
         chp_system
     }
 }
