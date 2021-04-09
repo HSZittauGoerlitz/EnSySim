@@ -112,6 +112,18 @@ impl Cell {
         self.sep_bsl_agents.push(sep_bsl_agent);
         self.n_sep_bsl_agents += 1;
     }
+
+    fn replace_building(&mut self, building_pos: usize,
+                        building: building::Building)
+    {
+        if building_pos > (self.n_buildings - 1) as usize {
+            warn!("Building position exceeds number of available buildings. \
+                   Max. possiblie building position is {}",
+                   self.n_buildings - 1);
+        } else {
+            self.buildings[building_pos] = building;
+        }
+    }
 }
 
 /// PV plant
