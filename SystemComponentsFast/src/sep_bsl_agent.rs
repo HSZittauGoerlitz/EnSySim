@@ -69,8 +69,8 @@ impl SepBSLagent {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(_sep_bsl_pv) => warn!("Separate BSL agent already
-                                         has a PV plant, nothing is added"),
+            Some(_sep_bsl_pv) => warn!("Separate BSL agent already \
+                                        has a PV plant, nothing is added"),
         }
     }
 
@@ -88,8 +88,8 @@ impl SepBSLagent {
                                                 self.demand_apv, hist)
                                     );
                      },
-            Some(_sep_bsl_pv) => warn!("Separate BSL agent already
-                                         has a PV plant, nothing is added"),
+            Some(_sep_bsl_pv) => warn!("Separate BSL agent already \
+                                        has a PV plant, nothing is added"),
         }
     }
 }

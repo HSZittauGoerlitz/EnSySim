@@ -244,13 +244,13 @@ impl HeatpumpSystem {
             debug!("calculated mean cop: {},
                     minimum cop: {},
                     minimum power factor: {}",
-                    cop_mean, min_cop, min_q);
+                   cop_mean, min_cop, min_q);
 
             debug!("net power: {}W, for
-                   minimum temperature: {}°C and
-                   supply temperature: {}°C
-                   max heating load: {}W,
-                   corresponding heating power: {}W",
+                    minimum temperature: {}°C and
+                    supply temperature: {}°C
+                    max heating load: {}W,
+                    corresponding heating power: {}W",
                    &pow_t, &t_min, &t_supply, &q_hln,
                    &(pow_t * min_q));
         }
@@ -259,13 +259,13 @@ impl HeatpumpSystem {
         debug!("calculated mean cop: {},
                 minimum cop: {},
                 minimum power factor: {}",
-                cop_mean, min_cop, min_q);
+               cop_mean, min_cop, min_q);
 
         debug!("net power: {}W, for
-               minimum temperature: {}°C and
-               supply temperature: {}°C
-               max heating load: {}W,
-               corresponding heating power: {}W",
+                minimum temperature: {}°C and
+                supply temperature: {}°C
+                max heating load: {}W,
+                corresponding heating power: {}W",
                &pow_t, &t_min, &t_supply, &q_hln,
                &(pow_t * min_q));
  //debug!("{}", cop_from_coefficients(&7822.9, &-11.7, &35.));
