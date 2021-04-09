@@ -249,6 +249,16 @@ impl Building {
                                                  hist)
                      );
     }
+
+    fn replace_agent(&mut self, agent_pos: usize, agent: agent::Agent){
+        if agent_pos > (self.n_agents - 1) as usize {
+            warn!("Agent position exceeds number of available Agents.
+                   Max. possiblie agent position is {}",
+                   self.n_agents - 1);
+        } else {
+            self.agents[agent_pos] = agent;
+        }
+    }
 }
 
 impl Building {
