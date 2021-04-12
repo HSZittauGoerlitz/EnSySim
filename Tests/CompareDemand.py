@@ -85,7 +85,7 @@ cell.add_building(building)
 # load SynPro weather data and replace temperature
 weather = pd.read_hdf("Tests/Data/TRY_2010_Potsdam.h5", key='Weather')
 fT = interp1d((weather.time - weather.time[0]).dt.total_seconds(),
-               weather['T [degC]'])
+              weather['T [degC]'])
 T = np.array(fT((time - time[0]).dt.total_seconds()), dtype=np.float32)
 
 # %% Run simulation
