@@ -3,7 +3,7 @@
 SynPro Settings:
  - 3 default persons
  - one-family house
- - old building
+ - old building (110 kWh/m^2 - 140 kWh/m^2)
  - Potsdam reference weather (2010)
  - No circulation losses for hot water
  - No night setback for heating system
