@@ -98,9 +98,10 @@ simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
 agent_hw = agent.hw_demand * HWP * 1e-3  # in kW
 building_sh = np.array(cell.load_t.get_memory())*1e-3 - agent_hw  # in kW
 # show comparative parameter for space heating demand in kWh / m^2
-shDemandParameter = building_sh.cumsum()*0.25 / Geo.loc['A_living', 'Value']
+shDemandParameter = (building_sh.sum()*0.25 /
+                     Geo.loc['A_living', 'Value']).values[0]
 print("Buildings yearly space heating demand in relation to the "
-      "habitable surface is {:.2f}".format(shDemandParameter))
+      "habitable surface is {:.2f} kWh/m^2".format(shDemandParameter))
 if shDemandParameter < 110.:
     print("Hence the demand of the EnSySim building is lower "
           "than the SynPro building.")
