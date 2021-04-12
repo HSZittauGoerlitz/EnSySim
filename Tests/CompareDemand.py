@@ -86,7 +86,7 @@ cell.add_building(building)
 weather = pd.read_hdf("Tests/Data/TRY_2010_Potsdam.h5", key='Weather')
 fT = interp1d((weather.time - weather.time[0]).dt.total_seconds(),
               weather['T [degC]'])
-T = np.array(fT((time - time[0]).dt.total_seconds()), dtype=np.float32)
+T = fT((time - time[0]).dt.total_seconds()).astype(np.float32)
 
 # %% Run simulation
 simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
