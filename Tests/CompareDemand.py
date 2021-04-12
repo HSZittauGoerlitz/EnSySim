@@ -152,3 +152,6 @@ plots.compareCurves([SynProData.time],
                     ['SynPro', 'EnSySim'], yLabel='Thermal Energy in MWh')
 
 # %%
+plots.buildingTemperature(cell.buildings[0], time, T)
+
+# %%
