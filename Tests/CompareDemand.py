@@ -97,20 +97,6 @@ simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
 # -> this portion is neglected here, since it's balanced in long time course
 agent_hw = agent.hw_demand * HWP * 1e-3  # in kW
 building_sh = np.array(cell.load_t.get_memory())*1e-3 - agent_hw  # in kW
-# show comparative parameter for space heating demand in kWh / m^2
-shDemandParameter = (building_sh.sum()*0.25 /
-                     Geo.loc['A_living', 'Value']).values[0]
-print("Buildings yearly space heating demand in relation to the "
-      "habitable surface is {:.2f} kWh/(m^2 a)".format(shDemandParameter))
-if shDemandParameter < 110.:
-    print("Hence the demand of the EnSySim building is lower "
-          "than the SynPro building.")
-elif shDemandParameter > 140.:
-    print("Hence the demand of the EnSySim building is higher "
-          "than the SynPro building.")
-else:
-    print("Hence the demand of the EnSySim building is comparable "
-          "to the SynPro building.")
 
 # %% load data to compare
 SynProData = pd.read_hdf("Tests/Data/SynProTestHouse_ThreeDefaultPersons.h5")
