@@ -3,7 +3,7 @@
 SynPro Settings:
  - 3 default persons
  - one-family house
- - old building (110 kWh/m^2 - 140 kWh/m^2)
+ - old building (110 kWh/(m^2 a) - 140 kWh/(m^2 a))
  - Potsdam reference weather (2010)
  - No circulation losses for hot water
  - No night setback for heating system
@@ -101,7 +101,7 @@ building_sh = np.array(cell.load_t.get_memory())*1e-3 - agent_hw  # in kW
 shDemandParameter = (building_sh.sum()*0.25 /
                      Geo.loc['A_living', 'Value']).values[0]
 print("Buildings yearly space heating demand in relation to the "
-      "habitable surface is {:.2f} kWh/m^2".format(shDemandParameter))
+      "habitable surface is {:.2f} kWh/(m^2 a)".format(shDemandParameter))
 if shDemandParameter < 110.:
     print("Hence the demand of the EnSySim building is lower "
           "than the SynPro building.")
