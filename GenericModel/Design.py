@@ -107,15 +107,16 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, n,
 
         # create a_uv_array
         a_uv_values = np.array([Geo.loc['Areas'].values.T[0],
-                                U.loc['UValues', (classNames[classIdx],
-                                                  mState)]
+                                U.loc[('UValues', Geo.loc['Areas'].index),
+                                      (classNames[classIdx], mState)].values.T
                                 ]).T
 
         # create building
         # effective heat capacity with fixed C_eff of 15. (Wh)/(m^3K)
         building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
                             a_uv_values,
-                            U.loc['DeltaU', (classNames[classIdx], mState)],
+                            U.loc[('DeltaU', ''),
+                                  (classNames[classIdx], mState)],
                             n.loc['Infiltration', infState],
                             n.loc[airState, infState],
                             15. * Geo.loc[('Volume')].Value,  # cp_eff [Wh/K]
