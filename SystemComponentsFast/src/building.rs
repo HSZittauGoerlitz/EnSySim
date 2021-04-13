@@ -515,13 +515,6 @@ impl Building {
             heat_loss = self.res_u_trans * (self.temperature - *t_out);
         }
 
-        let p_request = heat_loss + heat_up;
-
-        if p_request > 0. {
-            p_request
-        } else {
-            0.
-        }
-
+        (heat_loss + heat_up).max(0.)
     }
 }
