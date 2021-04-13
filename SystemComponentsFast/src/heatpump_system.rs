@@ -347,12 +347,16 @@ impl HeatpumpSystem {
     /// Calculate current electrical and thermal power
     ///
     /// # Arguments
-    /// * thermal_load (&f32): thermal load of building this time step
+    /// * heating_demand (&f32): Thermal power needed for
+    ///                          heating the building [W]
+    /// * hot_water_demand (&f32): Thermal power needed by agents for
+    ///                            warm water [W]
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, thermal_load: &f32, t_out: &f32) -> (f32, f32)
+    pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
+                t_out: &f32) -> (f32, f32)
     {
         let storage_state = self.storage.get_relative_charge();
         debug!("storage state: {}", storage_state);
@@ -384,6 +388,8 @@ impl HeatpumpSystem {
 
         let (con_e, hp_t) = self.heatpump.step(&self.hp_state, t_out);
         let boiler_t = self.boiler.step(&self.boiler_state);
+
+        let thermal_load = heating_demand + hot_water_demand;
 
         let pow_t = hp_t + boiler_t;
         let storage_t = pow_t - thermal_load;

@@ -373,7 +373,7 @@ impl Building {
             None => (0., 0.),
             Some(building_heatpump) => {
                 let (load_e, gen_t) = building_heatpump.step(
-                                        &(thermal_load_heat + thermal_load_hw),
+                                        &thermal_load_heat, thermal_load_hw,
                                         t_out);
                 (-load_e, gen_t)
             },
