@@ -248,7 +248,8 @@ impl Building {
 
     fn add_dimensioned_chp(&mut self, hist: usize) {
         self.add_chp(chp_system::ChpSystem::new(self.q_hln,
-                                                 hist)
+                                                self.n_max_agents as f32,
+                                                hist)
                      );
     }
 
@@ -344,7 +345,7 @@ impl Building {
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(&(thermal_load_heat + thermal_load_hw))
+                building_chp.step(&thermal_load_heat, thermal_load_hw)
                 },
             }
     }

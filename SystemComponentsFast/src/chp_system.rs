@@ -1,6 +1,8 @@
 // external
 use pyo3::prelude::*;
-use log::{debug};
+//use log::{debug};
+
+use crate::helper::min_index;
 
 use crate::boiler::Boiler;
 use crate::chp::CHP;
@@ -14,6 +16,8 @@ pub struct ChpSystem {
     chp: CHP,  // chp plant
     #[pyo3(get)]
     storage: GenericStorage,  // thermal storage
+    #[pyo3(get)]
+    storage_hw: GenericStorage,  // storage of hot water system
     #[pyo3(get)]
     boiler: Boiler,  // peak load boiler
 
@@ -29,14 +33,17 @@ pub struct ChpSystem {
 
 #[pymethods]
 impl ChpSystem {
-    ///  Create CHP system with thermal storage and boiler
-    ///  The technical design is based on norm heating load.
+    /// Create CHP system with thermal storage and boiler
+    /// The technical design is based on norm heating load.
+    ///
+    /// The hot water system is designed according to DIN 4708.
     ///
     /// # Arguments
     /// * q_hln (f32): norm heating load of building
+    /// * n (f32): Characteristic number for buildings hot water demand
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(q_hln: f32, hist: usize) -> Self {
+    pub fn new(q_hln: f32, n: f32, hist: usize) -> Self {
 
         // chp:
         let pow_t = 0.8 * q_hln;
@@ -44,31 +51,22 @@ impl ChpSystem {
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C,
-        //c_water = 4.184 KJ(kg*K)
-        let models: [f32;11] = [200., 300., 400., 500., 600., 750.,
-                                950., 1500., 2000., 3000., 5000.];
+        let c_water = 1.162;  // (Wh) / (kg K)
+        let rho_water = 983.2;  // kg / m^3
+        // Available storage volumes in m^3
+        let models: [f32;11] = [0.2, 0.3, 0.4, 0.5, 0.6, 0.75,
+                                0.95, 1.5, 2., 3., 5.];
         let mut diffs: [f32;11] = [0.;11];
-        let exact = pow_t * 50.0; // kW * l/kW
+        let exact = pow_t * 50.0e-3; // kW * m^3/kW
 
         for (pos, model) in models.iter().enumerate() {
             diffs[pos] = (exact - model).abs();
         }
 
         let index = min_index(&diffs);
-        // ToDo: bring to helper.rs file
-        fn min_index(array: &[f32]) -> usize {
-            let mut i = 0;
 
-            for (j, &value) in array.iter().enumerate() {
-                if value < array[i] {
-                    i = j;
-                }
-            }
-
-            i
-        }
         let volume = models[index];
-        let cap = volume * 4.184*1000. * 40. / 3600.; // in Wh
+        let cap = volume * c_water * rho_water * 40.; // in Wh
 
         // dummy parameters for now
         let storage = GenericStorage::new(cap,
@@ -77,6 +75,32 @@ impl ChpSystem {
                                           0.05,
                                           q_hln,
                                           hist,);
+
+        // hot water storage
+        // Min. capacity according to DIN
+        // 5820. Wh is the energy needed to fill standard bathtub
+        let w_2tn = 5820. * n * ((1. + n.sqrt()) / n.sqrt());
+        // Volume needed for this capacity
+        // diff. between cold and hot water: 60. K
+        let min_volume_hw = w_2tn / (60. * c_water * rho_water);
+
+        // find hot water storage volume
+        let mut volume_hw = *models.last().unwrap();
+        for model in models.iter() {
+            if min_volume_hw < *model {
+                volume_hw = *model;
+                break;
+            }
+        }
+
+        // dummy parameters for now
+        let cap_hw = volume_hw * c_water * rho_water * 60.; // in Wh
+        let storage_hw = GenericStorage::new(cap_hw,
+                                             0.95,
+                                             0.95,
+                                             0.05,
+                                             1.2 * w_2tn,  // w_2tn / 1h -> W
+                                             hist,);
 
         // boiler
         let pow_t = 0.2 * q_hln;
@@ -95,13 +119,14 @@ impl ChpSystem {
         }
 
         let chp_system = ChpSystem {chp: chp,
-                     storage: storage,
-                     boiler: boiler,
-                     boiler_state: false,
-                     chp_state: false,
-                     gen_e: gen_e,
-                     gen_t: gen_t,
-                    };
+                                    storage: storage,
+                                    storage_hw: storage_hw,
+                                    boiler: boiler,
+                                    boiler_state: false,
+                                    chp_state: false,
+                                    gen_e: gen_e,
+                                    gen_t: gen_t,
+                                    };
         chp_system
     }
 }
@@ -132,11 +157,15 @@ impl ChpSystem {
     /// Calculate current electrical and thermal power
     ///
     /// # Arguments
-    /// * thermal_load (&f32): thermal load of building this time step
-    ///
+    /// * heating_demand (&f32): Thermal power needed for
+    ///                          heating the building [W]
+    /// * hot_water_demand (&f32): Thermal power needed by agents for
+    ///                            warm water [W]
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, thermal_load: &f32) -> (f32, f32) {
+    pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32)
+    -> (f32, f32)
+    {
         // system satisfies heat demand from building
         // this is done by emptying storage
         // if state is true, system needs to actively produce heat
@@ -146,7 +175,7 @@ impl ChpSystem {
         // ToDo: add partial load to chp and boiler
         // ToDo: check if chp does not over supply system -> boiler
         let storage_state = self.storage.get_relative_charge();
-        debug!("storage state: {}", storage_state);
+        let storage_state_hw = self.storage_hw.get_relative_charge();
 
         if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
             self.boiler_state = true;
@@ -163,15 +192,26 @@ impl ChpSystem {
             self.chp_state = true;
         }
         else if storage_state >= ChpSystem::STORAGE_LEVEL_1 {
-            self.chp_state = false;
+            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
+                self.chp_state = false;
+            }
             self.boiler_state = false;
+        }
+
+        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_4 {
+            self.chp_state = true;
         }
 
         let (pow_e, chp_t) = self.chp.step(&self.chp_state);
         let boiler_t = self.boiler.step(&self.boiler_state);
 
-        let pow_t = chp_t + boiler_t;
-        let storage_t = pow_t - thermal_load;
+        // call hot water storage with CHP power
+        //-> differences will be used by heating system
+        let storage_hw_t = chp_t - hot_water_demand;
+        let storage_hw_diff = self.storage_hw.step(&storage_hw_t);
+
+        let pow_t = storage_hw_diff + boiler_t;
+        let storage_t = pow_t - heating_demand;
 
         // call storage step -> check if all energy could be processed
         let storage_diff = self.storage.step(&storage_t);
@@ -180,6 +220,6 @@ impl ChpSystem {
         self.save_hist(&pow_e, &pow_t);
 
         // return supply data
-        return (pow_e, thermal_load + storage_diff);
+        return (pow_e, *heating_demand + *hot_water_demand + storage_diff);
     }
 }

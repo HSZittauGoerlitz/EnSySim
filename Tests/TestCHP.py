@@ -86,5 +86,6 @@ plots.buildingTemperature(b, time, T)
 
 # %%
 plots.chargeState(b.chp_system.storage, time)
+plots.chargeState(b.chp_system.storage_hw, time)
 
 # %%

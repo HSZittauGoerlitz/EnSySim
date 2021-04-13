@@ -102,7 +102,7 @@ impl GenericStorage {
                         GenericStorage::TIME_STEP;
 
         if self.charge > self.cap {
-            diff += (self.cap - self.charge) / GenericStorage::TIME_STEP;
+            diff += (self.charge - self.cap) / GenericStorage::TIME_STEP;
             self.charge = self.cap;
         }
 
