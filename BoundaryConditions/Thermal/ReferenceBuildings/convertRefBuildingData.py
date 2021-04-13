@@ -17,7 +17,7 @@ cwd = os.getcwd()
 if cwd.split(os.sep)[-1] == "ReferenceBuildings":
     loc = cwd + os.sep
 else:
-    loc = "pyEnSySim/BoundaryConditions/Thermal/ReferenceBuildings/"
+    loc = "BoundaryConditions/Thermal/ReferenceBuildings/"
 refFiles = os.listdir(loc)
 
 buildingData = pd.DataFrame(index=['Geometry', 'UValues', 'n'])
