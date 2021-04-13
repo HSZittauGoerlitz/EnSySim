@@ -10,7 +10,8 @@ pub struct Heatpump {
     #[pyo3(get)]
     pow_t: f32,  // thermalpower of heatpump [W]
     state: bool,  // on/off switch for heatpump
-    t_supply: f32,
+    t_supply: f32,  // supply side temperature (heating system) [°C]
+    t_min_working: f32,  // minimal source temperature [°C]
 
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
@@ -116,7 +117,8 @@ impl Heatpump {
     /// * power_t (f32): installed thermal power of heatpump [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(power_t: f32, t_supply: f32, hist: usize) -> Self {
+    pub fn new(power_t: f32, t_supply: f32,
+               t_min_working: f32, hist: usize) -> Self {
 
         // heatpump:
         let pow_t = power_t;
@@ -140,6 +142,7 @@ impl Heatpump {
         let heatpump = Heatpump {pow_t: pow_t,
                      state: state,
                      t_supply: t_supply,
+                     t_min_working: t_min_working,
                      con_e: con_e,
                      gen_t: gen_t,
                      cop_hist: cop_hist,
@@ -150,6 +153,10 @@ impl Heatpump {
 
 /// Heatpump
 impl Heatpump {
+
+    pub fn get_t_min_working(&self) -> f32 {
+        self.t_min_working
+    }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32, cop: &f32) {
         match &mut self.con_e {

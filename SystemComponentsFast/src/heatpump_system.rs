@@ -238,21 +238,6 @@ impl HeatpumpSystem {
             cop_mean = average_bool_select_weighted(&cops, &weights,
                                                     &heating_days);
             iter_count += 1.;
-
-            let min_cop = cop_from_coefficients(&pow_t, &t_min, &t_supply);
-            let min_q = q_from_coefficients(&pow_t, &t_min, &t_supply);
-            debug!("calculated mean cop: {},
-                    minimum cop: {},
-                    minimum power factor: {}",
-                   cop_mean, min_cop, min_q);
-
-            debug!("net power: {}W, for
-                    minimum temperature: {}°C and
-                    supply temperature: {}°C
-                    max heating load: {}W,
-                    corresponding heating power: {}W",
-                   &pow_t, &t_min, &t_supply, &q_hln,
-                   &(pow_t * min_q));
         }
         let min_cop = cop_from_coefficients(&pow_t, &t_min, &t_supply);
         let min_q = q_from_coefficients(&pow_t, &t_min, &t_supply);
@@ -268,14 +253,13 @@ impl HeatpumpSystem {
                 corresponding heating power: {}W",
                &pow_t, &t_min, &t_supply, &q_hln,
                &(pow_t * min_q));
- //debug!("{}", cop_from_coefficients(&7822.9, &-11.7, &35.));
 
         // create heatpump
-        let heatpump = Heatpump::new(pow_t, t_supply, hist);
+        let heatpump = Heatpump::new(pow_t, t_supply, t_min, hist);
 
-        // create boiler based on missing power
-        let pow_t_required = (q_hln - pow_t * min_q).max(0.);
-        let boiler = Boiler::new(pow_t_required, hist);
+        // create boiler based on norm heating load
+        // --> bivalent-alternative
+        let boiler = Boiler::new(q_hln, hist);
 
         // thermal storage:
         // 50l~kg per kW thermal generation, 40K difference
@@ -373,6 +357,8 @@ impl HeatpumpSystem {
         let storage_state = self.storage.get_relative_charge();
         debug!("storage state: {}", storage_state);
 
+        // TODO: respect minimal working temperature of heatpump
+
         if storage_state <= HeatpumpSystem::STORAGE_LEVEL_4 {
             self.boiler_state = true;
             self.hp_state = true;
@@ -390,6 +376,10 @@ impl HeatpumpSystem {
         else if storage_state >= HeatpumpSystem::STORAGE_LEVEL_1 {
             self.hp_state = false;
             self.boiler_state = false;
+        }
+
+        if t_out < &self.heatpump.get_t_min_working() {
+            self.hp_state = false;
         }
 
         let (con_e, hp_t) = self.heatpump.step(&self.hp_state, t_out);
