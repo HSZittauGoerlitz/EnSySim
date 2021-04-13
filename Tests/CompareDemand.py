@@ -49,12 +49,13 @@ cell = Cell(climate.loc['EgNorm kWh', 'Value'],
 
 # %% Create Building
 # Parameter
-bClass = "class_1"
+bClass = "class_2"
 mState = "original"
 airState = "VentilationFree"
 isAtDHN = True
 a_uv_values = np.array([Geo.loc['Areas'].values.T[0],
-                        U.loc['UValues', (bClass, mState)]
+                        U.loc[('UValues', Geo.loc['Areas'].index),
+                              (bClass, mState)].values.T
                         ]).T
 if bClass == 'class_5':
     infState = 'new'
@@ -64,7 +65,7 @@ else:
 # Building and Occupants
 building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
                     a_uv_values,
-                    U.loc['DeltaU', (bClass, mState)],
+                    U.loc[('DeltaU', ''), (bClass, mState)],
                     n.loc['Infiltration', infState],
                     n.loc[airState, infState],
                     15. * Geo.loc[('Volume')].Value,  # cp_eff [Wh/K]

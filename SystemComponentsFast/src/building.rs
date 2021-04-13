@@ -502,13 +502,10 @@ impl Building {
     {
         let (heat_loss, heat_up);
 
-        if self.temperature > self.nominal_temperature {
-            return 0.;
-        } else {
-            // thermal heat needed for heating up the building in one time step
-            heat_up = self.cp_eff * (self.nominal_temperature -
-                                     self.temperature) / Building::TIME_STEP;
-        }
+        // thermal heat needed for heating up the building in one time step
+        // or overhang of thermal energy (then heat_up is negative)
+        heat_up = self.cp_eff * (self.nominal_temperature -
+                                 self.temperature) / Building::TIME_STEP;
 
         if self.temperature < *t_out {
             heat_loss = 0.;
@@ -517,6 +514,13 @@ impl Building {
             heat_loss = self.res_u_trans * (self.temperature - *t_out);
         }
 
-        heat_loss + heat_up
+        let p_request = heat_loss + heat_up;
+
+        if p_request > 0. {
+            p_request
+        } else {
+            0.
+        }
+
     }
 }
