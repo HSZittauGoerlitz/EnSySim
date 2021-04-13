@@ -359,7 +359,6 @@ impl HeatpumpSystem {
                 t_out: &f32) -> (f32, f32)
     {
         let storage_state = self.storage.get_relative_charge();
-        debug!("storage state: {}", storage_state);
 
         // TODO: respect minimal working temperature of heatpump
 
