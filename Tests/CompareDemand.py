@@ -2,13 +2,12 @@
 
 SynPro Settings:
  - 3 default persons
- - one-family house
- - old building (110 kWh/(m^2 a) - 140 kWh/(m^2 a))
+ - One-family house
+ - Old building (110 kWh/(m^2 a) - 140 kWh/(m^2 a))
  - Potsdam reference weather (2010)
- - No circulation losses for hot water
+ - Circulation losses for hot water
  - No night setback for heating system
  - Simulation time is year 2015 with 15min time steps
-h5 file key = 'ThreeDefaultPersons'
 """
 
 # %% Imports
@@ -35,6 +34,9 @@ end = "31.12.2015"
 region = "East"
 
 bType = "FSH"
+
+# %% load data to compare
+SynProData = pd.read_hdf("Tests/Data/SynProTestHouse.h5", key="TDPcirc")
 
 # %% prepare simulation
 nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg = getSimData(start, end,
@@ -83,11 +85,8 @@ building.replace_agent(0, agent)
 # Add building to cell
 cell.add_building(building)
 
-# load SynPro weather data and replace temperature
-weather = pd.read_hdf("Tests/Data/TRY_2010_Potsdam.h5", key='Weather')
-fT = interp1d((weather.time - weather.time[0]).dt.total_seconds(),
-              weather['T [degC]'])
-T = fT((time - time[0]).dt.total_seconds()).astype(np.float32)
+# overwrite outside temperature
+T = np.array(SynProData.loc[:, "Tout [degC]"].values, dtype=np.float32)
 
 # %% Run simulation
 simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
@@ -98,9 +97,6 @@ simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
 # -> this portion is neglected here, since it's balanced in long time course
 agent_hw = agent.hw_demand * HWP * 1e-3  # in kW
 building_sh = np.array(cell.load_t.get_memory())*1e-3 - agent_hw  # in kW
-
-# %% load data to compare
-SynProData = pd.read_hdf("Tests/Data/SynProTestHouse_ThreeDefaultPersons.h5")
 
 # %% compare electrical demand
 plots.compareCurves([SynProData.time],
