@@ -178,8 +178,6 @@ impl GenericStorage {
         // save data
         self.save_hist();
 
-        debug!("pow: {} ,diff:{}, charge: {}", pow, diff, self.charge);
-
         return diff;
     }
 }
