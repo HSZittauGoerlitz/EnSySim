@@ -1,0 +1,3 @@
+TDP     = Test House with three Default Persons
+TDPcirc = Test House with three Default Persons and
+          hot water system with circulation losses
