@@ -20,7 +20,7 @@ def _addHotwater(simData):
     """
     # all agents are using PHH profile,
     # since there is no statistic to business hot water demand available
-    HWP = pd.read_hdf("./BoundaryConditions/Thermal/"
+    HWP = pd.read_hdf("./BoundaryConditions/Thermal/HotWaterProfile/"
                       "HotWaterDayProfile.h5", key='PHH')
     simData.loc[:, 'HWPfactor'] = (HWP.loc[simData.time.dt.hour,
                                    'fProportion'].values)
