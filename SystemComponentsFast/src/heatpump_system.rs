@@ -199,7 +199,6 @@ impl HeatpumpSystem {
         let mut iter_count = 0.;
         while cop_mean < seas_perf_fac {
             // update bool vector for hour selection
-            debug!("iteration {}", iter_count);
             // increase lower bound of heatpump working temperature
             if iter_count > 0. {
                 t_min = t_min + 1.;
@@ -243,18 +242,6 @@ impl HeatpumpSystem {
         }
         let min_cop = cop_from_coefficients(&pow_t, &t_min, &t_supply);
         let min_q = q_from_coefficients(&pow_t, &t_min, &t_supply);
-        debug!("calculated mean cop: {},
-                minimum cop: {},
-                minimum power factor: {}",
-               cop_mean, min_cop, min_q);
-
-        debug!("net power: {}W, for
-                minimum temperature: {}°C and
-                supply temperature: {}°C
-                max heating load: {}W,
-                corresponding heating power: {}W",
-               &pow_t, &t_min, &t_supply, &q_hln,
-               &(pow_t * min_q));
 
         // create heatpump
         let heatpump = Heatpump::new(pow_t, t_supply, t_min, hist);
@@ -269,12 +256,14 @@ impl HeatpumpSystem {
         let temp_diff = t_supply + 5. - 20.;
         let cap = find_heating_system_storage(&pow_t, &temp_diff);
 
+        // make sure storage can handle max power from heatpump, 20°C used
+        let max_q = q_from_coefficients(&pow_t, &20., &t_supply);
         // dummy parameters for now
         let storage = GenericStorage::new(cap,
                                           0.95,
                                           0.95,
                                           0.05,
-                                          pow_t.max(q_hln),
+                                          pow_t*max_q,
                                           hist);
 
         let con_e;
