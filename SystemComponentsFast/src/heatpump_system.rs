@@ -269,12 +269,14 @@ impl HeatpumpSystem {
         let temp_diff = t_supply + 5. - 20.;
         let cap = find_heating_system_storage(&pow_t, &temp_diff);
 
+        // make sure storage can handle max power from heatpump, 20°C used
+        let max_q = q_from_coefficients(&pow_t, &20., &t_supply);
         // dummy parameters for now
         let storage = GenericStorage::new(cap,
                                           0.95,
                                           0.95,
                                           0.05,
-                                          pow_t.max(q_hln),
+                                          pow_t*max_q,
                                           hist);
 
         let con_e;
