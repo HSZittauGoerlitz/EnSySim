@@ -2,6 +2,8 @@
 use pyo3::prelude::*;
 use log::{debug};
 
+use crate::helper::find_heating_system_storage;
+
 use crate::boiler::Boiler;
 use crate::heatpump::Heatpump;
 use crate::generic_storage::GenericStorage;
@@ -262,32 +264,10 @@ impl HeatpumpSystem {
         let boiler = Boiler::new(q_hln, hist);
 
         // thermal storage:
-        // 50l~kg per kW thermal generation, 40K difference
-        // -> 60°C, c_water = 4.184 KJ(kg*K)
-        let models: [f32;11] = [200., 300., 400., 500., 600., 750., 950.,
-                                1500., 2000., 3000., 5000.];
-        let mut diffs: [f32;11] = [0.;11];
-        let exact = pow_t * 50.0; // kW * l/kW
-
-        for (pos, model) in models.iter().enumerate() {
-            diffs[pos] = (exact - model).abs();
-        }
-
-        let index = min_index(&diffs);
-        // ToDo: bring to helper.rs file
-        fn min_index(array: &[f32]) -> usize {
-            let mut i = 0;
-
-            for (j, &value) in array.iter().enumerate() {
-                if value < array[i] {
-                    i = j;
-                }
-            }
-            i
-        }
-        let volume = models[index];
-        let temp_diff = t_supply + 5. - 20.; // 5°C spread, 20°C room temperature
-        let cap = volume * 4.184*1000. * temp_diff / 3600.;
+        // 50l~kg per kW thermal generation, 40K difference -> 60°C
+        // 5°C spread, 20°C room temperature
+        let temp_diff = t_supply + 5. - 20.;
+        let cap = find_heating_system_storage(&pow_t, &temp_diff);
 
         // dummy parameters for now
         let storage = GenericStorage::new(cap,

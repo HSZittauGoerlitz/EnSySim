@@ -2,7 +2,8 @@
 use pyo3::prelude::*;
 //use log::{debug};
 
-use crate::helper::min_index;
+use crate::helper::{find_heating_system_storage,
+                    find_hot_water_system_storage};
 
 use crate::boiler::Boiler;
 use crate::chp::CHP;
@@ -51,22 +52,7 @@ impl ChpSystem {
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C,
-        let c_water = 1.162;  // (Wh) / (kg K)
-        let rho_water = 983.2;  // kg / m^3
-        // Available storage volumes in m^3
-        let models: [f32;11] = [0.2, 0.3, 0.4, 0.5, 0.6, 0.75,
-                                0.95, 1.5, 2., 3., 5.];
-        let mut diffs: [f32;11] = [0.;11];
-        let exact = pow_t * 50.0e-3; // kW * m^3/kW
-
-        for (pos, model) in models.iter().enumerate() {
-            diffs[pos] = (exact - model).abs();
-        }
-
-        let index = min_index(&diffs);
-
-        let volume = models[index];
-        let cap = volume * c_water * rho_water * 40.; // in Wh
+        let cap = find_heating_system_storage(&pow_t, &40.);
 
         // dummy parameters for now
         let storage = GenericStorage::new(cap,
@@ -77,29 +63,15 @@ impl ChpSystem {
                                           hist,);
 
         // hot water storage
-        // Min. capacity according to DIN
-        // 5820. Wh is the energy needed to fill standard bathtub
-        let w_2tn = 5820. * n * ((1. + n.sqrt()) / n.sqrt());
-        // Volume needed for this capacity
         // diff. between cold and hot water: 60. K
-        let min_volume_hw = w_2tn / (60. * c_water * rho_water);
-
-        // find hot water storage volume
-        let mut volume_hw = *models.last().unwrap();
-        for model in models.iter() {
-            if min_volume_hw < *model {
-                volume_hw = *model;
-                break;
-            }
-        }
-
+        let cap_hw = find_hot_water_system_storage(&n, &60.);
         // dummy parameters for now
-        let cap_hw = volume_hw * c_water * rho_water * 60.; // in Wh
+        // TODO: Which power is adequate?
         let storage_hw = GenericStorage::new(cap_hw,
                                              0.95,
                                              0.95,
                                              0.05,
-                                             1.2 * w_2tn,  // w_2tn / 1h -> W
+                                             cap_hw / 0.5,  // cap_hw/...h -> W
                                              hist,);
 
         // boiler
