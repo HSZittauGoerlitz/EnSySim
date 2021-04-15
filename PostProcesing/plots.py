@@ -367,4 +367,3 @@ def compareCurves(time, values, names,
         return fig
     else:  # show figure
         fig.show()
-
