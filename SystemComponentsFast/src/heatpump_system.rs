@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{debug};
+use log::{info};
 
 use crate::helper::find_heating_system_storage;
 
@@ -286,6 +286,14 @@ impl HeatpumpSystem {
                                               con_e: con_e,
                                               gen_t: gen_t,
                                               };
+
+        info!("
+               designed heatpump system with following specifications:
+               heatpump nominal power: {:.2}kW
+               storage capacity: {:.2}kWh
+               boiler nominal power: {:.2}kW",
+               pow_t/1000., cap/1000., q_hln/1000.);
+
         heatpump_system
     }
 }

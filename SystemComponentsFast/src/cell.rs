@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{warn};
+use log::{error};
 
 use crate::{building, pv, sep_bsl_agent, hist_memory, save_e, save_t};
 
@@ -102,7 +102,7 @@ impl Cell {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(_cell_pv) => warn!("Cell already has a \
+            Some(_cell_pv) => error!("Cell already has a \
                                      PV plant, nothing is added"),
         }
     }
@@ -117,7 +117,7 @@ impl Cell {
                         building: building::Building)
     {
         if building_pos > (self.n_buildings - 1) as usize {
-            warn!("Building position exceeds number of available buildings. \
+            error!("Building position exceeds number of available buildings. \
                    Max. possiblie building position is {}",
                    self.n_buildings - 1);
         } else {
