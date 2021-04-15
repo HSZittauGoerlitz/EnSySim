@@ -7,7 +7,8 @@
     "Abasement": 85.5,
     "Aroof": 100,
     "V": 517,
-    "nUnits": 1
+    "nUnits": 1,
+    "cp_effective": 15.0
   },
   "Uvalues": {
     "class_1": {
