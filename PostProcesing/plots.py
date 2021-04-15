@@ -8,7 +8,8 @@ COL_CON = 'rgb(255,84,79)'  # color for consumption
 COL_BAL = 'rgba(0,0,0,0.5)'  # color for balance
 
 
-def arbitraryBalance(generation, load, time, unitPrefix, title=""):
+def arbitraryBalance(generation, load, time, unitPrefix,
+                     title="", retFig=False):
     """Plot the power and energy balance for given curves
 
     Arguments:
@@ -20,6 +21,8 @@ def arbitraryBalance(generation, load, time, unitPrefix, title=""):
 
     Keyword Arguments:
         title {str} -- Title used for plot (default: {""})
+        retFig {bool} -- When True figure is not showed, but returned
+                         (default: {False})
     """
     # calculate resulting energy course
     dt = time.diff().dt.seconds / 3600.  # time difference in h
@@ -86,11 +89,13 @@ def arbitraryBalance(generation, load, time, unitPrefix, title=""):
                      row=1, col=1)
     fig.update_yaxes(title_text="Energy [{}W]".format(unitPrefix),
                      row=2, col=1)
-    # show figure
-    fig.show()
+    if retFig:
+        return fig
+    else:  # show figure
+        fig.show()
 
 
-def buildingTemperature(building, time, T):
+def buildingTemperature(building, time, T, retFig=False):
     """ Plot the temperature course for given building
 
     Args:
@@ -98,6 +103,10 @@ def buildingTemperature(building, time, T):
                                shall be plotted
           time (pd series of datetime): Time
           T (np array): Outside Temperature during Simulation [degC]
+
+    Keyword Arguments:
+        retFig {bool} -- When True figure is not showed, but returned
+                         (default: {False})
     """
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time, y=building.temperature_hist.get_memory(),
@@ -116,7 +125,10 @@ def buildingTemperature(building, time, T):
                       title_text="Building Temperature Course")
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Temperature degC")
-    fig.show()
+    if retFig:
+        return fig
+    else:  # show figure
+        fig.show()
 
 
 def cellPowerBalance(cell, time):
@@ -276,13 +288,17 @@ def cellEnergyBalance(cell, time):
     fig.show()
 
 
-def chargeState(storage, time):
+def chargeState(storage, time, retFig=False):
     """ Plot the charge state for given storage
 
     Args:
           storage (Storage): Storage for which the charge course
                              shall be plotted
           time (pd series of datetime): Time
+
+    Keyword Arguments:
+        retFig {bool} -- When True figure is not showed, but returned
+                         (default: {False})
     """
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time,
@@ -297,10 +313,14 @@ def chargeState(storage, time):
                                  .format(storage.cap * 1e-3))
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Charge [kWh]")
-    fig.show()
+    if retFig:
+        return fig
+    else:  # show figure
+        fig.show()
 
 
-def compareCurves(time, values, names, xLabel='Time', yLabel='', title=''):
+def compareCurves(time, values, names,
+                  xLabel='Time', yLabel='', title='', retFig=False):
     """Create comparison plot for given curves
 
     Arguments:
@@ -313,6 +333,8 @@ def compareCurves(time, values, names, xLabel='Time', yLabel='', title=''):
         xLabel {str} -- Label for x axis (default: {'Time'})
         yLabel {str} -- Label for y axis (default: {''})
         title {str} -- Plot title (default: {''})
+        retFig {bool} -- When True figure is not showed, but returned
+                         (default: {False})
     """
     nCurves = len(values)
 
@@ -341,4 +363,8 @@ def compareCurves(time, values, names, xLabel='Time', yLabel='', title=''):
     fig.update_layout(height=600, width=600, title_text=title)
     fig.update_xaxes(title_text=xLabel)
     fig.update_yaxes(title_text=yLabel)
-    fig.show()
+    if retFig:
+        return fig
+    else:  # show figure
+        fig.show()
+
