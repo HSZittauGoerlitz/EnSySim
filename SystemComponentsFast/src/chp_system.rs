@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-//use log::{debug};
+use log::{info};
 
 use crate::helper::{find_heating_system_storage,
                     find_hot_water_system_storage};
@@ -47,12 +47,12 @@ impl ChpSystem {
     pub fn new(q_hln: f32, n: f32, hist: usize) -> Self {
 
         // chp:
-        let pow_t = 0.8 * q_hln;
-        let chp = CHP::new(pow_t, hist);
+        let pow_t_chp = 0.8 * q_hln;
+        let chp = CHP::new(pow_t_chp, hist);
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C,
-        let cap = find_heating_system_storage(&pow_t, &40.);
+        let cap = find_heating_system_storage(&pow_t_chp, &40.);
 
         // dummy parameters for now
         let storage = GenericStorage::new(cap,
@@ -75,8 +75,8 @@ impl ChpSystem {
                                              hist,);
 
         // boiler
-        let pow_t = 0.2 * q_hln;
-        let boiler = Boiler::new(pow_t, hist);
+        let pow_t_boiler = 0.2 * q_hln;
+        let boiler = Boiler::new(pow_t_boiler, hist);
 
         let gen_e;
         let gen_t;
@@ -99,6 +99,15 @@ impl ChpSystem {
                                     gen_e: gen_e,
                                     gen_t: gen_t,
                                     };
+
+        info!("
+               designed chp system with following specifications:
+               chp nominal power: {:.2}kW
+               heating storage capacity: {:.2}kWh
+               hot water storage capcaity: {:.2}kWh
+               boiler nominal power: {:.2}kW",
+               pow_t_chp/1000., cap/1000., cap_hw/1000., pow_t_boiler/1000.);
+
         chp_system
     }
 }

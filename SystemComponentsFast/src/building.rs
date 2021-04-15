@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{warn};
+use log::{error};
 
 
 use crate::{agent, controller, pv, heatpump_system, chp_system, hist_memory,
@@ -168,7 +168,7 @@ impl Building {
             self.n_agents += 1;
         }
         else {
-            warn!("Number of max. Agents reached, \
+            error!("Number of max. Agents reached, \
                    no agent is added");
         }
     }
@@ -176,7 +176,7 @@ impl Building {
     fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
-            Some(_building_pv) => warn!("Building already has a \
+            Some(_building_pv) => error!("Building already has a \
                                          PV plant, nothing is added"),
         }
     }
@@ -191,11 +191,11 @@ impl Building {
                 match &self.heatpump_system {
                     None => {self.heatpump_system = Some(heatpump_sytem);},
                     Some(_building_heatpump) =>
-                        warn!("Building already has a \
+                        error!("Building already has a \
                                heatpump, nothing is added"),
                 };
             },
-            Some(_building_chp) => warn!("Building already has a chp, \
+            Some(_building_chp) => error!("Building already has a chp, \
                                           heatpump is not added"),
         }
     }
@@ -205,7 +205,7 @@ impl Building {
         self.heat_building = Building::get_chp_generation;
         match &self.chp_system {
             None => {self.chp_system = Some(chp_system);},
-            Some(_building_chp) => warn!("Building already has a \
+            Some(_building_chp) => error!("Building already has a \
                                           CHP plant, nothing is added"),
         }
     }
@@ -262,7 +262,7 @@ impl Building {
 
     fn replace_agent(&mut self, agent_pos: usize, agent: agent::Agent){
         if agent_pos > (self.n_agents - 1) as usize {
-            warn!("Agent position exceeds number of available Agents. \
+            error!("Agent position exceeds number of available Agents. \
                    Max. possiblie agent position is {}",
                    self.n_agents - 1);
         } else {
