@@ -43,7 +43,7 @@ nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg = getSimData(start, end,
                                                                    region)
 climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
-Geo, U, n = _loadBuildingData(bType)
+Geo, U, g, n = _loadBuildingData(bType)
 
 cell = Cell(climate.loc['EgNorm kWh', 'Value'],
             climate.loc['ToutNorm degC', 'Value'],
@@ -71,6 +71,7 @@ building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
                     n.loc['Infiltration', infState],
                     n.loc[airState, infState],
                     (Geo.loc['cp_effective'] * Geo.loc['Volume']).Value,
+                    g.loc[mState, bClass],
                     Geo.loc[('Volume')].values.astype(np.uint32)[0][0],
                     isAtDHN, cell.t_out_n, nSteps
                     )

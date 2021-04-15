@@ -45,7 +45,7 @@ def _addAgents(building, pAgent, pPHH, pAgriculture):
     return building
 
 
-def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, n,
+def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, g, n,
                   pAgent, pPHH, pAgriculture, pPV, pHP, hist=0):
     """ Add Buildings of one type to cell
 
@@ -62,6 +62,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, n,
                             East, West, South, North
         Geo (pd DataFrame): Geometry data of building type
         U (pd DataFrame): U-Values of building type
+        g (pd DataFrame): Solar factors for building type
         n (pd DataFrame): Infiltration rates of building type
         pAgent (float32): Probability that agents is created
                           (Corresponds to the propotion of agents on
@@ -121,6 +122,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, n,
                             n.loc[airState, infState],
                             (Geo.loc['cp_effective'] *
                              Geo.loc['Volume']).Value,
+                            g.loc[mState, classNames[classIdx]],
                             Geo.loc[('Volume')].values.astype(np.uint32)[0][0],
                             isAtDHN, cell.t_out_n, hist
                             )
@@ -354,9 +356,10 @@ def _loadBuildingData(bType):
     bFile = './BoundaryConditions/Thermal/ReferenceBuildings/' + bType + '.h5'
     Geo = pd.read_hdf(bFile, key='Geo')
     U = pd.read_hdf(bFile, key='U')
+    g = pd.read_hdf(bFile, key='g')
     n = pd.read_hdf(bFile, key='n')
 
-    return (Geo, U, n)
+    return (Geo, U, g, n)
 
 
 def generateGenericCell(nBuildings, pAgents, pPHHagents,
@@ -467,12 +470,12 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
     # init buildings and agents
     for key in pBTypes.keys():
         bType = pBTypes[key]['type']
-        Geo, U, n = _loadBuildingData(bType)
+        Geo, U, g, n = _loadBuildingData(bType)
 
         _checkParameter(U, pBTypes[key])
 
         _addBuildings(cell, nBuildings[bType], pBTypes[bType], pDHN[bType],
-                      region, Geo, U, n,
+                      region, Geo, U, g, n,
                       pAgents[bType], pPHHagents[bType], pAgriculture[bType],
                       pPVplants, pHeatpumps, hist)
 

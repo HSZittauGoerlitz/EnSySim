@@ -21,6 +21,7 @@ pub struct Building {
     n_ventilation: f32,  // 1h
     res_u_trans: f32,  // resulting heat transmission coefficient W/K
     cp_eff: f32,  // effective heat storage coefficient Wh/K
+    g: f32,  // Solar factor of building windows 0 to 1
     temperature: f32, // estimation of mean building temperature degC
     nominal_temperature: f32, // temperature set-point of building degC
     #[pyo3(get)]
@@ -68,6 +69,7 @@ impl Building {
     /// * n_infiltration (f32): Air infiltration rate of building [1/h]
     /// * n_ventilation (f32): Air infiltration rate due ventilation [1/h]
     /// * cp_eff (f32): Effective heat storage coefficient of building [Wh/K]
+    /// * g (f32): Solar factor of building windows 0 to 1 [-]
     /// * volume (f32): Inner building Volume [m^3]
     ///                 (This Value is used for calculation
     ///                 of air renewal losses)
@@ -78,8 +80,8 @@ impl Building {
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     fn new(n_max_agents: u32, areas_uv: Vec<[f32; 2]>, delta_u: f32,
-           n_infiltration: f32, n_ventilation: f32, cp_eff: f32, volume: f32,
-           is_at_dhn: bool, t_out_n: f32, hist: usize) -> Self {
+           n_infiltration: f32, n_ventilation: f32, cp_eff: f32, g: f32,
+           volume: f32, is_at_dhn: bool, t_out_n: f32, hist: usize) -> Self {
         // check parameter
         if n_max_agents <= 0 {
             panic!("Number of max. Agents must be greater than 0");
@@ -101,6 +103,10 @@ impl Building {
         }
         if volume < 0. {
             panic!("Building volume must not be negative");
+        }
+
+        if (g < 0.) | (g > 1.) {
+            panic!("Solar factor must be between 0 and 1");
         }
 
         let (gen_e, gen_t, load_e, load_t, temperature_hist);
@@ -132,6 +138,7 @@ impl Building {
             n_ventilation: n_ventilation,
             res_u_trans: 0.,
             cp_eff: cp_eff,
+            g: g,
             temperature: 20.,
             nominal_temperature: 20.,
             v: volume,
