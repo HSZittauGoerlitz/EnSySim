@@ -103,11 +103,13 @@ for file_ in refFiles:
         Geo.loc[('Volume', ''), 'Value'] = V
         Geo.loc[('nUnits', ''), 'Value'] = nUnits
         Geo.loc[('A_living', ''), 'Value'] = data['Geometry']['Aliving']
+        g = pd.DataFrame.from_dict(data['g'])
         n = pd.DataFrame.from_dict(data['n'])
         # save to hdf file
         store = pd.HDFStore(loc + name + '.h5')
         store['Geo'] = Geo
         store['U'] = U
+        store['g'] = g
         store['n'] = n
         store.close()
 

@@ -65,6 +65,20 @@
       }
     }
   },
+  "g": {
+    "class_1": {
+      "original": 0.8,
+      "modernised": 0.8
+    },
+    "class_2": {
+      "original": 0.8,
+      "modernised": 0.8
+    },
+    "class_3": {
+      "original": 0.8,
+      "modernised": 0.8
+    }
+  },
   "n": {
     "original": {
       "Infiltration": 0.46,
