@@ -119,7 +119,8 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, n,
                                   (classNames[classIdx], mState)],
                             n.loc['Infiltration', infState],
                             n.loc[airState, infState],
-                            15. * Geo.loc[('Volume')].Value,  # cp_eff [Wh/K]
+                            (Geo.loc['cp_effective'] *
+                             Geo.loc['Volume']).Value,
                             Geo.loc[('Volume')].values.astype(np.uint32)[0][0],
                             isAtDHN, cell.t_out_n, hist
                             )

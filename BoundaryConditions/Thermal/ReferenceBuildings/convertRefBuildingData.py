@@ -58,10 +58,10 @@ def getA_UValuePairs(data, name):
         if part == 'V':
             V = np.float32(value)
             continue
-        if part == 'nUnits':
+        elif part == 'nUnits':
             nUnits = np.uint32(value)
             continue
-        elif part == 'Aliving':
+        elif (part == 'Aliving') | (part == 'cp_effective'):
             continue
         elif part[0] != 'A':
             print("WARNING: Unknown entry {} in Geometry of {}"
@@ -100,6 +100,8 @@ for file_ in refFiles:
         A, Anames, V, nUnits, U = getA_UValuePairs(data, name)
         GeoIdx = pd.MultiIndex.from_product([['Areas'], Anames])
         Geo = pd.DataFrame(A, index=GeoIdx, columns=['Value'])
+        Geo.loc[('cp_effective', ''),
+                'Value'] = data['Geometry']['cp_effective']
         Geo.loc[('Volume', ''), 'Value'] = V
         Geo.loc[('nUnits', ''), 'Value'] = nUnits
         Geo.loc[('A_living', ''), 'Value'] = data['Geometry']['Aliving']
