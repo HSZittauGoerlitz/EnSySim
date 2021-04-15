@@ -142,6 +142,19 @@ fig.add_trace(go.Scatter(x=time, y=SynProData['Tin [degC]'],
                          name="SynPro",
                          )
               )
+fig = fig.set_subplots(rows=2, cols=1,
+                       shared_xaxes=True,
+                       vertical_spacing=0.02)
+fig.update_xaxes(title_text="", row=1, col=1)
+fig.update_xaxes(title_text="Time", row=2, col=1)
+fig.update_yaxes(title_text="Heating State", row=2, col=1)
+fig.add_trace(go.Scatter(x=time, y=SynProData['Heating state'],
+                         line={'color': 'rgba(100, 149, 237, 0.5)',
+                               'width': 1},
+                         name="SynPro",
+                         ),
+              row=2, col=1
+              )
 fig.show()
 
 # %%
