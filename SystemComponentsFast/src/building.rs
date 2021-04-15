@@ -3,8 +3,10 @@ use pyo3::prelude::*;
 use log::{error};
 
 
-use crate::{agent, controller, pv, heatpump_system, chp_system, hist_memory,
-            save_e, save_t};
+use crate::{agent, controller, pv, heatpump_system, chp_system,
+            hist_memory, save_e, save_t};
+
+use crate::environment::Environment;
 
 #[pyclass]
 #[derive(Clone)]
@@ -448,7 +450,7 @@ impl Building {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                t_out: &f32, eg: &f32) -> (f32, f32, f32, f32) {
+                environment: &Environment) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
         let thermal_load_heat;  // space heating demand
@@ -457,6 +459,7 @@ impl Building {
         let mut electrical_generation = 0.;
         let mut internal_gains = 0.;  // internal gains for space heating
 
+        let e = environment;
 
         // calculate loads
         self.agents.iter().for_each(|agent: &agent::Agent| {
@@ -468,13 +471,13 @@ impl Building {
         internal_gains += electrical_load;
 
         // PV
-        electrical_generation += self.get_pv_generation(eg);
+        electrical_generation += self.get_pv_generation(&e.irradiation_all);
 
         // Heating
         let sh_power_request = self.temperature_control(&internal_gains,
-                                                        t_out);
+                                                        &e.t_out);
         let (sub_e, thermal_generation) = (self.heat_building)
-            (self, &sh_power_request, &thermal_load_hw, t_out);
+            (self, &sh_power_request, &thermal_load_hw, &e.t_out);
 
         if sub_e < 0. {
             electrical_load -= sub_e;  // sub_e is negative -> minus means plus
@@ -493,7 +496,7 @@ impl Building {
         thermal_load_heat = self.get_space_heating_demand(&(internal_gains +
                                                             thermal_generation -
                                                             thermal_load_hw),
-                                                          &t_out);
+                                                          &e.t_out);
 
 
         // save data

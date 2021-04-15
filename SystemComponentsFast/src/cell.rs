@@ -2,7 +2,10 @@
 use pyo3::prelude::*;
 use log::{error};
 
-use crate::{building, pv, sep_bsl_agent, hist_memory, save_e, save_t};
+use crate::{building, pv, sep_bsl_agent,
+            hist_memory, save_e, save_t};
+
+use crate::environment::Environment;
 
 #[pyclass]
 #[derive(Clone)]
@@ -151,8 +154,10 @@ impl Cell {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                t_out: &f32, t_out_n: &f32, eg: &f32) -> (f32, f32, f32, f32) {
+                t_out_n: &f32, environment: &Environment)
+                -> (f32, f32, f32, f32) {
         // init current step
+        let e = environment;
         let mut electrical_load = 0.;
         let mut thermal_load = 0.;
         let mut electrical_generation = 0.;
@@ -162,7 +167,7 @@ impl Cell {
         self.sub_cells.iter_mut().for_each(|sc: &mut Cell| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
                 sc.step(slp_data, hw_profile,
-                        t_out, t_out_n, eg);
+                        e.t_out, t_out_n, e.irradiation_all);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
@@ -173,7 +178,7 @@ impl Cell {
         self.buildings.iter_mut().for_each(|b: &mut building::Building| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
                 b.step(slp_data, hw_profile,
-                       t_out, eg);
+                       &e.t_out, &e.irradiation_all);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
@@ -184,7 +189,7 @@ impl Cell {
         self.sep_bsl_agents.iter_mut().
             for_each(|sbsl: &mut sep_bsl_agent::SepBSLagent| {
                 let (sub_gen_e, sub_load_e) =
-                    sbsl.step(slp_data, eg);
+                    sbsl.step(slp_data, &e.irradiation_all);
                 electrical_generation += sub_gen_e;
                 electrical_load += sub_load_e;
         });
@@ -192,7 +197,7 @@ impl Cell {
 
         // calculate generation
         // TODO: CHP
-        electrical_generation += self.get_pv_generation(eg);
+        electrical_generation += self.get_pv_generation(&e.irradiation_all);
 
         // TODO: Storage, Controller
 
