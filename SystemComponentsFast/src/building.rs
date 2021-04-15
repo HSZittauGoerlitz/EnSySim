@@ -38,7 +38,7 @@ pub struct Building {
     chp_system: Option<chp_system::ChpSystem>,
     #[pyo3(get)]
     heatpump_system: Option<heatpump_system::HeatpumpSystem>,
-    heat_building: fn(&mut Building, &f32, &f32) -> (f32, f32),
+    heat_building: fn(&mut Building, &f32, &f32, &f32) -> (f32, f32),
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -310,18 +310,18 @@ impl Building {
     /// Space heating demand is determined by internal control algorithm.
     ///
     /// # Arguments
+    /// * sh_power_request (&f32): Thermal power requested for
+    ///                            space heating [W]
     /// * thermal_load_hw (&f32): Hot water demand [W]
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * (f32, f32): (electrical generation/load = 0., thermal generation)
-    fn get_dhn_generation(&mut self,
-                          thermal_load_hw: &f32, t_out: &f32)
-    -> (f32, f32) {
+    fn get_dhn_generation(&mut self, sh_power_request: &f32,
+                          thermal_load_hw: &f32, _t_out: &f32) -> (f32, f32)
+    {
             // Building is self-supplied
-            let thermal_load_heat = self.temperature_control(t_out);
-            (0., thermal_load_heat + thermal_load_hw)
-
+            (0., sh_power_request + thermal_load_hw)
     }
 
     /// Function to calculate thermal generation of building with chp plant.
@@ -332,20 +332,20 @@ impl Building {
     /// Space heating demand is determined by internal control algorithm.
     ///
     /// # Arguments
-    /// * thermal_load_heat (&f32): Space heating demand [W]
+    /// * sh_power_request (&f32): Thermal power requested for
+    ///                            space heating [W]
     /// * thermal_load_hw (&f32): Hot water demand [W]
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * (f32, f32): (electrical generation/load, thermal generation)
-    fn get_chp_generation(&mut self,
-                          thermal_load_hw: &f32, t_out: &f32) -> (f32, f32)
+    fn get_chp_generation(&mut self, sh_power_request: &f32,
+                          thermal_load_hw: &f32, _t_out: &f32) -> (f32, f32)
     {
-        let thermal_load_heat = self.temperature_control(t_out);
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(&thermal_load_heat, thermal_load_hw)
+                building_chp.step(sh_power_request, thermal_load_hw)
                 },
             }
     }
@@ -358,22 +358,22 @@ impl Building {
     /// Space heating demand is determined by internal control algorithm.
     ///
     /// # Arguments
-    /// * thermal_load_heat (&f32): Space heating demand [W]
+    /// * sh_power_request (&f32): Thermal power requested for
+    ///                            space heating [W]
     /// * thermal_load_hw (&f32): Hot water demand [W]
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * (f32, f32): (electrical generation/load, thermal generation)
-    fn get_heatpump_generation(&mut self,
+    fn get_heatpump_generation(&mut self, sh_power_request: &f32,
                                thermal_load_hw: &f32, t_out: &f32)
     -> (f32, f32)
     {
-        let thermal_load_heat = self.temperature_control(t_out);
         match &mut self.heatpump_system {
             None => (0., 0.),
             Some(building_heatpump) => {
                 let (load_e, gen_t) = building_heatpump.step(
-                                        &thermal_load_heat, thermal_load_hw,
+                    sh_power_request, thermal_load_hw,
                                         t_out);
                 (-load_e, gen_t)
             },
@@ -448,6 +448,7 @@ impl Building {
         let mut thermal_load_hw = 0.;  // hot water demand
         let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
+        let mut internal_gains = 0.;  // internal gains for space heating
 
 
         // calculate loads
@@ -456,13 +457,17 @@ impl Building {
             electrical_load += sub_load_e;
             thermal_load_hw += sub_load_t;
         });
+        // Electric energy consumed in building will heat it up (DIN 4108-6)
+        internal_gains += electrical_load;
 
         // PV
         electrical_generation += self.get_pv_generation(eg);
 
         // Heating
+        let sh_power_request = self.temperature_control(&internal_gains,
+                                                        t_out);
         let (sub_e, thermal_generation) = (self.heat_building)
-            (self, &thermal_load_hw, t_out);
+            (self, &sh_power_request, &thermal_load_hw, t_out);
 
         if sub_e < 0. {
             electrical_load -= sub_e;  // sub_e is negative -> minus means plus
@@ -478,7 +483,8 @@ impl Building {
         // Update building temperature and resulting thermal load
         // For space heating generation, the hot water generation must be
         // subtracted from complete thermal generation.
-        thermal_load_heat = self.get_space_heating_demand(&(thermal_generation -
+        thermal_load_heat = self.get_space_heating_demand(&(internal_gains +
+                                                            thermal_generation -
                                                             thermal_load_hw),
                                                           &t_out);
 
@@ -495,11 +501,13 @@ impl Building {
     /// set point or heat building up. Cooling is not considered.
     ///
     /// # Arguments
+    /// * internal_gains (&f32): Internal heat gains of building [W]
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * f32: Requested Heating power [W]
-    fn temperature_control(&mut self, t_out: &f32) -> f32
+    fn temperature_control(&mut self, internal_gains: &f32,
+                           t_out: &f32) -> f32
     {
         let (heat_loss, heat_up);
 
@@ -515,6 +523,6 @@ impl Building {
             heat_loss = self.res_u_trans * (self.temperature - *t_out);
         }
 
-        (heat_loss + heat_up).max(0.)
+        (heat_loss + heat_up - *internal_gains).max(0.)
     }
 }

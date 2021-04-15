@@ -240,8 +240,6 @@ impl HeatpumpSystem {
                                                     &heating_days);
             iter_count += 1.;
         }
-        let min_cop = cop_from_coefficients(&pow_t, &t_min, &t_supply);
-        let min_q = q_from_coefficients(&pow_t, &t_min, &t_supply);
 
         // create heatpump
         let heatpump = Heatpump::new(pow_t, t_supply, t_min, hist);
