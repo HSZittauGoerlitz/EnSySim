@@ -158,3 +158,5 @@ fig.add_trace(go.Scatter(x=time, y=SynProData['Heating state'],
 fig.show()
 
 # %%
+print("EnSySim Buildings has a yearly space heating demand of {:.2f} kWh/m^2"
+      .format(building_sh.sum() * 0.25 / Geo.loc[('A_living', ''), 'Value']))
