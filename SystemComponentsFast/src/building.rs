@@ -448,6 +448,7 @@ impl Building {
         let mut thermal_load_hw = 0.;  // hot water demand
         let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
+        let mut internal_gains = 0.;  // internal gains for space heating
 
 
         // calculate loads
@@ -456,6 +457,8 @@ impl Building {
             electrical_load += sub_load_e;
             thermal_load_hw += sub_load_t;
         });
+        // Electric energy consumed in building will heat it up (DIN 4108-6)
+        internal_gains += electrical_load;
 
         // PV
         electrical_generation += self.get_pv_generation(eg);
@@ -478,7 +481,8 @@ impl Building {
         // Update building temperature and resulting thermal load
         // For space heating generation, the hot water generation must be
         // subtracted from complete thermal generation.
-        thermal_load_heat = self.get_space_heating_demand(&(thermal_generation -
+        thermal_load_heat = self.get_space_heating_demand(&(internal_gains +
+                                                            thermal_generation -
                                                             thermal_load_hw),
                                                           &t_out);
 
