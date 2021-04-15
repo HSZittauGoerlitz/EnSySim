@@ -3,8 +3,10 @@ use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use numpy::PyReadonlyArrayDyn;
 // local
-#[macro_use]
 // Environment
+mod environment;
+// Entities
+#[macro_use]
 mod agent;
 mod building;
 mod cell;
@@ -23,11 +25,11 @@ mod helper;
 mod hist_memory;
 
 #[pymodule]
-#[allow(non_snake_case)] // for python binding
 fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     pyo3_log::init();
 
+    m.add_class::<environment::Environment>()?;
     m.add_class::<agent::Agent>()?;
     m.add_class::<building::Building>()?;
     m.add_class::<cell::Cell>()?;
