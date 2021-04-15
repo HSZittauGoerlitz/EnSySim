@@ -15,7 +15,7 @@ from BoundaryConditions.Simulation.SimulationData import getSimData
 from GenericModel.Design import _addAgents, _loadBuildingData
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d
+import plotly.graph_objs as go
 from SystemComponentsFast import simulate, Building, Cell
 from PostProcesing import plots
 import logging
@@ -135,6 +135,13 @@ plots.compareCurves([SynProData.time],
                     ['SynPro', 'EnSySim'], yLabel='Thermal Energy in MWh')
 
 # %%
-plots.buildingTemperature(cell.buildings[0], time, T)
+fig = plots.buildingTemperature(cell.buildings[0], time, T, True)
+fig.add_trace(go.Scatter(x=time, y=SynProData['Tin [degC]'],
+                         line={'color': 'rgba(100, 149, 237, 0.5)',
+                               'width': 1},
+                         name="SynPro",
+                         )
+              )
+fig.show()
 
 # %%
