@@ -21,12 +21,12 @@ def get_uniques(list_in):
 # %% get reference year temperatures
 
 
-path = "../BoundaryConditions/Weather/"
+path = "./BoundaryConditions/Weather/"
 file_name = "East.h5"
 
-df = pd.read_hdf(path+file_name)
+df = pd.read_hdf(path+file_name, key='Weather')
 
-t_ref = df['temperatures_15'].tolist()
+t_ref = df.reference['T [degC]'].tolist()
 
 # %% get only heating days
 t_heat = 12

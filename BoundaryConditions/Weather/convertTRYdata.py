@@ -58,8 +58,8 @@ def _findBeginning(file_name, loc):
     """Scan given TRY dat file and find end of header (start of data)
 
     Arguments:
-        file_name {string} -- Name of TRY data file
-        loc {string} -- Location of TRY data file
+        file_name {str} -- Name of TRY data file
+        loc {str} -- Location of TRY data file
 
     Returns:
         (int, string) -- (lines before data starts,
@@ -82,23 +82,27 @@ def _findBeginning(file_name, loc):
     return (dat_start, last_line)
 
 
-def _getNormedOutsideTemperature(data, region):
+def _getNormedOutsideTemperature(data, region, loc):
     """ Load normed outside temperature for given region.
 
-    Those temperatures have to be added to the 'ToutNorm.json' file, with the
+    Those temperatures have to be added to the 'TnormOut.json' file, with the
     corresponding region name. If this information is missing, a value is
     estimated for the region TRY data.
 
     Arguments:
         data {pd DataFrame} -- Preprocessed TRY data for
                                reference and extreme years
-        region {string} -- Name of the region for wich the normed outside
-                           temperature is needed
+        region {str} -- Name of the region for wich the normed outside
+                        temperature is needed
+        loc {str} -- Location of the TnormOut.json file
 
     Returns:
         float - Normed outside temperature
     """
-    with open('TnormOut.json', 'r') as ToutFile:
+    loc = ('.' + os.sep +
+           os.sep.join(os.path.realpath(__file__).split(os.sep)[2:-1]) +
+           os.sep)
+    with open(loc + 'TnormOut.json', 'r') as ToutFile:
         ToutData = json.load(ToutFile)
 
     try:
@@ -113,7 +117,7 @@ def _getRefYear(file_name):
     """ Read reference year from given file name
 
     Arguments:
-        file_name {string} -- Name of file with DWD reference weather data
+        file_name {str} -- Name of file with DWD reference weather data
 
     Returns:
         int -- Reference year
@@ -131,9 +135,12 @@ def _getTRY_Data_T_Eg(file_name, loc):
     The global radiation value is calculated as [kWh/m^2 ]
     (time integral of radiation data)
 
+    Also the separate radiation data columns will be kept, since they are
+    useful regarding the thermal house model.
+
     Arguments:
-        file_name {string} -- Name of TRY data file
-        loc {string} -- Location of TRY data file
+        file_name {str} -- Name of TRY data file
+        loc {str} -- Location of TRY data file
 
     Returns:
         pd DataFrame -- Ref. year data (T, Eg) for given TRY file
@@ -149,19 +156,24 @@ def _getTRY_Data_T_Eg(file_name, loc):
 
     # Fix hour names 0 to 23
     data.HH -= 1
-    data['date_time'] = pd.to_datetime((refYear*10000 +
-                                        data.MM*100 + data.DD).apply(str),
-                                       format='%Y%m%d')
-    data.date_time += pd.to_timedelta(data.HH, unit='h')
+    data[('date_time', '')] = pd.to_datetime((refYear*10000 +
+                                              data.MM*100 +
+                                              data.DD).apply(str),
+                                             format='%Y%m%d')
+    data[('date_time', '')] += pd.to_timedelta(data.HH, unit='h')
 
-    data['Eg'] = (data.B + data.D)
-    data['T'] = data.t
+    data[('weather_data', 'E diffuse [W/m^2]')] = data.D
+    data[('weather_data', 'E direct [W/m^2]')] = data.B
+    data[('weather_data', 'Eg [W/m^2]')] = (data.B + data.D)
+    data[('weather_data', 'T [degC]')] = data.t
 
     # clean up
     data.drop(columns=header, inplace=True)
     # not necessary, but in case something happened to the data order
-    data.sort_values('date_time', axis=0, ascending=True,
+    data.sort_values(('date_time', ''), axis=0, ascending=True,
                      inplace=True, ignore_index=True)
+    # rebuild index for better accessibility of data
+    data.columns = pd.MultiIndex.from_tuples(data.columns)
 
     return data
 
@@ -171,7 +183,7 @@ def _loadAllTRYfiles(loc):
     reference years with extreme summer and winter.
 
     Arguments:
-        loc {string} -- Location TRY data files
+        loc {str} -- Location TRY data files
 
     Returns:
         pandas DataFrame -- Ref. year data (T, Eg) for
@@ -188,9 +200,9 @@ def _loadAllTRYfiles(loc):
             # time course is taken from reference year
             if refType == 'reference':
                 data[('date_time', '')] = sub_data.date_time
-
-            data[(refType, 'Eg [W]')] = sub_data['Eg']
-            data[(refType, 'T [degC]')] = sub_data['T']
+            # take weather data
+            for col in sub_data.weather_data.columns:
+                data[(refType, col)] = sub_data.loc[:, ('weather_data', col)]
 
     data[('doy', '')] = data[('date_time', '')].dt.day_of_year
     data.columns = pd.MultiIndex.from_tuples(data.columns)
@@ -198,7 +210,7 @@ def _loadAllTRYfiles(loc):
     return data
 
 
-def _saveData(data, ToutNorm, name):
+def _saveData(data, ToutNorm, name, save_loc):
     """ Save given weather data as h5 file
 
     There are two kinds of data stored:
@@ -216,28 +228,29 @@ def _saveData(data, ToutNorm, name):
         data {pd DataFrame} -- Preprocessed TRY data for
                                reference and extreme years
         ToutNorm {float} -- Normed outside temperature [degC]
-        Name {String} -- Name of h5-file in which the data is stored
+        name {str} -- Name of h5-file in which the data is stored
+        save_loc {str} -- Location where to store the data
     """
     # store weather data
-    store = pd.HDFStore(name + '.h5')
+    store = pd.HDFStore(save_loc + name + '.h5')
     store['Weather'] = data
     # calculate and store standard data
     sd = pd.DataFrame(columns=['Value'])
     # in case of unequally spaced data get time steps
     dt = data.date_time.diff()
     # calculate yearly Eg Energy and store it
-    sd.loc['EgNorm kWh', 'Value'] = (data.reference['Eg [W]'].values[0] +
-                                     (data.reference['Eg [W]'][1:].cumsum() *
-                                     dt.dt.total_seconds()[1:] / 3600.)
-                                     .values[-1]) * 1e-3  # Wh -> kWh
-    sd.loc['ToutNorm degC', 'Value'] = ToutNorm
+    sd.loc['EgNorm [kWh/m^2]', 'Value'] = (
+      data.reference['Eg [W/m^2]'].values[0] +
+      (data.reference['Eg [W/m^2]'][1:].cumsum() *
+       dt.dt.total_seconds()[1:] / 3600.).values[-1]) * 1e-3  # Wh -> kWh
+    sd.loc['ToutNorm [degC]', 'Value'] = ToutNorm
     sd.loc[:, 'Value'] = sd['Value'].apply(float)  # ensure correct data type
     store['Standard'] = sd
 
     store.close()
 
 
-def importData(loc):
+def importData(loc, script_loc):
     """ Load all raw data of DWD reference weather data in given location
 
     This method will browse all sub directories, load and preprocess the
@@ -246,21 +259,27 @@ def importData(loc):
     data, needed for design, is stored under the key 'Standard'.
 
     Arguments:
-        loc {[type]} -- [description]
+        loc {str} -- Location of raw data
+        script_loc {str} -- Location of this script (here should also be the
+                            TnormOut.json and here will be saved
+                            the imported weather)
     """
     loc = _checkLocation(loc)
+    script_loc = _checkLocation(script_loc)
 
     for content in os.listdir(loc):
         if os.path.isdir(loc + content):
             data = _loadAllTRYfiles(loc + content + os.sep)
-            T = _getNormedOutsideTemperature(data, content)
-            _saveData(data, T, content)
+            T = _getNormedOutsideTemperature(data, content, script_loc)
+            _saveData(data, T, content, script_loc)
 
 
 # %%
-dat_loc = './TRWdata_raw'
+dat_loc = "./BoundaryConditions/Weather/TRWdata_raw"
+script_loc = ('.' + os.sep +
+              os.sep.join(os.path.realpath(__file__).split(os.sep)[2:-1]))
 
-importData(dat_loc)
+importData(dat_loc, script_loc)
 
 
 # %%
