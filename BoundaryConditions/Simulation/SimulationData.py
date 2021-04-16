@@ -234,75 +234,73 @@ def _getWeather(simData, region):
     """
     RefWeather = pd.read_hdf("./BoundaryConditions/Weather/" +
                              region + ".h5", 'Weather')
-    # add columns for weather
-    simData['T'] = 0.
-    simData['Eg'] = 0.
+    cols = RefWeather.reference.columns
 
+    # at first create simulation weather data without interpolation
+    SimWeather = pd.DataFrame(columns=['t [s]'] + cols.to_list())
+
+    # ensure ref Weather time steps are hourly
+    if RefWeather.date_time.dt.freq != 'H':
+        # TODO: Catch -> Create hourly stepped ref Data
+        raise ValueError("Weather data time step must be one hour")
+
+    # Fill sim time in seconds hourly stepped
+    SimWeather['time'] = pd.date_range(simData.time.iloc[0],
+                                       simData.time.iloc[-1], freq='H')
+    SimWeather['doy'] = SimWeather.time.dt.dayofyear
+    SimWeather['t [s]'] = ((SimWeather.time - SimWeather.time[0])
+                           .dt.total_seconds())
     # get mask of all non leap year days once -> keep out doy 366
-    maskDoy = (simData.doy >= 1) & (simData.doy <= 365)
+    maskDoy = (SimWeather.doy >= 1) & (SimWeather.doy <= 365)
 
     # one-time create weight function to get smooth transistions
     # between years or december extrapolation
-    lenDay = ((simData.time.dt.year == simData.time.dt.year[0]) &
-              (simData.doy == simData.doy[0])).sum()
-    wDay = np.arange(lenDay-1, -1., -1.) / lenDay
+    lenDay = 24  # h -> since ref weather data is hourly stepped
+    wDay = np.vstack(np.arange(lenDay-1, -1., -1.) / lenDay)
     wDay = wDay**10
     wDayInv = 1 - wDay
 
     yearEnd = None
 
     # Split up Eg data generation into linked doy sequences
-    for year in range(simData.time.dt.year.min(),
-                      simData.time.dt.year.max()+1):
+    for year in range(SimWeather.time.dt.year.min(),
+                      SimWeather.time.dt.year.max()+1):
         # for now ignore the possibility of leap year
-        maskY = ((simData.time.dt.year == year) & maskDoy)
+        maskY = ((SimWeather.time.dt.year == year) & maskDoy)
+        # get start and end Idx for current year
+        doyStart = SimWeather.doy[(SimWeather.time.dt.year == year).idxmax()]
+        startY = (RefWeather.doy == doyStart).idxmax()
+        endY = startY + maskY.sum()-1
 
         # get weighting factors
         w = np.random.random(3)
         w /= w.sum()  # sum of all factors must be 1
-        # Create Weather functions
-        t = (RefWeather.date_time - RefWeather.date_time[0]).dt.total_seconds()
-        t /= 3600.  # in [h]
-        fT = interp1d(t,
-                      (RefWeather.reference['T [degC]']*w[0] +
-                       RefWeather.winter_extreme['T [degC]']*w[1] +
-                       RefWeather.summer_extreme['T [degC]']*w[2]).values,
-                      'linear', bounds_error=False, fill_value='extrapolate')
-        fEg = interp1d(t,
-                       (RefWeather.reference['Eg [W]']*w[0] +
-                        RefWeather.winter_extreme['Eg [W]']*w[1] +
-                        RefWeather.summer_extreme['Eg [W]']*w[2]).values,
-                       'linear', bounds_error=False, fill_value='extrapolate')
 
-        # get time for interpolation
-        t = simData.loc[maskY, 'time']
-        t = ((t - pd.to_datetime("01.01.{}".format(year)))
-             .dt.total_seconds() / 3600.)  # in h
-        # add new Data
-        simData.loc[maskY, 'T'] = fT(t)
-        simData.loc[maskY, 'Eg'] = fEg(t)
+        # Calculate simulation data
+        SimWeather.loc[maskY, cols] = (
+          RefWeather.reference.loc[startY:endY, cols]*w[0] +
+          RefWeather.winter_extreme.loc[startY:endY, cols]*w[1] +
+          RefWeather.summer_extreme.loc[startY:endY, cols]*w[2]
+          ).values
 
         # get smooth transition if there is a year before
         if yearEnd is not None:
-            mask_new = maskY & (simData.doy == 1)
-            simData.loc[mask_new, 'T'] = (
-              wDay * yearEnd[0] +
-              wDayInv * simData.loc[maskY, 'T'].values[:lenDay])
-            simData.loc[mask_new, 'Eg'] = (
-              wDay * yearEnd[1] +
-              wDayInv * simData.loc[maskY, 'Eg'].values[:lenDay])
+            mask_new = maskY & (SimWeather.doy == 1)
+            SimWeather.loc[mask_new, cols] = (
+                    wDay * yearEnd +
+                    wDayInv * SimWeather.loc[maskY, cols].values[:lenDay])
 
         # leap day treatment
-        if simData.time[maskY].dt.is_leap_year.any():
+        if SimWeather.time[maskY].dt.is_leap_year.any():
             # update year mask
-            maskY = simData.time.dt.year == year
+            maskY = SimWeather.time.dt.year == year
             # handle different cases
-            doyEnd = simData.doy[maskY].max()
+            doyEnd = SimWeather.doy[maskY].max()
 
             # there is missing data, only if last day of year is considered
             if doyEnd == 366:
                 # prepare
-                doyStart = simData.doy[maskY].min()
+                doyStart = SimWeather.doy[maskY].min()
                 # random weights for inter-/extrapolation
                 w = np.random.random(2)
                 w /= w.sum()
@@ -312,56 +310,49 @@ def _getWeather(simData, region):
                 # 2. Start after leap -> extrapolate end pf year
                 if doyStart < DOY_LEAPDAY:
                     # move data beginning from leap day
-                    mask_new = maskY & ((simData.doy >= DOY_LEAPDAY+1) &
-                                        (simData.doy <= 366))
-                    mask_old = maskY & ((simData.doy >= DOY_LEAPDAY) &
-                                        (simData.doy <= 365))
-                    simData.loc[mask_new, ['T', 'Eg']] = simData.loc[mask_old,
-                                                                     ['T',
-                                                                      'Eg']
-                                                                     ].values
+                    mask_new = maskY & ((SimWeather.doy >= DOY_LEAPDAY+1) &
+                                        (SimWeather.doy <= 366))
+                    mask_old = maskY & ((SimWeather.doy >= DOY_LEAPDAY) &
+                                        (SimWeather.doy <= 365))
+                    SimWeather.loc[mask_new, cols] = (
+                        SimWeather.loc[mask_old, cols].values)
                     # interpolate leap day data with surrounding days
                     # leap day has March 1st for know -> add Feb 28th
-                    mask_new = maskY & (simData.doy == DOY_LEAPDAY)
-                    mask_old = maskY & (simData.doy == DOY_LEAPDAY-1)
-                    New = (w[0] * simData.loc[mask_new, ['T', 'Eg']].values +
-                           w[1] * simData.loc[mask_old, ['T', 'Eg']].values)
-                    Last = simData.loc[mask_old, ['T', 'Eg']].values[-1]
+                    mask_new = maskY & (SimWeather.doy == DOY_LEAPDAY)
+                    mask_old = maskY & (SimWeather.doy == DOY_LEAPDAY-1)
+                    New = (w[0] * SimWeather.loc[mask_new, cols].values +
+                           w[1] * SimWeather.loc[mask_old, cols].values)
+                    Last = SimWeather.loc[mask_old, cols].values[-1]
                     # first transition
-                    simData.loc[mask_new, ['T']] = (wDay*Last[0] +
-                                                    wDayInv*New[:, 0])
-                    simData.loc[mask_new, ['Eg']] = (wDay*Last[1] +
-                                                     wDayInv*New[:, 1])
+                    SimWeather.loc[mask_new, cols] = (wDay*Last + wDayInv*New)
                     # second transition -> new is now old
-                    mask_old = maskY & (simData.doy == DOY_LEAPDAY+1)
-                    New = simData.loc[mask_old, ['T', 'Eg']].values[-1]
-                    Last = simData.loc[mask_new, ['T', 'Eg']].values
-                    simData.loc[mask_old, ['T']] = (wDayInv*Last[:, 0] +
-                                                    wDay*New[0])
-                    simData.loc[mask_old, ['Eg']] = (wDayInv*Last[:, 1] +
-                                                     wDay*New[1])
-
+                    mask_old = maskY & (SimWeather.doy == DOY_LEAPDAY+1)
+                    New = SimWeather.loc[mask_old, cols].values[-1]
+                    Last = SimWeather.loc[mask_new, cols].values
+                    SimWeather.loc[mask_old, cols] = (wDayInv*Last + wDay*New)
                 else:
                     # just add missing data to last day of year
-                    # since information is missing for time before doyStart,
+                    # since information is missing
+                    # for time before doyStart,
                     # the last two known days will be extrapolated
-                    mask_new = maskY & (simData.doy == 366)
-                    mask_old_1 = maskY & (simData.doy == 364)
-                    mask_old_2 = maskY & (simData.doy == 365)
+                    mask_new = maskY & (SimWeather.doy == 366)
+                    mask_old_1 = maskY & (SimWeather.doy == 364)
+                    mask_old_2 = maskY & (SimWeather.doy == 365)
                     # scale new temperature in relation to
                     # last temperature of day before
-                    Last = simData.loc[mask_old_2, ['T', 'Eg']].values[-1]
-                    New = (w[0] * simData.loc[mask_old_1,
-                                              ['T', 'Eg']].values +
-                           w[1] * simData.loc[mask_old_2,
-                                              ['T', 'Eg']].values
-                           )
-                    simData.loc[mask_new, ['T']] = (wDay*Last[0] +
-                                                    wDayInv*New[:, 0])
-                    simData.loc[mask_new, ['Eg']] = (wDay*Last[1] +
-                                                     wDayInv*New[:, 1])
+                    Last = SimWeather.loc[mask_old_2, cols].values[-1]
+                    New = (w[0] * SimWeather.loc[mask_old_1, cols].values +
+                           w[1] * SimWeather.loc[mask_old_2, cols].values)
+                    SimWeather.loc[mask_new, cols] = (wDay*Last + wDayInv*New)
         # set year Flag
-        yearEnd = simData.loc[maskY, ['T', 'Eg']].values[-1]
+        yearEnd = SimWeather.loc[maskY, cols].values[-1]
+
+    # go threw simulated weather data and interpolate it for simData
+    simTime = (simData.time - simData.time[0]).dt.total_seconds()
+    for col in cols:
+        fWeather = interp1d(SimWeather['t [s]'], SimWeather[col], 'linear',
+                            bounds_error=False, fill_value='extrapolate')
+        simData[col] = fWeather(simTime)
 
     return simData
 

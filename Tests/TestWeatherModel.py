@@ -65,7 +65,7 @@ def plotArrayTemperatures(time, nTestCases, region):
         color = hex_to_rgba(next(palette))
 
         fig.add_trace(go.Scatter(x=time.time,
-                                 y=_getWeather(time, region)['T'],
+                                 y=_getWeather(time, region)['T [degC]'],
                                  line={'color': color,
                                        'width': 1},
                                  name="T_{}".format(i+1)
