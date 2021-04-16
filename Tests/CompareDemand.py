@@ -45,8 +45,8 @@ climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
 Geo, U, g, n = _loadBuildingData(bType)
 
-cell = Cell(climate.loc['EgNorm kWh', 'Value'],
-            climate.loc['ToutNorm degC', 'Value'],
+cell = Cell(climate.loc['EgNorm [kWh/m^2]', 'Value'],
+            climate.loc['ToutNorm [degC]', 'Value'],
             nSteps)
 
 # %% Create Building
