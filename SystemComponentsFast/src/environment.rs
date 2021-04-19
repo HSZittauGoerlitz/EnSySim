@@ -1,7 +1,14 @@
 pub struct Environment {
+<<<<<<< Updated upstream
+=======
+    #[pyo3(get, set)]
+>>>>>>> Stashed changes
     pub irradiation_dir: f32,
+    #[pyo3(get, set)]
     pub irradiation_diff: f32,
+    #[pyo3(get, set)]
     pub irradiation_all: f32,
+    #[pyo3(get, set)]
     pub t_out: f32,
 }
 
