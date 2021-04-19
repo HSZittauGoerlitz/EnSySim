@@ -167,7 +167,7 @@ impl Cell {
         self.sub_cells.iter_mut().for_each(|sc: &mut Cell| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
                 sc.step(slp_data, hw_profile,
-                        e.t_out, t_out_n, e.irradiation_all);
+                        t_out_n, e);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
@@ -177,8 +177,7 @@ impl Cell {
         // calculate buildings
         self.buildings.iter_mut().for_each(|b: &mut building::Building| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
-                b.step(slp_data, hw_profile,
-                       &e.t_out, &e.irradiation_all);
+                b.step(slp_data, hw_profile, &e);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
