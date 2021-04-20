@@ -124,10 +124,10 @@ def _addSLPdata(simData):
                 G0.Summer.Sunday.values,
                 L0.Summer.Sunday.values]), nDays).T
     # Dynamic sampling of PHH profile
-    newData.loc[:, [('SLP', 'PHH')]] *= (- 3.92*1e-10*simData.doy**4 +
-                                         3.2*1e-7*simData.doy**3 -
-                                         7.02*1e-5*simData.doy**2 +
-                                         2.1*1e-3*simData.doy + 1.24)
+    newData[('SLP', 'PHH')] *= (- 3.92*1e-10*simData.doy**4 +
+                                3.2*1e-7*simData.doy**3 -
+                                7.02*1e-5*simData.doy**2 +
+                                2.1*1e-3*simData.doy + 1.24)
     # merge data frames
     simData = simData.join(newData)
 
