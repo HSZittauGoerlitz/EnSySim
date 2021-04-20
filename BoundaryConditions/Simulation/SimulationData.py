@@ -370,7 +370,7 @@ def _getSolarPosition(simData, latitude, longitude):
     """
     # TODO: calculation assumes UTC-time if not localized
     solarPosition = pv.solarposition.get_solarposition(
-                                   simData.time,
+                                   simData[('time', '')],
                                    latitude,
                                    longitude
                                )

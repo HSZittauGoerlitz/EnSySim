@@ -91,6 +91,6 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
         env.irradiation_glob = e_global[step];
         env.irradiation_diff = e_diffuse[step];
         env.irradiation_dir = e_direct[step];
-        main_cell.step(&slp, &hot_water_data[step], &cell_t_out_n, &env);
+        main_cell.step(&slp, &hot_water_data[step], &cell_t_out_n, &mut env);
     }
 }

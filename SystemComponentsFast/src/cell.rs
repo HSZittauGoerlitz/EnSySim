@@ -142,26 +142,26 @@ impl Cell {
 
     /// Calculate area specific solar irradiation for windows facing
     /// south, west, north and east
-    fn get_specific_solar_gains(&mut self, env: &mut Environment) {
+    fn get_specific_solar_gains(&mut self,  env: &mut Environment) {
         // first calculate direct part
         // south, west, north, east
         let mut irradiations = [0., 0., 0., 0.];
-        let mut orientations = [0., 90., 180., 270.];
+        let orientations: [f32; 4] = [0., 90., 180., 270.];
 
-        let I_b: f32 = env.irradiation_dir.to_radians();
+        let i_b: f32 = env.irradiation_dir.to_radians();
         let h: f32 = env.solar_elevation.to_radians();
         let tilt: f32 = std::f32::consts::FRAC_PI_2;
         let gamma: f32 = env.solar_azimuth.to_radians();
         
         for (idx, orientation) in orientations.iter().enumerate() {
-            irradiations[idx] += I_b * (tilt.sin() + h.cos() / h.sin() * (orientation.to_radians() - gamma).cos() * tilt.cos());
+            irradiations[idx] += i_b * (tilt.sin() + h.cos() / h.sin() * ((*orientation).to_radians() - gamma).cos() * tilt.cos());
         }
 
         // now diffuse part
-        let I_d: f32 = env.irradiation_diff;
+        let i_d: f32 = env.irradiation_diff;
 
-        for direction in irradiations.iter() {
-            direction += I_d * (1. + tilt.cos()) / 2.;
+        for idx in 0..irradiations.len() {
+            irradiations[idx] += i_d * (1. + tilt.cos()) / 2.;
         }
 
         env.specific_gains = irradiations;
@@ -183,7 +183,7 @@ impl Cell {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                t_out_n: &f32, env: &Environment)
+                t_out_n: &f32, env: &mut Environment)
                 -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
@@ -203,7 +203,7 @@ impl Cell {
         });
 
         // calculate buildings
-        self.get_specific_solar_gains(&mut env);
+        self.get_specific_solar_gains(env);
         self.buildings.iter_mut().for_each(|b: &mut building::Building| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
                 b.step(slp_data, hw_profile, &env);

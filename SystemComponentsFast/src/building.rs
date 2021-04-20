@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{error};
+use log::{error, debug};
 
 
 use crate::{agent, controller, pv, heatpump_system, chp_system,
@@ -403,7 +403,7 @@ impl Building {
         for view in irradiations.iter() {
             solar_gain += view * window_area / 4.;
         }
-
+        debug!("solar gain: {}W", solar_gain);
         solar_gain
     }
 
