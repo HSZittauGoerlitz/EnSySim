@@ -3,8 +3,10 @@ use pyo3::prelude::*;
 use log::{error};
 
 
-use crate::{agent, controller, pv, heatpump_system, chp_system, hist_memory,
-            save_e, save_t};
+use crate::{agent, controller, pv, heatpump_system, chp_system,
+            hist_memory, save_e, save_t};
+
+use crate::environment::Environment;
 
 #[pyclass]
 #[derive(Clone)]
@@ -387,6 +389,25 @@ impl Building {
         }
     }
 
+    /// Calculate solar gains in W
+    ///
+    /// Building walls are east, south, west, north straight.
+    /// Window area gets allocated uniformly (1/4th per direction)
+    fn get_solar_gains(&self, env: &Environment) -> f32 {
+        let window_area = self.areas_uv[2][0];
+        // south, west, north, east
+        let irradiations = env.specific_gains;
+
+        let mut solar_gain = 0.;
+
+        for view in irradiations.iter() {
+            solar_gain += view * window_area / 4.;
+        }
+
+        solar_gain
+    }
+
+
     /// Calculate space heating demand in W
     ///
     /// At first the building temperature is calculated by the following DGL:
@@ -448,7 +469,7 @@ impl Building {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                t_out: &f32, eg: &f32) -> (f32, f32, f32, f32) {
+                env: &Environment) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
         let thermal_load_heat;  // space heating demand
@@ -456,7 +477,6 @@ impl Building {
         let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
         let mut internal_gains = 0.;  // internal gains for space heating
-
 
         // calculate loads
         self.agents.iter().for_each(|agent: &agent::Agent| {
@@ -466,15 +486,17 @@ impl Building {
         });
         // Electric energy consumed in building will heat it up (DIN 4108-6)
         internal_gains += electrical_load;
+        // solar irradiation through windows will heat building
+        internal_gains += self.get_solar_gains(&env);
 
         // PV
-        electrical_generation += self.get_pv_generation(eg);
+        electrical_generation += self.get_pv_generation(&env.irradiation_glob);
 
         // Heating
         let sh_power_request = self.temperature_control(&internal_gains,
-                                                        t_out);
+                                                        &env.t_out);
         let (sub_e, thermal_generation) = (self.heat_building)
-            (self, &sh_power_request, &thermal_load_hw, t_out);
+            (self, &sh_power_request, &thermal_load_hw, &env.t_out);
 
         if sub_e < 0. {
             electrical_load -= sub_e;  // sub_e is negative -> minus means plus
@@ -493,7 +515,7 @@ impl Building {
         thermal_load_heat = self.get_space_heating_demand(&(internal_gains +
                                                             thermal_generation -
                                                             thermal_load_hw),
-                                                          &t_out);
+                                                          &env.t_out);
 
 
         // save data
