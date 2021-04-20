@@ -47,8 +47,7 @@ def _addSLPdata(simData):
         pandas data frame: Data frame with sim time and SLP data
     """
     # prepare columns
-    cIdx = pd.MultiIndex.from_tuples([('SLP', 'PHH'), ('SLP', 'BSLa'),
-                                      ('SLP', 'BSLc')])
+    cIdx = [('SLP', 'PHH'), ('SLP', 'BSLa'), ('SLP', 'BSLc')]
     newData = pd.DataFrame(index=np.arange(simData.shape[0]), columns=cIdx)
     # load SLP base data
     PHH = pd.read_hdf("./BoundaryConditions/Electrical/SLP/PHH.h5",
@@ -61,83 +60,83 @@ def _addSLPdata(simData):
     # Winter
     mask = simData.winter & (simData.weekDaySLP < 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(PHH.Winter.WorkDay,
-                                                         1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(G0.Winter.WorkDay,
-                                                          1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(L0.Winter.WorkDay,
-                                                          1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(PHH.Winter.WorkDay,
+                                                           1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(G0.Winter.WorkDay,
+                                                            1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(L0.Winter.WorkDay,
+                                                            1, nDays).T
     mask = simData.winter & (simData.weekDaySLP == 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(PHH.Winter.Saturday,
-                                                         1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(G0.Winter.Saturday,
-                                                          1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(L0.Winter.Saturday,
-                                                          1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(PHH.Winter.Saturday,
+                                                           1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(G0.Winter.Saturday,
+                                                            1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(L0.Winter.Saturday,
+                                                            1, nDays).T
     mask = simData.winter & (simData.weekDaySLP == 6)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(PHH.Winter.Sunday,
-                                                         1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(G0.Winter.Sunday,
-                                                          1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(L0.Winter.Sunday,
-                                                          1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(PHH.Winter.Sunday,
+                                                           1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(G0.Winter.Sunday,
+                                                            1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(L0.Winter.Sunday,
+                                                            1, nDays).T
     # Intermediate
     mask = simData.intermediate & (simData.weekDaySLP < 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(
-      PHH.InterimPeriod.WorkDay, 1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(
-      G0.InterimPeriod.WorkDay,  1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(
-      L0.InterimPeriod.WorkDay,  1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(
+      PHH.InterimPeriod.WorkDay,   1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(
+      G0.InterimPeriod.WorkDay,    1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(
+      L0.InterimPeriod.WorkDay,    1, nDays).T
     mask = simData.intermediate & (simData.weekDaySLP == 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(
-      PHH.InterimPeriod.Saturday, 1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(
-      G0.InterimPeriod.Saturday,  1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(
-      L0.InterimPeriod.Saturday,  1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(
+      PHH.InterimPeriod.Saturday,   1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(
+      G0.InterimPeriod.Saturday,    1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(
+      L0.InterimPeriod.Saturday,    1, nDays).T
     mask = simData.intermediate & (simData.weekDaySLP == 6)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(
-      PHH.InterimPeriod.Sunday, 1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(
-      G0.InterimPeriod.Sunday,  1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(
-      L0.InterimPeriod.Sunday,  1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(
+      PHH.InterimPeriod.Sunday,   1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(
+      G0.InterimPeriod.Sunday,    1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(
+      L0.InterimPeriod.Sunday,    1, nDays).T
     # Summer
     mask = simData.summer & (simData.weekDaySLP < 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(PHH.Summer.WorkDay,
-                                                         1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(G0.Summer.WorkDay,
-                                                          1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(L0.Summer.WorkDay,
-                                                          1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(PHH.Summer.WorkDay,
+                                                           1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(G0.Summer.WorkDay,
+                                                            1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(L0.Summer.WorkDay,
+                                                            1, nDays).T
     mask = simData.summer & (simData.weekDaySLP == 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(PHH.Summer.Saturday,
-                                                         1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(G0.Summer.Saturday,
-                                                          1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(L0.Summer.Saturday,
-                                                          1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(PHH.Summer.Saturday,
+                                                           1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(G0.Summer.Saturday,
+                                                            1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(L0.Summer.Saturday,
+                                                            1, nDays).T
     mask = simData.summer & (simData.weekDaySLP == 6)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, ('SLP', 'PHH')] = np.matlib.repmat(PHH.Summer.Sunday,
-                                                         1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLc')] = np.matlib.repmat(G0.Summer.Sunday,
-                                                          1, nDays)[0]
-    newData.loc[mask, ('SLP', 'BSLa')] = np.matlib.repmat(L0.Summer.Sunday,
-                                                          1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH')]] = np.matlib.repmat(PHH.Summer.Sunday,
+                                                           1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLc')]] = np.matlib.repmat(G0.Summer.Sunday,
+                                                            1, nDays).T
+    newData.loc[mask, [('SLP', 'BSLa')]] = np.matlib.repmat(L0.Summer.Sunday,
+                                                            1, nDays).T
     # Dynamic sampling of PHH profile
-    newData.loc[:, ('SLP', 'PHH')] *= (- 3.92*1e-10*simData.doy**4 +
-                                       3.2*1e-7*simData.doy**3 -
-                                       7.02*1e-5*simData.doy**2 +
-                                       2.1*1e-3*simData.doy + 1.24)
+    newData.loc[:, [('SLP', 'PHH')]] *= (- 3.92*1e-10*simData.doy**4 +
+                                         3.2*1e-7*simData.doy**3 -
+                                         7.02*1e-5*simData.doy**2 +
+                                         2.1*1e-3*simData.doy + 1.24)
     # merge data frames
     simData = simData.join(newData)
 
