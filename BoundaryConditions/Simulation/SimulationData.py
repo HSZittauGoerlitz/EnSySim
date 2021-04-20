@@ -25,8 +25,9 @@ def _addHotwater(simData):
     # since there is no statistic to business hot water demand available
     HWP = pd.read_hdf("./BoundaryConditions/Thermal/HotWaterProfile/"
                       "HotWaterDayProfile.h5", key='PHH')
-    simData.loc[:, 'HWPfactor'] = (HWP.loc[simData.time.dt.hour,
-                                   'fProportion'].values)
+    simData.insert(simData.shape[1], ('HWPfactor', ''),
+                   HWP.loc[simData[('time', '')].dt.hour,
+                           'fProportion'].values)
 
     return simData
 
@@ -49,7 +50,7 @@ def _addSLPdata(simData):
         pandas data frame: Data frame with sim time and SLP data
     """
     # prepare columns
-    cIdx = ['SLP_PHH', 'SLP_BSLa', 'SLP_BSLc']
+    cIdx = [('SLP', 'PHH'), ('SLP', 'BSLa'), ('SLP', 'BSLc')]
     newData = pd.DataFrame(index=np.arange(simData.shape[0]), columns=cIdx)
     # load SLP base data
     PHH = pd.read_hdf("./BoundaryConditions/Electrical/SLP/PHH.h5",
@@ -62,83 +63,74 @@ def _addSLPdata(simData):
     # Winter
     mask = simData.winter & (simData.weekDaySLP < 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.Winter.WorkDay,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.Winter.WorkDay,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.Winter.WorkDay,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.Winter.WorkDay.values,
+                G0.Winter.WorkDay.values,
+                L0.Winter.WorkDay.values]), nDays).T
     mask = simData.winter & (simData.weekDaySLP == 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.Winter.Saturday,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.Winter.Saturday,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.Winter.Saturday,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.Winter.Saturday.values,
+                G0.Winter.Saturday.values,
+                L0.Winter.Saturday.values]), nDays).T
     mask = simData.winter & (simData.weekDaySLP == 6)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.Winter.Sunday,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.Winter.Sunday,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.Winter.Sunday,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.Winter.Sunday.values,
+                G0.Winter.Sunday.values,
+                L0.Winter.Sunday.values]), nDays).T
     # Intermediate
     mask = simData.intermediate & (simData.weekDaySLP < 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.InterimPeriod.WorkDay,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.InterimPeriod.WorkDay,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.InterimPeriod.WorkDay,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.InterimPeriod.WorkDay.values,
+                G0.InterimPeriod.WorkDay.values,
+                L0.InterimPeriod.WorkDay.values]), nDays).T
     mask = simData.intermediate & (simData.weekDaySLP == 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.InterimPeriod.Saturday,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.InterimPeriod.Saturday,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.InterimPeriod.Saturday,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.InterimPeriod.Saturday.values,
+                G0.InterimPeriod.Saturday.values,
+                L0.InterimPeriod.Saturday.values]), nDays).T
     mask = simData.intermediate & (simData.weekDaySLP == 6)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.InterimPeriod.Sunday,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.InterimPeriod.Sunday,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.InterimPeriod.Sunday,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.InterimPeriod.Sunday.values,
+                G0.InterimPeriod.Sunday.values,
+                L0.InterimPeriod.Sunday.values]), nDays).T
     # Summer
     mask = simData.summer & (simData.weekDaySLP < 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.Summer.WorkDay,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.Summer.WorkDay,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.Summer.WorkDay,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.Summer.WorkDay.values,
+                G0.Summer.WorkDay.values,
+                L0.Summer.WorkDay.values]), nDays).T
     mask = simData.summer & (simData.weekDaySLP == 5)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.Summer.Saturday,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.Summer.Saturday,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.Summer.Saturday,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.Summer.Saturday.values,
+                G0.Summer.Saturday.values,
+                L0.Summer.Saturday.values]), nDays).T
     mask = simData.summer & (simData.weekDaySLP == 6)
     nDays = int(mask.sum() / 96)
-    newData.loc[mask, 'SLP_PHH'] = np.matlib.repmat(PHH.Summer.Sunday,
-                                                    1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLc'] = np.matlib.repmat(G0.Summer.Sunday,
-                                                     1, nDays)[0]
-    newData.loc[mask, 'SLP_BSLa'] = np.matlib.repmat(L0.Summer.Sunday,
-                                                     1, nDays)[0]
+    newData.loc[mask, [('SLP', 'PHH'), ('SLP', 'BSLc'),
+                       ('SLP', 'BSLa')]] = np.tile(
+      np.array([PHH.Summer.Sunday.values,
+                G0.Summer.Sunday.values,
+                L0.Summer.Sunday.values]), nDays).T
     # Dynamic sampling of PHH profile
-    newData.loc[:, 'SLP_PHH'] *= (- 3.92*1e-10*simData.doy**4 +
-                                  3.2*1e-7*simData.doy**3 -
-                                  7.02*1e-5*simData.doy**2 +
-                                  2.1*1e-3*simData.doy + 1.24)
+    newData[('SLP', 'PHH')] *= (- 3.92*1e-10*simData.doy**4 +
+                                3.2*1e-7*simData.doy**3 -
+                                7.02*1e-5*simData.doy**2 +
+                                2.1*1e-3*simData.doy + 1.24)
     # merge data frames
     simData = simData.join(newData)
 
@@ -188,7 +180,8 @@ def _getSimTime(startDate, endDate):
     doy = time.dayofyear
     weekDaySLP = time.dayofweek
 
-    df = pd.DataFrame({'time': time, 'doy': doy, 'weekDaySLP': weekDaySLP})
+    df = pd.DataFrame({('time', ''): time, 'doy': doy,
+                       'weekDaySLP': weekDaySLP})
     # add relevant time periods
     df['summer'] = (((time.month > 5) & (time.month < 9)) |
                     ((time.month == 5) & (time.day >= 15)) |
@@ -248,8 +241,9 @@ def _getWeather(simData, region):
         raise ValueError("Weather data time step must be one hour")
 
     # Fill sim time in seconds hourly stepped
-    SimWeather['time'] = pd.date_range(simData.time.iloc[0],
-                                       simData.time.iloc[-1], freq='H')
+    SimWeather['time'] = pd.date_range(simData[('time', '')].iloc[0],
+                                       simData[('time', '')].iloc[-1],
+                                       freq='H')
     SimWeather['doy'] = SimWeather.time.dt.dayofyear
     SimWeather['t [s]'] = ((SimWeather.time - SimWeather.time[0])
                            .dt.total_seconds())
@@ -351,11 +345,12 @@ def _getWeather(simData, region):
         yearEnd = SimWeather.loc[maskY, cols].values[-1]
 
     # go threw simulated weather data and interpolate it for simData
-    simTime = (simData.time - simData.time[0]).dt.total_seconds()
+    simTime = (simData[('time', '')] -
+               simData[('time', '')][0]).dt.total_seconds()
     for col in cols:
         fWeather = interp1d(SimWeather['t [s]'], SimWeather[col], 'linear',
                             bounds_error=False, fill_value='extrapolate')
-        simData[('Weather', col)] = fWeather(simTime)
+        simData[('Weather', col)] = fWeather(simTime).astype(np.float32)
 
     return simData
 
@@ -449,6 +444,8 @@ def getSimData_df(startDate, endDate, region):
     #data = _getSolarIrradiationWindows(data)
     data = _cleanSimData(data)
 
+    data.columns = pd.MultiIndex.from_tuples(data.columns)
+
     return data
 
 
@@ -472,10 +469,9 @@ def getSimData(startDate, endDate, region):
     data = getSimData_df(startDate, endDate, region)
 
     return (data.time.size, data.time,
-            data.SLP_PHH.to_numpy(dtype=np.float32),
-            data.SLP_BSLa.to_numpy(dtype=np.float32),
-            data.SLP_BSLc.to_numpy(dtype=np.float32),
+            data.SLP.PHH.to_numpy(dtype=np.float32),
+            data.SLP.BSLa.to_numpy(dtype=np.float32),
+            data.SLP.BSLc.to_numpy(dtype=np.float32),
             data.HWPfactor.to_numpy(dtype=np.float32),
-            data[('Weather', 'T [degC]')].to_numpy(dtype=np.float32),
-            data[('Weather', 'Eg [W/m^2]')].to_numpy(dtype=np.float32)
+            data.Weather
             )

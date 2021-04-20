@@ -23,15 +23,16 @@ region = "East"
 bType = "FSH"
 
 # %% prepare simulation
-nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg = getSimData(start, end,
-                                                                   region)
+nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, Weather = getSimData(start,
+                                                                     end,
+                                                                     region)
 climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
 
 Geo, U, g, n = _loadBuildingData(bType)
 
-cell = Cell(climate.loc['EgNorm kWh', 'Value'],
-            climate.loc['ToutNorm degC', 'Value'],
+cell = Cell(climate.loc['EgNorm [kWh/m^2]', 'Value'],
+            climate.loc['ToutNorm [degC]', 'Value'],
             nSteps)
 
 # %% Create Building
@@ -69,7 +70,8 @@ building.add_dimensioned_chp(nSteps)
 cell.add_building(building)
 
 # %% Run simulation
-simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
+simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP,
+         Weather.to_dict('list'))
 
 # %%
 plots.cellPowerBalance(cell, time)
@@ -84,7 +86,7 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 
 # %%
 b = cell.buildings[0]
-plots.buildingTemperature(b, time, T)
+plots.buildingTemperature(b, time, Weather['T [degC]'])
 
 # %%
 plots.chargeState(b.chp_system.storage, time)
