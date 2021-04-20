@@ -23,8 +23,9 @@ region = "East"
 bType = "FSH"
 
 # %% prepare simulation
-nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg = getSimData(start, end,
-                                                                   region)
+nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, Weather = getSimData(start,
+                                                                     end,
+                                                                     region)
 climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
 
@@ -97,7 +98,8 @@ cell.add_building(building)
 
 
 # %%
-simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, T, Eg)
+simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP,
+         Weather.to_dict('list'))
 
 
 # %%
@@ -115,7 +117,7 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 
 # %%
 b = cell.buildings[0]
-plots.buildingTemperature(b, time, T)
+plots.buildingTemperature(b, time, Weather['T [degC]'])
 
 # %%
 plots.chargeState(b.heatpump_system.storage, time)
