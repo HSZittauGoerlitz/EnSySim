@@ -29,7 +29,6 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     pyo3_log::init();
 
-    m.add_class::<environment::Environment>()?;
     m.add_class::<agent::Agent>()?;
     m.add_class::<building::Building>()?;
     m.add_class::<cell::Cell>()?;

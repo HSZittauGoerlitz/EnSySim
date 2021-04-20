@@ -1,6 +1,9 @@
+
 import numpy as np
 import numpy.matlib
 import pandas as pd
+import pvlib as pv
+from math import sin, cos, radians
 from scipy.interpolate import interp1d
 
 
@@ -357,6 +360,67 @@ def _getWeather(simData, region):
     return simData
 
 
+def _getSolarPosition(simData, latitude, longitude):
+    """ Get position of sun from time and location
+    Args:
+        simData (pandas data frame): Simulation data
+        latitude (float): Latitude in decimal degrees. Positive north of
+                          equator, negative to south
+        longitude (float): Longitude in decimal degrees. Positive east of
+                           prime meridian, negative to west
+
+    Returns:
+        pandas data frame: Data frame with sim data
+
+    """
+    # TODO: calculation assumes UTC-time if not localized
+    solarPosition = pv.solarposition.get_solarposition(
+                                   simData.time,
+                                   latitude,
+                                   longitude
+                               )
+
+    simData[('SolarPosition',
+             'elevation [degree]')] = solarPosition.elevation.values
+    simData[('SolarPosition',
+             'azimuth [degree]')] = solarPosition.azimuth.values
+
+    return simData
+
+
+# def _getSolarIrradiationWindows(simData):
+#     """ Get irradiation on vertial faces in east/south/west/nord orientation
+#         Result is area specific (W/m²)
+#     Args:
+#         simData (pandas data frame): Simulation data, solar position and
+#         irradiance values (direct & diffuse)
+#     Returns:
+#         pandas data frame: Data frame with sim data
+#     """
+#     # # south, west, north, east
+#     orientations = [0, 90, 180, 270]
+#       # remember: for azimuth north is 0°!
+
+#     for orientation in orientations:
+
+#         # direct irradiation
+#         I_b = simData[('Weather', 'E direct [W/m^2]')]
+#         # elevation
+#         h = simData[('SolarPosition', 'elevation [degree]')].apply(radians)
+#         # tilt to horizontal
+#         tilt = radians(90)
+#         # azimuth
+#         gamma = simData[('SolarPosition', 'azimuth [degree]')].apply(radians)
+
+#         col_name = 'irradiance_' + str(orientation) + ' [W/m^2]'
+
+#         simData[('Weather', col_name)] = I_b / h.apply(sin) * (h.apply(sin) * cos(tilt) +
+#                                             h.apply(cos) * (orientation -
+#                                             gamma).apply(cos) * sin(tilt))
+
+#     return simData
+
+
 def getSimData_df(startDate, endDate, region):
     """ Get all boundary condition data needed for a simulation run
 
@@ -377,6 +441,12 @@ def getSimData_df(startDate, endDate, region):
     data = _addSLPdata(data)
     data = _addHotwater(data)
     data = _getWeather(data, region)
+
+    # Mittelpunkt Deutschland
+    latitude = 51.164305
+    longitude = 10.4541205
+    data = _getSolarPosition(data, latitude, longitude)
+    #data = _getSolarIrradiationWindows(data)
     data = _cleanSimData(data)
 
     return data
