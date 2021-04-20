@@ -70,7 +70,7 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
     let slp_bslc = slp_bslc.as_array();
     let hot_water_data = hot_water_data.as_array();
     // Get Environment data and create object
-    let mut env = environment::Environment::new(0., 0., 0.);
+    let mut env = environment::Environment::new(0., 0., 0., 0., 0.);
     let t = env_data.get("T [degC]").unwrap();
     let e_global = env_data.get("Eg [W/m^2]").unwrap();
     let e_diffuse = env_data.get("E diffuse [W/m^2]").unwrap();
@@ -88,7 +88,7 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
         slp[2] = slp_bslc[step];
         // Environment
         env.t_out = t[step];
-        env.irradiation_all = e_global[step];
+        env.irradiation_glob = e_global[step];
         env.irradiation_diff = e_diffuse[step];
         env.irradiation_dir = e_direct[step];
         main_cell.step(&slp, &hot_water_data[step], &cell_t_out_n, &env);
