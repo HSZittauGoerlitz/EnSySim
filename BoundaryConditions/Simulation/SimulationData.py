@@ -357,7 +357,7 @@ def _getWeather(simData, region):
     for col in cols:
         fWeather = interp1d(SimWeather['t [s]'], SimWeather[col], 'linear',
                             bounds_error=False, fill_value='extrapolate')
-        simData[('Weather', col)] = fWeather(simTime)
+        simData[('Weather', col)] = fWeather(simTime).astype(np.float32)
 
     return simData
 
@@ -413,6 +413,5 @@ def getSimData(startDate, endDate, region):
             data.SLP.BSLa.to_numpy(dtype=np.float32),
             data.SLP.BSLc.to_numpy(dtype=np.float32),
             data.HWPfactor.to_numpy(dtype=np.float32),
-            data.Weather['T [degC]'].to_numpy(dtype=np.float32),
-            data.Weather['Eg [W/m^2]'].to_numpy(dtype=np.float32)
+            data.Weather
             )
