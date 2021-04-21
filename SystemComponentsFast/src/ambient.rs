@@ -1,4 +1,4 @@
-pub struct Environment {
+pub struct AmbientParameters {
     pub irradiation_dir: f32,
     pub irradiation_diff: f32,
     pub irradiation_glob: f32,
@@ -8,7 +8,7 @@ pub struct Environment {
     pub t_out: f32,
 }
 
-impl Environment {
+impl AmbientParameters {
     pub fn new(direct: f32,
                diffuse: f32,
                elevation: f32,
@@ -19,7 +19,7 @@ impl Environment {
         let irradiation_glob = direct + diffuse;
         let specific_gains = [0., 0., 0., 0.];
 
-        Environment {irradiation_dir: direct,
+        AmbientParameters {irradiation_dir: direct,
                      irradiation_diff: diffuse,
                      irradiation_glob: irradiation_glob,
                      solar_elevation: elevation,

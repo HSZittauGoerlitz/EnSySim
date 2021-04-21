@@ -6,7 +6,7 @@ use log::{error, debug};
 use crate::{agent, controller, pv, heatpump_system, chp_system,
             hist_memory, save_e, save_t};
 
-use crate::environment::Environment;
+use crate::ambient::AmbientParameters;
 
 #[pyclass]
 #[derive(Clone)]
@@ -214,7 +214,7 @@ impl Building {
 
     /// Add PV with dimensioning of installed PV power
     /// by agents demand statistics
-    /// and environments global irradiation history.
+    /// and AmbientParameterss global irradiation history.
     ///
     /// # Arguments
     /// * Eg (f32): Mean annual global irradiation
@@ -393,10 +393,11 @@ impl Building {
     ///
     /// Building walls are east, south, west, north straight.
     /// Window area gets allocated uniformly (1/4th per direction)
-    fn get_solar_gains(&self, env: &Environment) -> f32 {
-        let window_area = self.areas_uv[2][0];
+    fn get_solar_gains(&self, amb: &AmbientParameters) -> f32 {
+        let window_area = self.areas_uv[1][0];
+        debug!("window area: {}m²", window_area);
         // south, west, north, east
-        let irradiations = env.specific_gains;
+        let irradiations = amb.specific_gains;
 
         let mut solar_gain = 0.;
 
@@ -469,7 +470,7 @@ impl Building {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                env: &Environment) -> (f32, f32, f32, f32) {
+                amb: &AmbientParameters) -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
         let thermal_load_heat;  // space heating demand
@@ -487,16 +488,16 @@ impl Building {
         // Electric energy consumed in building will heat it up (DIN 4108-6)
         internal_gains += electrical_load;
         // solar irradiation through windows will heat building
-        internal_gains += self.get_solar_gains(&env);
+        internal_gains += self.get_solar_gains(&amb);
 
         // PV
-        electrical_generation += self.get_pv_generation(&env.irradiation_glob);
+        electrical_generation += self.get_pv_generation(&amb.irradiation_glob);
 
         // Heating
         let sh_power_request = self.temperature_control(&internal_gains,
-                                                        &env.t_out);
+                                                        &amb.t_out);
         let (sub_e, thermal_generation) = (self.heat_building)
-            (self, &sh_power_request, &thermal_load_hw, &env.t_out);
+            (self, &sh_power_request, &thermal_load_hw, &amb.t_out);
 
         if sub_e < 0. {
             electrical_load -= sub_e;  // sub_e is negative -> minus means plus
@@ -515,12 +516,12 @@ impl Building {
         thermal_load_heat = self.get_space_heating_demand(&(internal_gains +
                                                             thermal_generation -
                                                             thermal_load_hw),
-                                                          &env.t_out);
+                                                          &amb.t_out);
 
 
         // save data
         save_e!(self, electrical_generation, electrical_load);
-        save_t!(self, internal_gains + thermal_generation,
+        save_t!(self, thermal_generation,
                 thermal_load_heat + thermal_load_hw);
 
         return (electrical_generation, electrical_load,

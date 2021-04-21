@@ -376,9 +376,9 @@ def _getSolarPosition(simData, latitude, longitude):
                                )
 
     simData[('SolarPosition',
-             'elevation [degree]')] = solarPosition.elevation.values
+             'elevation [degree]')] = solarPosition.elevation.values.astype(np.float32)
     simData[('SolarPosition',
-             'azimuth [degree]')] = solarPosition.azimuth.values
+             'azimuth [degree]')] = solarPosition.azimuth.values.astype(np.float32)
 
     return simData
 
@@ -473,5 +473,6 @@ def getSimData(startDate, endDate, region):
             data.SLP.BSLa.to_numpy(dtype=np.float32),
             data.SLP.BSLc.to_numpy(dtype=np.float32),
             data.HWPfactor.to_numpy(dtype=np.float32),
-            data.Weather
+            data.Weather,
+            data.SolarPosition
             )

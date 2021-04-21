@@ -1,11 +1,11 @@
 // external
 use pyo3::prelude::*;
-use log::{error};
+use log::{error, debug};
 
 use crate::{building, pv, sep_bsl_agent,
             hist_memory, save_e, save_t};
 
-use crate::environment::Environment;
+use crate::ambient::AmbientParameters;
 
 #[pyclass]
 #[derive(Clone)]
@@ -142,29 +142,31 @@ impl Cell {
 
     /// Calculate area specific solar irradiation for windows facing
     /// south, west, north and east
-    fn get_specific_solar_gains(&mut self,  env: &mut Environment) {
+    fn get_specific_solar_gains(&mut self,  amb: &mut AmbientParameters) {
         // first calculate direct part
         // south, west, north, east
         let mut irradiations = [0., 0., 0., 0.];
         let orientations: [f32; 4] = [0., 90., 180., 270.];
 
-        let i_b: f32 = env.irradiation_dir.to_radians();
-        let h: f32 = env.solar_elevation.to_radians();
+        let i_b: f32 = amb.irradiation_dir.to_radians();
+        let h: f32 = amb.solar_elevation.to_radians();
         let tilt: f32 = std::f32::consts::FRAC_PI_2;
-        let gamma: f32 = env.solar_azimuth.to_radians();
+        let gamma: f32 = amb.solar_azimuth.to_radians();
         
+        debug!("{}, {}, {}, {}", i_b, h, tilt, gamma);
+
         for (idx, orientation) in orientations.iter().enumerate() {
             irradiations[idx] += i_b * (tilt.sin() + h.cos() / h.sin() * ((*orientation).to_radians() - gamma).cos() * tilt.cos());
         }
 
         // now diffuse part
-        let i_d: f32 = env.irradiation_diff;
+        let i_d: f32 = amb.irradiation_diff;
 
         for idx in 0..irradiations.len() {
             irradiations[idx] += i_d * (1. + tilt.cos()) / 2.;
         }
 
-        env.specific_gains = irradiations;
+        amb.specific_gains = irradiations;
     }
 
 
@@ -183,7 +185,7 @@ impl Cell {
     /// * (f32, f32, f32, f32): Current electrical and thermal
     ///                         power consumption and generation [W]
     pub fn step(&mut self, slp_data: &[f32; 3], hw_profile: &f32,
-                t_out_n: &f32, env: &mut Environment)
+                t_out_n: &f32, amb: &mut AmbientParameters)
                 -> (f32, f32, f32, f32) {
         // init current step
         let mut electrical_load = 0.;
@@ -195,7 +197,7 @@ impl Cell {
         self.sub_cells.iter_mut().for_each(|sc: &mut Cell| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
                 sc.step(slp_data, hw_profile,
-                        t_out_n, env);
+                        t_out_n, amb);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
@@ -203,10 +205,10 @@ impl Cell {
         });
 
         // calculate buildings
-        self.get_specific_solar_gains(env);
+        self.get_specific_solar_gains(amb);
         self.buildings.iter_mut().for_each(|b: &mut building::Building| {
             let (sub_gen_e, sub_load_e, sub_gen_t, sub_load_t) =
-                b.step(slp_data, hw_profile, &env);
+                b.step(slp_data, hw_profile, &amb);
             electrical_generation += sub_gen_e;
             thermal_generation += sub_gen_t;
             electrical_load += sub_load_e;
@@ -217,7 +219,7 @@ impl Cell {
         self.sep_bsl_agents.iter_mut().
             for_each(|sbsl: &mut sep_bsl_agent::SepBSLagent| {
                 let (sub_gen_e, sub_load_e) =
-                    sbsl.step(slp_data, &env.irradiation_glob);
+                    sbsl.step(slp_data, &amb.irradiation_glob);
                 electrical_generation += sub_gen_e;
                 electrical_load += sub_load_e;
         });
@@ -225,7 +227,7 @@ impl Cell {
 
         // calculate generation
         // TODO: CHP
-        electrical_generation += self.get_pv_generation(&env.irradiation_glob);
+        electrical_generation += self.get_pv_generation(&amb.irradiation_glob);
 
         // TODO: Storage, Controller
 

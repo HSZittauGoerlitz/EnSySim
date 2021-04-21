@@ -5,7 +5,7 @@ use pyo3::wrap_pyfunction;
 use numpy::PyReadonlyArrayDyn;
 // local
 // Environment
-mod environment;
+mod ambient;
 // Entities
 #[macro_use]
 mod agent;
@@ -62,7 +62,8 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
             slp_phh: PyReadonlyArrayDyn<f32>, slp_bsla: PyReadonlyArrayDyn<f32>,
             slp_bslc: PyReadonlyArrayDyn<f32>,
             hot_water_data: PyReadonlyArrayDyn<f32>,
-            env_data: HashMap<&str, Vec<f32>>) {
+            env_data: HashMap<&str, Vec<f32>>,
+            sol_data: HashMap<&str, Vec<f32>>) {
     let mut slp: [f32; 3] = [0.; 3];
 
     let slp_phh = slp_phh.as_array();
@@ -70,11 +71,13 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
     let slp_bslc = slp_bslc.as_array();
     let hot_water_data = hot_water_data.as_array();
     // Get Environment data and create object
-    let mut env = environment::Environment::new(0., 0., 0., 0., 0.);
+    let mut amb = ambient::AmbientParameters::new(0., 0., 0., 0., 0.);
     let t = env_data.get("T [degC]").unwrap();
     let e_global = env_data.get("Eg [W/m^2]").unwrap();
     let e_diffuse = env_data.get("E diffuse [W/m^2]").unwrap();
     let e_direct = env_data.get("E direct [W/m^2]").unwrap();
+    let e_elevation = sol_data.get("elevation [degree]").unwrap();
+    let e_azimuth = sol_data.get("azimuth [degree]").unwrap();
 
     // get the constant to a new memory place,
     //since cell can be changed due saving history
@@ -87,10 +90,12 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
         slp[1] = slp_bsla[step];
         slp[2] = slp_bslc[step];
         // Environment
-        env.t_out = t[step];
-        env.irradiation_glob = e_global[step];
-        env.irradiation_diff = e_diffuse[step];
-        env.irradiation_dir = e_direct[step];
-        main_cell.step(&slp, &hot_water_data[step], &cell_t_out_n, &mut env);
+        amb.t_out = t[step];
+        amb.irradiation_glob = e_global[step];
+        amb.irradiation_diff = e_diffuse[step];
+        amb.irradiation_dir = e_direct[step];
+        amb.solar_elevation = e_elevation[step];
+        amb.solar_azimuth = e_azimuth[step];
+        main_cell.step(&slp, &hot_water_data[step], &cell_t_out_n, &mut amb);
     }
 }
