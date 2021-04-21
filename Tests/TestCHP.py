@@ -23,9 +23,7 @@ region = "East"
 bType = "FSH"
 
 # %% prepare simulation
-nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, Weather = getSimData(start,
-                                                                     end,
-                                                                     region)
+nSteps, time, SLP, HWP, Weather = getSimData(start, end, region)
 climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
 
@@ -70,8 +68,7 @@ building.add_dimensioned_chp(nSteps)
 cell.add_building(building)
 
 # %% Run simulation
-simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP,
-         Weather.to_dict('list'))
+simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'))
 
 # %%
 plots.cellPowerBalance(cell, time)
