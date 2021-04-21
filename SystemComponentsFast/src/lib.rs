@@ -55,6 +55,7 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 /// * hot_water_data (pyArr<f32>): Actual hot water day profile factors [-]
 /// * env_data (HashMap<&str, Vec<f32>>): All Environment/Weather data needed
 ///     for the simulation
+/// * sol_data (HashMap<&str, Vec<f32>>): Elevation and azimut of sun
 #[pyfunction]
 fn simulate(main_cell: &mut cell::Cell, steps: usize,
             slp_data: HashMap<&str, Vec<f32>>,

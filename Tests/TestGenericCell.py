@@ -41,7 +41,7 @@ region = "East"
 
 # %%
 # prepare simulation
-nSteps, time, SLP, HWP, Weather = getSimData(start, end, region)
+nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
 
 # %%
 cell = generateGenericCell(nBuildings, pAgents,
@@ -51,7 +51,8 @@ cell = generateGenericCell(nBuildings, pAgents,
                            region, nSteps)
 
 # %%
-simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'))
+simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
+         Solar.to_dict('lists'))
 
 # %%
 plots.cellPowerBalance(cell, time)

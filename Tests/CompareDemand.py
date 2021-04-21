@@ -89,7 +89,8 @@ cell.add_building(building)
 T = np.array(SynProData.loc[:, "Tout [degC]"].values, dtype=np.float32)
 
 # %% Run simulation
-simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'), Solar.to_dict('list'))
+simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
+         Solar.to_dict('list'))
 
 # %% recalculate agents hot water demand
 # this recalculation does not correspond exactly the simulation course
