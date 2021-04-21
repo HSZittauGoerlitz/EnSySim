@@ -20,6 +20,10 @@ from SystemComponentsFast import simulate, Building, Cell
 from PostProcesing import plots
 import logging
 
+import os
+
+print(os.getpid())
+
 # %% logger config
 FORMAT = ('%(levelname)s %(name)s %(asctime)-15s '
           '%(filename)s:%(lineno)d %(message)s')
