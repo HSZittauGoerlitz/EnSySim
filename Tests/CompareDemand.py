@@ -112,11 +112,26 @@ plots.compareCurves([SynProData.time],
                     ['SynPro', 'EnSySim'], yLabel='Electrical Energy in kWh')
 
 # %% compare space heating demand
-plots.compareCurves([SynProData.time],
-                    [SynProData['Q_SpaceHeating [W]']*1e-3,
-                     building_sh],
-                    ['SynPro', 'EnSySim'], yLabel='Thermal Power in kW',
-                    title='Comparison of buildings heat losses')
+fig = plots.compareCurves([SynProData.time],
+                          [SynProData['Q_SpaceHeating [W]']*1e-3,
+                          building_sh],
+                          ['SynPro', 'EnSySim'], yLabel='Thermal Power in kW',
+                          title='Comparison of buildings heat losses',
+                          retFig=True)
+fig = fig.set_subplots(rows=2, cols=1,
+                       shared_xaxes=True,
+                       vertical_spacing=0.02)
+fig.update_xaxes(title_text="", row=1, col=1)
+fig.update_xaxes(title_text="Time", row=2, col=1)
+fig.update_yaxes(title_text="Temperature [degC]", row=2, col=1)
+fig.add_trace(go.Scatter(x=time, y=SynProData['Tout [degC]'],
+                         line={'color': 'rgba(100, 149, 237, 0.5)',
+                               'width': 1},
+                         name="Outside Temperature",
+                         ),
+              row=2, col=1
+              )
+fig.show()
 
 plots.compareCurves([SynProData.time],
                     [SynProData['Q_SpaceHeating [W]'].cumsum()*1e-6*0.25,
