@@ -39,7 +39,7 @@ bType = "FSH"
 SynProData = pd.read_hdf("Tests/Data/SynProTestHouse.h5", key="TDPcirc")
 
 # %% prepare simulation
-nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, Weather, Solar = getSimData(start, end,
+nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end,
                                                                    region)
 climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                       ".h5", 'Standard')
@@ -90,7 +90,7 @@ cell.add_building(building)
 T = np.array(SynProData.loc[:, "Tout [degC]"].values, dtype=np.float32)
 
 # %% Run simulation
-simulate(cell, nSteps, SLP_PHH, SLP_BSLa, SLP_BSLc, HWP, Weather.to_dict('list'), Solar.to_dict('list'))
+simulate(cell, nSteps, SLP, HWP, Weather.to_dict('list'), Solar.to_dict('list'))
 
 # %% recalculate agents hot water demand
 # this recalculation does not correspond exactly the simulation course

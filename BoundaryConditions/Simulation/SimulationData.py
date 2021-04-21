@@ -132,7 +132,7 @@ def _addSLPdata(simData):
                                 7.02*1e-5*simData.doy**2 +
                                 2.1*1e-3*simData.doy + 1.24)
     # merge data frames
-    simData = simData.join(newData)
+    simData = simData.join(newData.astype(np.float32))
 
     return simData
 
@@ -469,9 +469,7 @@ def getSimData(startDate, endDate, region):
     data = getSimData_df(startDate, endDate, region)
 
     return (data.time.size, data.time,
-            data.SLP.PHH.to_numpy(dtype=np.float32),
-            data.SLP.BSLa.to_numpy(dtype=np.float32),
-            data.SLP.BSLc.to_numpy(dtype=np.float32),
+            data.SLP,
             data.HWPfactor.to_numpy(dtype=np.float32),
             data.Weather,
             data.SolarPosition

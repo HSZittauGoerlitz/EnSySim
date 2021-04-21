@@ -48,27 +48,23 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 /// # Arguments
 /// * main_cell (Cell): Main cell of energy system model
 /// * steps (usize): Number of simulation steps to execute
-/// * slp_phh (pyArr<f32>): Standard load profile data for
-///                         phh agents
-/// * slp_bsla (pyArr<f32>): Standard load profile data for
-///                          agriculture business agents
-/// * slp_bslc (pyArr<f32>): Standard load profile data for
-///                          common business agents
+/// * slp_data (HashMap<&str, Vec<f32>>): Standard load profile data for
+///     - "PHH": phh agents
+///     - "BSLa": agriculture business agents
+///     - "BSLc": common business agents
 /// * hot_water_data (pyArr<f32>): Actual hot water day profile factors [-]
-/// * env_data (pyDict): All Environment/Weather data needed
-///                      for the simulation
+/// * env_data (HashMap<&str, Vec<f32>>): All Environment/Weather data needed
+///     for the simulation
 #[pyfunction]
 fn simulate(main_cell: &mut cell::Cell, steps: usize,
-            slp_phh: PyReadonlyArrayDyn<f32>, slp_bsla: PyReadonlyArrayDyn<f32>,
-            slp_bslc: PyReadonlyArrayDyn<f32>,
+            slp_data: HashMap<&str, Vec<f32>>,
             hot_water_data: PyReadonlyArrayDyn<f32>,
             env_data: HashMap<&str, Vec<f32>>,
             sol_data: HashMap<&str, Vec<f32>>) {
     let mut slp: [f32; 3] = [0.; 3];
-
-    let slp_phh = slp_phh.as_array();
-    let slp_bsla = slp_bsla.as_array();
-    let slp_bslc = slp_bslc.as_array();
+    let slp_phh = slp_data.get("PHH").unwrap();
+    let slp_bsla = slp_data.get("BSLa").unwrap();
+    let slp_bslc = slp_data.get("BSLc").unwrap();
     let hot_water_data = hot_water_data.as_array();
     // Get Environment data and create object
     let mut amb = ambient::AmbientParameters::new(0., 0., 0., 0., 0.);
