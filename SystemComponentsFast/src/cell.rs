@@ -152,11 +152,20 @@ impl Cell {
         let h: f32 = amb.solar_elevation.to_radians();
         let tilt: f32 = std::f32::consts::FRAC_PI_2;
         let gamma: f32 = amb.solar_azimuth.to_radians();
-        
+
         debug!("{}, {}, {}, {}", i_b, h, tilt, gamma);
 
-        for (idx, orientation) in orientations.iter().enumerate() {
-            irradiations[idx] += i_b * (tilt.sin() + h.cos() / h.sin() * ((*orientation).to_radians() - gamma).cos() * tilt.cos());
+        if h > 0. {
+            for (idx, orientation) in orientations.iter().enumerate() {
+                // Difference between window orientation and sun azimuth
+                let delta = (*orientation).to_radians() - gamma;
+                if (delta > -std::f32::consts::FRAC_PI_2) &
+                   (delta < std::f32::consts::FRAC_PI_2) {
+                    irradiations[idx] += i_b * (h.sin()*tilt.cos() +
+                                                h.cos()*delta.cos()*tilt.sin()
+                                                );
+                   }
+            }
         }
 
         // now diffuse part
