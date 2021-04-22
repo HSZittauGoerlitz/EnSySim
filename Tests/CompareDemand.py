@@ -50,7 +50,7 @@ cell = Cell(climate.loc['EgNorm [kWh/m^2]', 'Value'],
 
 # %% Create Building
 # Parameter
-bClass = "class_2"
+bClass = "class_3"
 mState = "original"
 airState = "VentilationFree"
 isAtDHN = True
@@ -160,7 +160,3 @@ fig.add_trace(go.Scatter(x=time, y=SynProData['Heating state'],
               row=2, col=1
               )
 fig.show()
-
-# %%
-print("EnSySim Buildings has a yearly space heating demand of {:.2f} kWh/m^2"
-      .format(building_sh.sum() * 0.25 / Geo.loc[('A_living', ''), 'Value']))
