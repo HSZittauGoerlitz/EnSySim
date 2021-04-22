@@ -113,12 +113,12 @@ plots.compareCurves([SynProData.time],
                     ['SynPro', 'EnSySim'], yLabel='Electrical Energy in kWh')
 
 # %% compare space heating demand
-fig = plots.compareCurves([SynProData.time],
-                          [SynProData['Q_SpaceHeating [W]']*1e-3,
-                          building_sh],
-                          ['SynPro', 'EnSySim'], yLabel='Thermal Power in kW',
-                          title='Comparison of buildings heat losses',
-                          retFig=True)
+plots.compareCurves([SynProData.time],
+                    [SynProData['Q_SpaceHeating [W]']*1e-3,
+                    building_sh],
+                    ['SynPro', 'EnSySim'], yLabel='Thermal Power in kW',
+                    title='Comparison of buildings heat losses')
+
 
 plots.compareCurves([SynProData.time],
                     [SynProData['Q_SpaceHeating [W]'].cumsum()*1e-6*0.25,
