@@ -20,10 +20,6 @@ from SystemComponentsFast import simulate, Building, Cell
 from PostProcesing import plots
 import logging
 
-import os
-
-print(os.getpid())
-
 # %% logger config
 FORMAT = ('%(levelname)s %(name)s %(asctime)-15s '
           '%(filename)s:%(lineno)d %(message)s')
@@ -90,7 +86,8 @@ building.replace_agent(0, agent)
 cell.add_building(building)
 
 # overwrite outside temperature
-T = np.array(SynProData.loc[:, "Tout [degC]"].values, dtype=np.float32)
+Weather.loc[:, 'T [degC]'] = np.array(SynProData['Tout [degC]'].values,
+                                      dtype=np.float32)
 
 # %% Run simulation
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
@@ -122,20 +119,6 @@ fig = plots.compareCurves([SynProData.time],
                           ['SynPro', 'EnSySim'], yLabel='Thermal Power in kW',
                           title='Comparison of buildings heat losses',
                           retFig=True)
-fig = fig.set_subplots(rows=2, cols=1,
-                       shared_xaxes=True,
-                       vertical_spacing=0.02)
-fig.update_xaxes(title_text="", row=1, col=1)
-fig.update_xaxes(title_text="Time", row=2, col=1)
-fig.update_yaxes(title_text="Temperature [degC]", row=2, col=1)
-fig.add_trace(go.Scatter(x=time, y=SynProData['Tout [degC]'],
-                         line={'color': 'rgba(100, 149, 237, 0.5)',
-                               'width': 1},
-                         name="Outside Temperature",
-                         ),
-              row=2, col=1
-              )
-fig.show()
 
 plots.compareCurves([SynProData.time],
                     [SynProData['Q_SpaceHeating [W]'].cumsum()*1e-6*0.25,
@@ -155,7 +138,8 @@ plots.compareCurves([SynProData.time],
                     ['SynPro', 'EnSySim'], yLabel='Thermal Energy in MWh')
 
 # %%
-fig = plots.buildingTemperature(cell.buildings[0], time, T, True)
+fig = plots.buildingTemperature(cell.buildings[0], time,
+                                Weather['T [degC]'], True)
 fig.add_trace(go.Scatter(x=time, y=SynProData['Tin [degC]'],
                          line={'color': 'rgba(100, 149, 237, 0.5)',
                                'width': 1},
