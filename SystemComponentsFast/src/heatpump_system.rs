@@ -369,12 +369,12 @@ impl HeatpumpSystem {
         let storage_t = pow_t - thermal_load;
 
         // call storage step -> check if all energy could be processed
-        let storage_diff = self.storage.step(&storage_t);
+        let (storage_diff, storage_loss) = self.storage.step(&storage_t);
 
         // save production data
         self.save_hist(&con_e, &pow_t);
 
         // return supply data
-        return (con_e, thermal_load + storage_diff);
+        return (con_e, thermal_load + storage_diff + storage_loss);
     }
 }

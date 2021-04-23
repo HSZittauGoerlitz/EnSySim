@@ -15,7 +15,8 @@ pub struct GenericStorage {
     #[pyo3(get)]
     discharging_efficiency: f32,  // 0..1
     #[pyo3(get)]
-    self_discharge: f32,  // 0..1 [1/h] ToDo: function of charge (only thermal)
+    // ToDo: function of charge (only thermal)
+    self_discharge: f32,  // 0.. [1/h]
     // ToDo: cycle decay (only electrical)
     #[pyo3(get)]
     pow_max: f32,  // maximum power flow in or out of storage [W]
@@ -51,8 +52,8 @@ impl GenericStorage {
         if (discharging_efficiency < 0.) | (discharging_efficiency > 1.) {
             panic!("Discharging efficiency must be between 0 and 1")
         }
-        if (self_discharge < 0.) | (self_discharge > 1.) {
-            panic!("Self discharge must be between 0 and 1")
+        if self_discharge < 0. {
+            panic!("Self discharge must be at least 0/h")
         }
 
         if pow_max < 0. {
@@ -103,8 +104,10 @@ impl GenericStorage {
     /// * charge_power (&f32): Power used for charging during time step [W]
     ///
     /// # Returns
-    /// * f32: Power used for charging [W]
-    fn charge_storage(& mut self, charge_power: &f32) -> f32 {
+    /// * (f32, f32):
+    ///   - Power used for charging [W]
+    ///   - Losses during charge [W]
+    fn charge_storage(& mut self, charge_power: &f32) -> (f32, f32) {
         // check for a) maximum power flow and b) free storage capacity
         let mut diff = *charge_power - self.pow_max;
         let resulting_charge_power;
@@ -116,15 +119,22 @@ impl GenericStorage {
             diff = 0.;
         }
 
-        self.charge +=  resulting_charge_power * self.charging_efficiency *
-                        GenericStorage::TIME_STEP;
+        let f_charge_loss = 1. - self.charging_efficiency;
+        let mut charge_loss = resulting_charge_power * f_charge_loss;
+        let charge_old = self.charge;
+        self.charge += (resulting_charge_power - charge_loss) *
+                       GenericStorage::TIME_STEP;
 
         if self.charge > self.cap {
             diff += (self.charge - self.cap) / GenericStorage::TIME_STEP;
+            // recalculate losses in relation to actual charge power
+            charge_loss = (self.cap - charge_old) / GenericStorage::TIME_STEP *
+                          f_charge_loss;
+            diff -= charge_loss;
             self.charge = self.cap;
         }
-
-        return diff  // didn´t fit into storage, positive
+        // diff didn´t fit into storage -> positive
+        return (diff, charge_loss)
     }
 
     /// Discharge storage with given power
@@ -135,8 +145,10 @@ impl GenericStorage {
     /// * discharge_power (&f32): Power requested during time step [W]
     ///
     /// # Returns
-    /// * f32: Power provided by storage [W]
-    fn discharge_storage(&mut self, discharge_power: &f32) -> f32 {
+    /// * (f32, f32):
+    ///   - Power provided by storage [W]
+    ///   - Losses during discharge [W]
+    fn discharge_storage(&mut self, discharge_power: &f32) -> (f32, f32) {
         // check for a) maximum power flow and b) available storage content
         let mut diff = *discharge_power + self.pow_max;
         let resulting_discharge_power;
@@ -148,16 +160,27 @@ impl GenericStorage {
             diff = 0.;
         }
 
-        self.charge += resulting_discharge_power *
-                       self.discharging_efficiency *
+        let f_discharge_loss = 1. - self.discharging_efficiency;
+        let mut discharge_loss = resulting_discharge_power * f_discharge_loss;
+        // The complete energy will be subtracted from storage
+        // Additionally the losses have to be subtracted
+        // that way the storage can fullfill the requested demand
+        // discharge power and loss are negative
+        let charge_old = self.charge;
+        self.charge += (resulting_discharge_power + discharge_loss) *
                        GenericStorage::TIME_STEP;
 
         if  self.charge < 0. {
             diff += self.charge / GenericStorage::TIME_STEP;
+            // recalculate losses in relation to actual discharge power
+            discharge_loss = -charge_old / GenericStorage::TIME_STEP *
+                             f_discharge_loss;
+            // losses couldn't be provided by storage -> add to diff
+            diff += discharge_loss;
             self.charge = 0.;
         }
-
-        return diff  // couldn´t be supplied, negative
+        // diff couldn't be supplied -> negative
+        return (diff, -discharge_loss)
     }
 
     fn save_hist(&mut self) {
@@ -175,27 +198,35 @@ impl GenericStorage {
     /// * power input of surrounding system, may be positive or negative
     ///
     /// # Returns
-    /// * f32: Not received or delivered power [W], difference between
-    ///        requested and handled power
-    pub fn step(&mut self, pow: &f32) -> f32 {
-
-        let diff;
-
+    /// * (f32, f32):
+    ///   - Not received or delivered power [W], difference between
+    ///     requested and handled power
+    ///   - Losses due charging/discharging as well as self discharge [W]
+    pub fn step(&mut self, pow: &f32) -> (f32, f32)
+    {
+        let (diff, loss);
+        // TODO: Direct assignment when destructuring feature is stable
         if *pow > 0. {
-            diff = self.charge_storage(pow);
+            let (diff_, loss_) = self.charge_storage(pow);
+            diff = diff_;
+            loss = loss_;
         }
         else if *pow < 0. {
-            diff = self.discharge_storage(pow);
+            let (diff_, loss_) = self.discharge_storage(pow);
+            diff = diff_;
+            loss = loss_;
         } else {
             diff = 0.;
+            loss = 0.;
         }
 
-        self.charge = self.charge - self.charge * self.self_discharge *
-                                    GenericStorage::TIME_STEP;
+        let self_loss = self.charge * self.self_discharge *
+                        GenericStorage::TIME_STEP;
+        self.charge = self.charge - self_loss;
 
         // save data
         self.save_hist();
 
-        return diff;
+        return (diff, loss + self_loss);
     }
 }

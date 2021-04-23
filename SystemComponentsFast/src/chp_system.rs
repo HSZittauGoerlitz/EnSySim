@@ -189,18 +189,20 @@ impl ChpSystem {
         // call hot water storage with CHP power
         //-> differences will be used by heating system
         let storage_hw_t = chp_t - hot_water_demand;
-        let storage_hw_diff = self.storage_hw.step(&storage_hw_t);
+        let (storage_hw_diff, storage_hw_loss) =
+          self.storage_hw.step(&storage_hw_t);
 
         let pow_t = storage_hw_diff + boiler_t;
         let storage_t = pow_t - heating_demand;
 
         // call storage step -> check if all energy could be processed
-        let storage_diff = self.storage.step(&storage_t);
+        let (storage_diff, storage_loss) = self.storage.step(&storage_t);
 
         // save production data
         self.save_hist(&pow_e, &pow_t);
 
         // return supply data
-        return (pow_e, *heating_demand + *hot_water_demand + storage_diff);
+        return (pow_e, *heating_demand + *hot_water_demand + storage_diff +
+                       storage_hw_loss + storage_loss);
     }
 }
