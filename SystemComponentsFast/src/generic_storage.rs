@@ -16,7 +16,7 @@ pub struct GenericStorage {
     discharging_efficiency: f32,  // 0..1
     #[pyo3(get)]
     self_discharge: f32,  // 0..1 [1/h] ToDo: function of charge (only thermal)
-    // ToDo: cycle dacay (only electrical)
+    // ToDo: cycle decay (only electrical)
     #[pyo3(get)]
     pow_max: f32,  // maximum power flow in or out of storage [W]
     #[pyo3(get)]
@@ -40,6 +40,25 @@ impl GenericStorage {
                self_discharge:f32,
                pow_max: f32,
                hist: usize) -> Self {
+
+        if cap < 0. {
+            panic!("Storage capacity must be greater than 0");
+        }
+
+        if (charging_efficiency < 0.) | (charging_efficiency > 1.) {
+            panic!("Charging efficiency must be between 0 and 1")
+        }
+        if (discharging_efficiency < 0.) | (discharging_efficiency > 1.) {
+            panic!("Discharging efficiency must be between 0 and 1")
+        }
+        if (self_discharge < 0.) | (self_discharge > 1.) {
+            panic!("Self discharge must be between 0 and 1")
+        }
+
+        if pow_max < 0. {
+            panic!("Max. storage power must be greater than 0");
+        }
+
 
         let cap = cap;
 
