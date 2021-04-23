@@ -91,3 +91,7 @@ plots.chargeState(b.chp_system.storage, time)
 plots.chargeState(b.chp_system.storage_hw, time)
 
 # %%
+gen_e = np.array(cell.buildings[0].gen_e.get_memory())
+print("The CHP has {:.2f} full load hours".format((gen_e > 0.).sum() * 0.25))
+
+# %%
