@@ -142,9 +142,15 @@ impl ChpSystem {
     ///                          heating the building [W]
     /// * hot_water_demand (&f32): Thermal power needed by agents for
     ///                            warm water [W]
+    /// * t_heat_lim (&f32): min. outside temperature of building,
+    ///                      where no heating is needed  [degC]
+    /// * t_out_mean (&f32): Mean outside temperature of buildings region in
+    ///                      last hours [degC]
+    ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32)
+    pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
+                t_heat_lim: &f32, t_out_mean: &f32)
     -> (f32, f32)
     {
         // system satisfies heat demand from building
@@ -177,6 +183,13 @@ impl ChpSystem {
                 self.chp_state = false;
             }
             self.boiler_state = false;
+        }
+
+        if t_out_mean > t_heat_lim {
+            self.boiler_state = false;
+            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
+                self.chp_state = false;
+            }
         }
 
         if storage_state_hw <= ChpSystem::STORAGE_LEVEL_4 {
