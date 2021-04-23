@@ -24,8 +24,11 @@ pub struct Building {
     res_u_trans: f32,  // resulting heat transmission coefficient W/K
     cp_eff: f32,  // effective heat storage coefficient Wh/K
     g: f32,  // Solar factor of building windows 0 to 1
-    temperature: f32, // estimation of mean building temperature degC
-    nominal_temperature: f32, // temperature set-point of building degC
+    temperature: f32,  // estimation of mean building temperature degC
+    nominal_temperature: f32,  // temperature set-point of building degC
+    // min. outside temperature, where no heating is needed
+    heat_lim_temperature: f32,  // degC
+    mean_outside_temperature: f32,  // degC
     #[pyo3(get)]
     is_at_dhn: bool,
     #[pyo3(get)]
@@ -143,6 +146,8 @@ impl Building {
             g: g,
             temperature: 20.,
             nominal_temperature: 20.,
+            heat_lim_temperature: 15.,
+            mean_outside_temperature: 15.,
             v: volume,
             q_hln: 0.,
             is_at_dhn: is_at_dhn,
@@ -275,6 +280,7 @@ impl Building {
 
 impl Building {
     const TIME_STEP: f32 = 0.25;  // h
+    const N: f32 = 1.5 * 24. / Building::TIME_STEP;
     /// Calculate normed heating load Q_HLN of a building [W]
     ///
     /// The calculation is done in reference to the simplified method
@@ -354,7 +360,9 @@ impl Building {
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(sh_power_request, thermal_load_hw)
+                building_chp.step(sh_power_request, thermal_load_hw,
+                                  &self.heat_lim_temperature,
+                                  &self.mean_outside_temperature)
                 },
             }
     }
@@ -478,6 +486,7 @@ impl Building {
         let mut dhn_load = 0.;  // thermal load for cells dhn
         let mut electrical_generation = 0.;
         let mut internal_gains = 0.;  // internal gains for space heating
+        self.update_mean_t_out(&amb.t_out);
 
         // calculate loads
         self.agents.iter().for_each(|agent: &agent::Agent| {
@@ -557,5 +566,19 @@ impl Building {
         }
 
         (heat_loss + heat_up - *internal_gains).max(0.)
+    }
+
+    /// Update mean outside temperature registered by building
+    /// The mean is calculated as recursive value:
+    ///     Tmean = (n-1)/n*Tmean_last + 1/n*T
+    ///
+    /// n is set to 24h / TimeStep
+    ///
+    /// # Arguments
+    /// * t_out (&f32): Outside temperature [degC]
+    fn update_mean_t_out(&mut self, t_out: &f32) {
+        self.mean_outside_temperature =
+          (Building::N - 1.) / (Building::N) * self.mean_outside_temperature +
+          1. / Building::N * t_out;
     }
 }
