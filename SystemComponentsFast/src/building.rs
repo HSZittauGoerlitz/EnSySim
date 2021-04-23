@@ -499,6 +499,8 @@ impl Building {
         let (sub_e, thermal_generation) = (self.heat_building)
             (self, &sh_power_request, &thermal_load_hw, &amb.t_out);
 
+        // electrical effect of heating systems must not be considered
+        // for internal gains, since they are considered by the thermal part
         if sub_e < 0. {
             electrical_load -= sub_e;  // sub_e is negative -> minus means plus
         } else {
