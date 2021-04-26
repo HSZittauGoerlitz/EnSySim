@@ -16,7 +16,6 @@ pub struct GenericStorage {
     #[pyo3(get)]
     discharging_efficiency: f32,  // 0..1
     #[pyo3(get)]
-    // ToDo: function of charge (only thermal)
     self_discharge: f32,  // 0.. [1/h]
     // ToDo: cycle decay (only electrical)
     #[pyo3(get)]
@@ -127,7 +126,8 @@ impl GenericStorage {
                        GenericStorage::TIME_STEP;
 
         if self.charge > self.cap {
-            diff += (self.charge - self.cap) / GenericStorage::TIME_STEP;
+            diff += (self.charge - self.cap) / GenericStorage::TIME_STEP +
+                    charge_loss;  // revert subtraction of losses
             // recalculate losses in relation to actual charge power
             charge_loss = (self.cap - charge_old) / GenericStorage::TIME_STEP *
                           f_charge_loss;
@@ -172,7 +172,7 @@ impl GenericStorage {
                        GenericStorage::TIME_STEP;
 
         if  self.charge < 0. {
-            diff += self.charge / GenericStorage::TIME_STEP;
+            diff += self.charge / GenericStorage::TIME_STEP - discharge_loss;
             // recalculate losses in relation to actual discharge power
             discharge_loss = -charge_old / GenericStorage::TIME_STEP *
                              f_discharge_loss;
