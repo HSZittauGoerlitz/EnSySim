@@ -9,6 +9,7 @@ use crate::hist_memory;
 pub struct GenericStorage {
     #[pyo3(get)]
     cap: f32,  // capacity of storage [Wh]
+    #[pyo3(get)]
     charge: f32,  // charging state of storage [Wh]
     #[pyo3(get)]
     charging_efficiency: f32,  // 0..1
@@ -220,9 +221,8 @@ impl GenericStorage {
             loss = 0.;
         }
 
-        let self_loss = self.charge * self.self_discharge *
-                        GenericStorage::TIME_STEP;
-        self.charge = self.charge - self_loss;
+        let self_loss = self.charge * self.self_discharge; // W
+        self.charge = self.charge - self_loss*GenericStorage::TIME_STEP;
 
         // save data
         self.save_hist();
