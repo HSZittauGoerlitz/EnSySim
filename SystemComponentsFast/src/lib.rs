@@ -25,6 +25,7 @@ mod generic_storage;
 mod helper;
 mod hist_memory;
 
+
 #[pymodule]
 fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
@@ -37,7 +38,9 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<pv::PV>()?;
     m.add_class::<heatpump_system::HeatpumpSystem>()?;
     m.add_class::<chp_system::ChpSystem>()?;
+    m.add_class::<generic_storage::GenericStorage>()?;
     m.add_function(wrap_pyfunction!(simulate, m)?).unwrap();
+    m.add_function(wrap_pyfunction!(test_generic_storage, m)?).unwrap();
     Ok(())
 
 
@@ -95,4 +98,25 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
         amb.solar_azimuth = e_azimuth[step];
         main_cell.step(&slp, &hot_water_data[step], &cell_t_out_n, &mut amb);
     }
+}
+
+/// Test charge / discharge of generic storage
+///
+/// This function is used, to check that the energy balance is sustained
+/// during charging / discharging.
+///
+/// # Arguments
+/// * storage (&GenericStorage): Storage used for test
+/// * pow (f32): Charge (positive) / Discharge (negative) power [W]
+///
+/// # Returns
+/// * (f32, f32):
+///   - Not received or delivered power [W], difference between
+///     requested and handled power
+///   - Losses due charging/discharging as well as self discharge [W]
+#[pyfunction]
+pub fn test_generic_storage(storage: &mut generic_storage::GenericStorage,
+                            pow: f32) -> (f32, f32)
+{
+    storage.step(&pow)
 }
