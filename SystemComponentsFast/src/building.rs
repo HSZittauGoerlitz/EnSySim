@@ -534,7 +534,7 @@ impl Building {
 
         // save data
         save_e!(self, electrical_generation, electrical_load);
-        save_t!(self, thermal_generation,
+        save_t!(self, thermal_generation + internal_gains,
                 thermal_load_heat + thermal_load_hw);
 
         return (electrical_generation, electrical_load,
