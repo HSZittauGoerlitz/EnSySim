@@ -25,9 +25,11 @@ pub struct ChpSystem {
     // Controller variables
     boiler_state: bool,
     chp_state: bool,
+    summer_mode: bool,  // control mode: True -> Summer, False -> Winter
+    // Hysteresis for control mode in relation to buildings lim. Temp.
+    t_heat_lim_h: f32,  // degC
     // save storage losses, to consider in temperature control
     last_losses: f32,  // W
-
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -49,7 +51,7 @@ impl ChpSystem {
     pub fn new(q_hln: f32, n: f32, hist: usize) -> Self {
 
         // chp:
-        let pow_t_chp = 0.8 * q_hln;
+        let pow_t_chp = 0.4 * q_hln;
         let chp = CHP::new(pow_t_chp, hist);
 
         // thermal storage:
@@ -77,7 +79,7 @@ impl ChpSystem {
                                              hist,);
 
         // boiler
-        let pow_t_boiler = 0.2 * q_hln;
+        let pow_t_boiler = 0.6 * q_hln;
         let boiler = Boiler::new(pow_t_boiler, hist);
 
         let gen_e;
@@ -98,6 +100,8 @@ impl ChpSystem {
                                     boiler: boiler,
                                     boiler_state: false,
                                     chp_state: false,
+                                    summer_mode: false,
+                                    t_heat_lim_h: 1.5,
                                     last_losses: 0.,
                                     gen_e: gen_e,
                                     gen_t: gen_t,
@@ -168,39 +172,12 @@ impl ChpSystem {
         // excess heat is destroyed
         // ToDo: add partial load to chp and boiler
         // ToDo: check if chp does not over supply system -> boiler
-        let storage_state = self.storage.get_relative_charge();
-        let storage_state_hw = self.storage_hw.get_relative_charge();
 
-        if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
-            self.boiler_state = true;
-            self.chp_state = true;
-        }
-        else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) &
-                !self.chp_state {
-            self.boiler_state = false;
-            self.chp_state = true;
-        }
-        else if (storage_state >= ChpSystem::STORAGE_LEVEL_2) &
-                self.boiler_state {
-            self.boiler_state = false;
-            self.chp_state = true;
-        }
-        else if storage_state >= ChpSystem::STORAGE_LEVEL_1 {
-            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
-                self.chp_state = false;
-            }
-            self.boiler_state = false;
-        }
-
-        if t_out_mean > t_heat_lim {
-            self.boiler_state = false;
-            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
-                self.chp_state = false;
-            }
-        }
-
-        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_4 {
-            self.chp_state = true;
+        self.update_control_mode(t_heat_lim, t_out_mean);
+        if self.summer_mode {
+            self.summer_mode();
+        } else {
+            self.winter_mode();
         }
 
         let (pow_e, chp_t) = self.chp.step(&self.chp_state);
@@ -226,5 +203,64 @@ impl ChpSystem {
         // return supply data
         return (pow_e, *heating_demand + *hot_water_demand + storage_diff +
                        storage_hw_loss + storage_loss);
+    }
+
+    fn summer_mode(&mut self) {
+        let storage_state_hw = self.storage_hw.get_relative_charge();
+
+        self.boiler_state = false;
+        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_4 {
+            self.chp_state = true;
+        }
+        else if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
+            self.chp_state = false;
+        }
+    }
+    /// # Arguments
+    /// * t_heat_lim (&f32): min. outside temperature of building,
+    ///                      where no heating is needed  [degC]
+    /// * t_out_mean (&f32): Mean outside temperature of buildings region in
+    ///                      last hours [degC]
+    fn update_control_mode(&mut self, t_heat_lim: &f32, t_out_mean: &f32)
+    {
+        if self.summer_mode {
+            if *t_out_mean < (*t_heat_lim - self.t_heat_lim_h) {
+                self.summer_mode = false;
+            }
+        } else {
+            if *t_out_mean > (*t_heat_lim + self.t_heat_lim_h) {
+                self.summer_mode = true;
+            }
+        }
+    }
+
+    fn winter_mode(&mut self) {
+        let storage_state = self.storage.get_relative_charge();
+        let storage_state_hw = self.storage_hw.get_relative_charge();
+
+        if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
+            self.boiler_state = true;
+            self.chp_state = true;
+        }
+        else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) &
+                !self.chp_state {
+            self.boiler_state = false;
+            self.chp_state = true;
+        }
+        else if (storage_state >= ChpSystem::STORAGE_LEVEL_2) &
+                self.boiler_state {
+            self.boiler_state = false;
+            self.chp_state = true;
+        }
+        else if storage_state >= ChpSystem::STORAGE_LEVEL_1 {
+            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
+                self.chp_state = false;
+            }
+            self.boiler_state = false;
+        }
+
+        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_4 {
+            self.chp_state = true;
+        }
     }
 }

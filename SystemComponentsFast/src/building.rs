@@ -210,6 +210,7 @@ impl Building {
     fn add_chp(&mut self, chp_system: chp_system::ChpSystem) {
         self.is_self_supplied_t = false;
         self.heat_building = Building::get_chp_generation;
+        self.heat_lim_temperature = 13.5;
         match &self.chp_system {
             None => {self.chp_system = Some(chp_system);},
             Some(_building_chp) => error!("Building already has a \
