@@ -84,11 +84,29 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 
 # %%
 b = cell.buildings[0]
-plots.buildingTemperature(b, time, Weather['T [degC]'])
+fig_T = plots.buildingTemperature(b, time, Weather['T [degC]'], retFig=True)
+fig_S = plots.chargeState(b.chp_system.storage, time, retFig=True)
+fig_Shw = plots.chargeState(b.chp_system.storage_hw, time, retFig=True)
 
-# %%
-plots.chargeState(b.chp_system.storage, time)
-plots.chargeState(b.chp_system.storage_hw, time)
+fig_S.update_traces({'name': 'Storage'}, selector={'name': "charge"})
+fig_Shw.update_traces({'name': 'Storage hw'}, selector={'name': "charge"})
+
+fig_T = fig_T.set_subplots(rows=3, cols=1,
+                           shared_xaxes=True,
+                           vertical_spacing=0.02,
+                           subplot_titles=("",
+                                           fig_S.layout.title.text,
+                                           fig_Shw.layout.title.text
+                                           )
+                           )
+fig_T.update_layout({'height': 1000, 'width': 1000})
+fig_T.update_xaxes(title_text="", row=1, col=1)
+fig_T.update_xaxes(title_text="", row=2, col=1)
+fig_T.update_xaxes(title_text="Time", row=3, col=1)
+fig_T.append_trace(fig_S['data'][0], row=2, col=1)
+fig_T.append_trace(fig_Shw['data'][0], row=3, col=1)
+fig_T.update_yaxes(fig_S.layout['yaxis'], row=2, col=1)
+fig_T.update_yaxes(fig_Shw.layout['yaxis'], row=3, col=1)
 
 # %%
 gen_e = np.array(cell.buildings[0].gen_e.get_memory())
