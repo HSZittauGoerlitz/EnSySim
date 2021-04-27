@@ -25,6 +25,8 @@ pub struct ChpSystem {
     // Controller variables
     boiler_state: bool,
     chp_state: bool,
+    // save storage losses, to consider in temperature control
+    last_losses: f32,  // W
 
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
@@ -96,6 +98,7 @@ impl ChpSystem {
                                     boiler: boiler,
                                     boiler_state: false,
                                     chp_state: false,
+                                    last_losses: 0.,
                                     gen_e: gen_e,
                                     gen_t: gen_t,
                                     };
@@ -119,6 +122,10 @@ impl ChpSystem {
     const STORAGE_LEVEL_2: f32 = 0.6;
     const STORAGE_LEVEL_3: f32 = 0.3;
     const STORAGE_LEVEL_4: f32 = 0.2;
+
+    pub fn get_losses(&self) -> &f32 {
+        &self.last_losses
+    }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.gen_e {
@@ -210,6 +217,8 @@ impl ChpSystem {
 
         // call storage step -> check if all energy could be processed
         let (storage_diff, storage_loss) = self.storage.step(&storage_t);
+
+        self.last_losses = storage_hw_loss + storage_loss;
 
         // save production data
         self.save_hist(&pow_e, &pow_t);

@@ -280,7 +280,7 @@ impl Building {
 
 impl Building {
     const TIME_STEP: f32 = 0.25;  // h
-    const N: f32 = 1.5 * 24. / Building::TIME_STEP;
+    const N: f32 = 1. * 24. / Building::TIME_STEP;
     /// Calculate normed heating load Q_HLN of a building [W]
     ///
     /// The calculation is done in reference to the simplified method
@@ -360,7 +360,9 @@ impl Building {
         match &mut self.chp_system {
             None => (0., 0.),
             Some(building_chp) => {
-                building_chp.step(sh_power_request, thermal_load_hw,
+                building_chp.step(&(sh_power_request -
+                                    building_chp.get_losses()).max(0.),
+                                  thermal_load_hw,
                                   &self.heat_lim_temperature,
                                   &self.mean_outside_temperature)
                 },
