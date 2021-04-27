@@ -207,7 +207,7 @@ impl GenericStorage {
     {
         let (diff, loss);
 
-        let self_loss_start = self.charge * self.self_discharge; // W
+        let self_loss_start = (self.charge / self.cap) * self.self_discharge; // W
 
         // TODO: Direct assignment when destructuring feature is stable
         if *pow > 0. {
@@ -224,7 +224,7 @@ impl GenericStorage {
             loss = 0.;
         }
 
-        let self_loss_end = self.charge * self.self_discharge; // W
+        let self_loss_end = (self.charge / self.cap) * self.self_discharge; // W
         let self_loss = 0.5*self_loss_start + 0.5*self_loss_end;
 
         self.charge = self.charge - self_loss*GenericStorage::TIME_STEP;

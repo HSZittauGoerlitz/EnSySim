@@ -406,7 +406,6 @@ impl Building {
     /// Window area gets allocated uniformly (1/4th per direction)
     fn get_solar_gains(&self, amb: &AmbientParameters) -> f32 {
         let window_area = self.areas_uv[1][0];
-        debug!("window area: {}m²", window_area);
         // south, west, north, east
         let irradiations = amb.specific_gains;
 
@@ -415,7 +414,6 @@ impl Building {
         for view in irradiations.iter() {
             solar_gain += view * window_area / 4.;
         }
-        debug!("solar gain: {}W", solar_gain);
         solar_gain
     }
 
