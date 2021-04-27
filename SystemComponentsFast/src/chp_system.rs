@@ -122,10 +122,10 @@ impl ChpSystem {
 /// CHP plant
 impl ChpSystem {
     // Control Parameter
-    const STORAGE_LEVEL_1: f32 = 0.95;
-    const STORAGE_LEVEL_2: f32 = 0.6;
-    const STORAGE_LEVEL_3: f32 = 0.3;
-    const STORAGE_LEVEL_4: f32 = 0.2;
+    const STORAGE_LEVEL_HH: f32 = 0.95;
+    const STORAGE_LEVEL_H: f32 = 0.3;
+    const STORAGE_LEVEL_L: f32 = 0.2;
+    const STORAGE_LEVEL_LL: f32 = 0.05;
 
     pub fn get_losses(&self) -> &f32 {
         &self.last_losses
@@ -174,11 +174,6 @@ impl ChpSystem {
         // ToDo: check if chp does not over supply system -> boiler
 
         self.update_control_mode(t_heat_lim, t_out_mean);
-        if self.summer_mode {
-            self.summer_mode();
-        } else {
-            self.winter_mode();
-        }
 
         let (pow_e, chp_t) = self.chp.step(&self.chp_state);
         let boiler_t = self.boiler.step(&self.boiler_state);
@@ -209,10 +204,10 @@ impl ChpSystem {
         let storage_state_hw = self.storage_hw.get_relative_charge();
 
         self.boiler_state = false;
-        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_4 {
+        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_LL {
             self.chp_state = true;
         }
-        else if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
+        else if storage_state_hw >= ChpSystem::STORAGE_LEVEL_HH {
             self.chp_state = false;
         }
     }
@@ -223,6 +218,7 @@ impl ChpSystem {
     ///                      last hours [degC]
     fn update_control_mode(&mut self, t_heat_lim: &f32, t_out_mean: &f32)
     {
+        // Get actual control mode
         if self.summer_mode {
             if *t_out_mean < (*t_heat_lim - self.t_heat_lim_h) {
                 self.summer_mode = false;
@@ -232,34 +228,40 @@ impl ChpSystem {
                 self.summer_mode = true;
             }
         }
+        // Set actuators to corresponding control mode
+        if self.summer_mode {
+            self.summer_mode();
+        } else {
+            self.winter_mode();
+        }
     }
 
     fn winter_mode(&mut self) {
         let storage_state = self.storage.get_relative_charge();
         let storage_state_hw = self.storage_hw.get_relative_charge();
 
-        if storage_state <= ChpSystem::STORAGE_LEVEL_4 {
+        if storage_state <= ChpSystem::STORAGE_LEVEL_LL {
             self.boiler_state = true;
             self.chp_state = true;
         }
-        else if (storage_state <= ChpSystem::STORAGE_LEVEL_3) &
+        else if (storage_state <= ChpSystem::STORAGE_LEVEL_L) &
                 !self.chp_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if (storage_state >= ChpSystem::STORAGE_LEVEL_2) &
+        else if (storage_state >= ChpSystem::STORAGE_LEVEL_H) &
                 self.boiler_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if storage_state >= ChpSystem::STORAGE_LEVEL_1 {
-            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_1 {
+        else if storage_state >= ChpSystem::STORAGE_LEVEL_HH {
+            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_HH {
                 self.chp_state = false;
             }
             self.boiler_state = false;
         }
 
-        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_4 {
+        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_LL {
             self.chp_state = true;
         }
     }
