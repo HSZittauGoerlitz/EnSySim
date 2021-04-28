@@ -205,24 +205,17 @@ impl GenericStorage {
     ///   - Losses due charging/discharging as well as self discharge [W]
     pub fn step(&mut self, pow: &f32) -> (f32, f32)
     {
-        let (diff, loss);
-
         let self_loss_start = self.charge * self.self_discharge; // W
 
-        // TODO: Direct assignment when destructuring feature is stable
-        if *pow > 0. {
-            let (diff_, loss_) = self.charge_storage(pow);
-            diff = diff_;
-            loss = loss_;
-        }
-        else if *pow < 0. {
-            let (diff_, loss_) = self.discharge_storage(pow);
-            diff = diff_;
-            loss = loss_;
-        } else {
-            diff = 0.;
-            loss = 0.;
-        }
+        let (diff, loss) =
+          if *pow > 0. {
+              self.charge_storage(pow)
+          }
+          else if *pow < 0. {
+              self.discharge_storage(pow)
+          } else {
+              (0., 0.)
+          };
 
         let self_loss_end = self.charge * self.self_discharge; // W
         let self_loss = 0.5*self_loss_start + 0.5*self_loss_end;
