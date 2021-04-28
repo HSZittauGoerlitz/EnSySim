@@ -26,7 +26,7 @@ pub struct ChpSystem {
     // Controller variables
     boiler_state: bool,
     chp_state: bool,
-    summer_mode: bool,  // control mode: True -> Summer, False -> Winter
+    control_mode: u8,  // 0: Winter, 1: Intermediate, 2: Summer
     // Hysteresis for control mode in relation to buildings lim. Temp.
     t_heat_lim_h: f32,  // degC
     // save storage losses, to consider in temperature control
@@ -102,8 +102,8 @@ impl ChpSystem {
                                     boiler: boiler,
                                     boiler_state: false,
                                     chp_state: false,
-                                    summer_mode: false,
-                                    t_heat_lim_h: 1.5,
+                                    control_mode: 1,
+                                    t_heat_lim_h: 2.,
                                     last_losses: 0.,
                                     gen_e: gen_e,
                                     gen_t: gen_t,
@@ -129,23 +129,35 @@ impl ChpSystem {
     const STORAGE_LEVEL_L: f32 = 0.2;
     const STORAGE_LEVEL_LL: f32 = 0.05;
 
-    pub fn get_losses(&self) -> &f32 {
-        &self.last_losses
+    fn control(&mut self){
+        match self.control_mode {
+            0 => self.winter_mode(),
+            1 => self.intermediate_mode(),
+            2 => self.summer_mode(),
+            _ => panic!("Unknown control mode {} of chp system",
+                        self.control_mode),
+        }
     }
 
-    fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
-        match &mut self.gen_e {
-            None => {},
-            Some(gen_e) => {
-                gen_e.save(*pow_e)
-            },
+    fn intermediate_mode(&mut self) {
+        let storage_state = self.storage.get_relative_charge();
+        let storage_state_hw = self.storage_hw.get_relative_charge();
+
+        if self.boiler_state {self.boiler_state = false;}
+        if (storage_state <= ChpSystem::STORAGE_LEVEL_LL) |
+           (storage_state_hw <= ChpSystem::STORAGE_LEVEL_LL)
+        {
+            self.chp_state = true;
         }
-        match &mut self.gen_t {
-            None => {},
-            Some(gen_t) => {
-                gen_t.save(*pow_t)
-            }
+        else if (storage_state >= ChpSystem::STORAGE_LEVEL_H) &
+                (storage_state_hw >= ChpSystem::STORAGE_LEVEL_HH)
+        {
+            self.chp_state = false;
         }
+    }
+
+    pub fn get_losses(&self) -> &f32 {
+        &self.last_losses
     }
 
     /// Calculate current electrical and thermal power
@@ -176,6 +188,7 @@ impl ChpSystem {
         // ToDo: check if chp does not over supply system -> boiler
 
         self.update_control_mode(t_heat_lim, t_out_mean);
+        self.control();
 
         let (pow_e, chp_t) = self.chp.step(&self.chp_state);
         let boiler_t = self.boiler.step(&self.boiler_state);
@@ -202,10 +215,25 @@ impl ChpSystem {
                        storage_hw_loss + storage_loss);
     }
 
+    fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
+        match &mut self.gen_e {
+            None => {},
+            Some(gen_e) => {
+                gen_e.save(*pow_e)
+            },
+        }
+        match &mut self.gen_t {
+            None => {},
+            Some(gen_t) => {
+                gen_t.save(*pow_t)
+            }
+        }
+    }
+
     fn summer_mode(&mut self) {
         let storage_state_hw = self.storage_hw.get_relative_charge();
 
-        self.boiler_state = false;
+        if self.boiler_state {self.boiler_state = false;}
         if storage_state_hw <= ChpSystem::STORAGE_LEVEL_LL {
             self.chp_state = true;
         }
@@ -213,6 +241,13 @@ impl ChpSystem {
             self.chp_state = false;
         }
     }
+
+    /// Change Control mode
+    ///
+    /// 0: Winter
+    /// 1: Intermediate
+    /// 2: Summer
+    ///
     /// # Arguments
     /// * t_heat_lim (&f32): min. outside temperature of building,
     ///                      where no heating is needed  [degC]
@@ -221,20 +256,27 @@ impl ChpSystem {
     fn update_control_mode(&mut self, t_heat_lim: &f32, t_out_mean: &f32)
     {
         // Get actual control mode
-        if self.summer_mode {
-            if *t_out_mean < (*t_heat_lim - self.t_heat_lim_h) {
-                self.summer_mode = false;
-            }
-        } else {
-            if *t_out_mean > (*t_heat_lim + self.t_heat_lim_h) {
-                self.summer_mode = true;
-            }
-        }
-        // Set actuators to corresponding control mode
-        if self.summer_mode {
-            self.summer_mode();
-        } else {
-            self.winter_mode();
+        match self.control_mode {
+            0 => {
+                if *t_out_mean > (*t_heat_lim - 0.8*self.t_heat_lim_h) {
+                    self.control_mode = 1;
+                }
+            },
+            1 => {
+                if *t_out_mean > (*t_heat_lim + 1.2*self.t_heat_lim_h) {
+                    self.control_mode = 2;
+                }
+                else if *t_out_mean < (*t_heat_lim - 1.2*self.t_heat_lim_h) {
+                    self.control_mode = 0;
+                }
+            },
+            2 => {
+                if *t_out_mean < (*t_heat_lim + 0.8*self.t_heat_lim_h) {
+                    self.control_mode = 1;
+                }
+            },
+            _ => panic!("Unknown control mode {} of chp system",
+                        self.control_mode),
         }
     }
 
