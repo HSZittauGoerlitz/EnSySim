@@ -3,6 +3,7 @@ from BoundaryConditions.Simulation.SimulationData import getSimData
 from GenericModel.Design import _addAgents, _loadBuildingData
 import numpy as np
 import pandas as pd
+import plotly.graph_objs as go
 from SystemComponentsFast import simulate, Building, Cell
 from PostProcesing import dataCollection, plots
 import logging
@@ -84,6 +85,10 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 
 # %%
 b = cell.buildings[0]
+
+chp_gen_e = np.array(b.chp_system.gen_e.get_memory())
+CHPstate = chp_gen_e > 0.
+
 fig_T = plots.buildingTemperature(b, time, Weather['T [degC]'], retFig=True)
 fig_S = plots.chargeState(b.chp_system.storage, time, retFig=True)
 fig_Shw = plots.chargeState(b.chp_system.storage_hw, time, retFig=True)
@@ -97,8 +102,20 @@ fig_T = fig_T.set_subplots(rows=3, cols=1,
                            subplot_titles=("",
                                            fig_S.layout.title.text,
                                            fig_Shw.layout.title.text
-                                           )
+                                           ),
+                           specs=[[{"secondary_y": True}],
+                                  [{"secondary_y": False}],
+                                  [{"secondary_y": False}]
+                                  ]
                            )
+
+fig_T.add_trace(go.Scatter(x=time, y=CHPstate,
+                           line={'color': 'rgba(100, 149, 237, 0.5)',
+                                 'width': 1},
+                           name="CHP state"),
+                secondary_y=True
+                )
+
 fig_T.update_layout({'height': 1000, 'width': 1000})
 fig_T.update_xaxes(title_text="", row=1, col=1)
 fig_T.update_xaxes(title_text="", row=2, col=1)
@@ -109,7 +126,7 @@ fig_T.update_yaxes(fig_S.layout['yaxis'], row=2, col=1)
 fig_T.update_yaxes(fig_Shw.layout['yaxis'], row=3, col=1)
 
 # %%
-gen_e = np.array(cell.buildings[0].gen_e.get_memory())
-print("The CHP has {:.2f} full load hours".format((gen_e > 0.).sum() * 0.25))
+print("The CHP has {:.2f} full load hours"
+      .format((chp_gen_e > 0.).sum() * 0.25))
 
 # %%
