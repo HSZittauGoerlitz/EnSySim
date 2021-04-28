@@ -1,3 +1,4 @@
+use log::{debug};
 // Parameter used by helper functions
 static C_WATER:f32 = 1.162;  // (Wh) / (kg K)
 static RHO_WATER:f32 = 983.2;  // kg / m^3
@@ -49,7 +50,26 @@ pub fn find_heating_system_storage(pow_t: &f32, delta_t: &f32) -> f32
 
     volume * C_WATER * RHO_WATER * delta_t  // in Wh
 }
+pub fn find_heating_system_storage_test(pow_t: &f32, delta_t: &f32) -> (f32, f32)
+{
+    let mut diffs: [f32;11] = [0.;11];
+    let exact = pow_t * 50.0e-3; // kW * m^3/kW
 
+    for (pos, model) in MODELS.iter().enumerate() {
+        diffs[pos] = (exact - model).abs();
+    }
+
+    let index = min_index(&diffs);
+    let volume = MODELS[index];
+
+    let cap = volume * C_WATER * RHO_WATER * delta_t;  // in Wh
+
+    let radius = f32::powf(volume / (std::f32::consts::PI * 4.5), 1./3.);
+    let surface = std::f32::consts::PI * f32::powi(radius, 2) * 11.;
+    let soc = surface * 15.;
+    debug!("cap: {}, soc: {}", cap, soc);
+    return (cap, soc);
+}
 /// Find optimal size for hot water system storage
 ///
 /// The desing is realised according to DIN 4708.
