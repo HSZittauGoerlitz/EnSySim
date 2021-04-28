@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use log::{info};
 
 use crate::helper::{find_heating_system_storage,
-                    find_heating_system_storage_test,
+                    find_heat_storage_loss_parameter,
                     find_hot_water_system_storage};
 
 use crate::boiler::Boiler;
@@ -57,13 +57,14 @@ impl ChpSystem {
 
         // thermal storage:
         // 75l~kg per kW thermal generation, 40K difference -> 60°C,
-        let (cap, soc) = find_heating_system_storage_test(&pow_t_chp, &40.);
+        let (cap, volume) = find_heating_system_storage(&pow_t_chp, &40.);
+        let self_loss = find_heat_storage_loss_parameter(&volume, &cap);
 
         // dummy parameters for now
         let storage = GenericStorage::new(cap,
                                           0.95,
                                           0.95,
-                                          soc,
+                                          self_loss,
                                           q_hln,
                                           hist,);
 
@@ -75,7 +76,7 @@ impl ChpSystem {
         let storage_hw = GenericStorage::new(cap_hw,
                                              0.95,
                                              0.95,
-                                             0.0,
+                                             0.01,
                                              cap_hw / 0.5,  // cap_hw/...h -> W
                                              hist,);
 

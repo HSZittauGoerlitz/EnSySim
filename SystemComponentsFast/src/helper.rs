@@ -1,4 +1,3 @@
-use log::{debug};
 // Parameter used by helper functions
 static C_WATER:f32 = 1.162;  // (Wh) / (kg K)
 static RHO_WATER:f32 = 983.2;  // kg / m^3
@@ -35,8 +34,9 @@ pub fn min_index(array: &[f32]) -> usize
 ///                    and inlet temperature)
 ///
 /// # Returns
-/// f32: Capacity of storage in [Wh]
-pub fn find_heating_system_storage(pow_t: &f32, delta_t: &f32) -> f32
+/// - f32: Capacity of storage in [Wh]
+/// - f32: Volume of storage [m^3]
+pub fn find_heating_system_storage(pow_t: &f32, delta_t: &f32) -> (f32, f32)
 {
     let mut diffs: [f32;11] = [0.;11];
     let exact = pow_t * 50.0e-3; // kW * m^3/kW
@@ -48,28 +48,30 @@ pub fn find_heating_system_storage(pow_t: &f32, delta_t: &f32) -> f32
     let index = min_index(&diffs);
     let volume = MODELS[index];
 
-    volume * C_WATER * RHO_WATER * delta_t  // in Wh
+    (volume * C_WATER * RHO_WATER * delta_t,    // Wh
+     volume)  // m^3
 }
-pub fn find_heating_system_storage_test(pow_t: &f32, delta_t: &f32) -> (f32, f32)
+
+/// Calculate storage loss parameter according to german KWKG
+///
+/// - supposed heigth/radius ratio of storage of 4.5
+///   --> used for the storage surface calculation
+/// - 15W/m² reached at full charge and scaled with with cap/charge ratio
+///
+/// # Arguments
+/// * volume (&f32): Capacity of storage [m^3]
+/// * cap (&f32): Capacity of storage [Wh]
+///
+/// # Returns
+/// f32: Storage self losses [1/h]
+pub fn find_heat_storage_loss_parameter(volume: &f32, cap: &f32) -> f32
 {
-    let mut diffs: [f32;11] = [0.;11];
-    let exact = pow_t * 50.0e-3; // kW * m^3/kW
+    let radius = (volume / (std::f32::consts::PI * 4.5)).cbrt(); // m
+    let surface = std::f32::consts::PI * 11. * radius.powf(2.); // m^2
 
-    for (pos, model) in MODELS.iter().enumerate() {
-        diffs[pos] = (exact - model).abs();
-    }
-
-    let index = min_index(&diffs);
-    let volume = MODELS[index];
-
-    let cap = volume * C_WATER * RHO_WATER * delta_t;  // in Wh
-
-    let radius = f32::powf(volume / (std::f32::consts::PI * 4.5), 1./3.);
-    let surface = std::f32::consts::PI * f32::powi(radius, 2) * 11.;
-    let soc = surface * 15.;
-    debug!("cap: {}, soc: {}", cap, soc);
-    return (cap, soc);
+     surface * 15. / cap // m^2 * W/m^2 / Wh -> W / Wh -> 1/h
 }
+
 /// Find optimal size for hot water system storage
 ///
 /// The desing is realised according to DIN 4708.

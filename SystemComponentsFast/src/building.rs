@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{error, debug};
+use log::error;
 
 
 use crate::{agent, controller, pv, heatpump_system, chp_system,

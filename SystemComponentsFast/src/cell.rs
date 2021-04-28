@@ -1,6 +1,6 @@
 // external
 use pyo3::prelude::*;
-use log::{error, debug};
+use log::error;
 
 use crate::{building, pv, sep_bsl_agent,
             hist_memory, save_e, save_t};
@@ -152,8 +152,6 @@ impl Cell {
         let h: f32 = amb.solar_elevation.to_radians();
         let tilt: f32 = std::f32::consts::FRAC_PI_2;
         let gamma: f32 = amb.solar_azimuth.to_radians();
-
-        debug!("{}, {}, {}, {}", i_b, h, tilt, gamma);
 
         if h > 0. {
             for (idx, orientation) in orientations.iter().enumerate() {

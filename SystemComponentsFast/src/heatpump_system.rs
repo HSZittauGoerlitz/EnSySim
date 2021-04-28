@@ -252,7 +252,7 @@ impl HeatpumpSystem {
         // 50l~kg per kW thermal generation, 40K difference -> 60°C
         // 5°C spread, 20°C room temperature
         let temp_diff = t_supply + 5. - 20.;
-        let cap = find_heating_system_storage(&pow_t, &temp_diff);
+        let (cap, _) = find_heating_system_storage(&pow_t, &temp_diff);
 
         // make sure storage can handle max power from heatpump, 20°C used
         let max_q = q_from_coefficients(&pow_t, &20., &t_supply);
