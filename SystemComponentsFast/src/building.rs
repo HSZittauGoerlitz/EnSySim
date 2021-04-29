@@ -393,8 +393,11 @@ impl Building {
             None => (0., 0.),
             Some(building_heatpump) => {
                 let (load_e, gen_t) = building_heatpump.step(
-                    sh_power_request, thermal_load_hw,
-                                        t_out);
+                  &(sh_power_request-building_heatpump.get_losses()).max(0.),
+                  thermal_load_hw, t_out,
+                  &self.heat_lim_temperature,
+                  &self.mean_outside_temperature
+                );
                 (-load_e, gen_t)
             },
         }
