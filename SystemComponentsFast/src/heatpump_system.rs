@@ -243,7 +243,7 @@ impl HeatpumpSystem {
                                           0.95,
                                           0.95,
                                           self_loss,
-                                          pow_t*max_q,
+                                          pow_t*max_q + q_hln,
                                           hist);
 
         let con_e;
