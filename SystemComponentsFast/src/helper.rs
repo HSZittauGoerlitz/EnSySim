@@ -1,3 +1,5 @@
+use rand::Rng;
+
 // Parameter used by helper functions
 static C_WATER:f32 = 1.162;  // (Wh) / (kg K)
 static RHO_WATER:f32 = 983.2;  // kg / m^3
@@ -38,8 +40,11 @@ pub fn min_index(array: &[f32]) -> usize
 /// - f32: Volume of storage [m^3]
 pub fn find_heating_system_storage(pow_t: &f32, delta_t: &f32) -> (f32, f32)
 {
+    let mut rng = rand::thread_rng();
+
     let mut diffs: [f32;11] = [0.;11];
-    let exact = pow_t * 50.0e-3; // kW * m^3/kW
+    let cap_water: f32 = rng.gen_range(50.0..=100.0)*1e-3; // m^3/kW
+    let exact = pow_t * 1e-3 * cap_water; // m^3 (pow_t into kW)
 
     for (pos, model) in MODELS.iter().enumerate() {
         diffs[pos] = (exact - model).abs();

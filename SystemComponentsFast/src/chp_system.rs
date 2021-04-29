@@ -1,5 +1,6 @@
 // external
 use pyo3::prelude::*;
+use rand::Rng;
 use log::{info};
 
 use crate::helper::{find_heating_system_storage,
@@ -45,14 +46,16 @@ impl ChpSystem {
     /// The hot water system is designed according to DIN 4708.
     ///
     /// # Arguments
-    /// * q_hln (f32): norm heating load of building
+    /// * q_hln (f32): norm heating load of building [W]
     /// * n (f32): Characteristic number for buildings hot water demand
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(q_hln: f32, n: f32, hist: usize) -> Self {
 
+        let mut rng = rand::thread_rng();
+        let f_chp: f32 = rng.gen_range(0.25..=0.45);
         // chp:
-        let pow_t_chp = 0.4 * q_hln;
+        let pow_t_chp = f_chp * q_hln;
         let chp = CHP::new(pow_t_chp, hist);
 
         // thermal storage:
@@ -81,7 +84,7 @@ impl ChpSystem {
                                              hist,);
 
         // boiler
-        let pow_t_boiler = 0.6 * q_hln;
+        let pow_t_boiler = (1. - f_chp) * q_hln;
         let boiler = Boiler::new(pow_t_boiler, hist);
 
         let gen_e;
