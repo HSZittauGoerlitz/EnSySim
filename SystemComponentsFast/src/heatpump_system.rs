@@ -22,6 +22,11 @@ pub struct HeatpumpSystem {
     // Controller variables
     boiler_state: bool,
     hp_state: bool,
+    control_mode: u8,  // 0: Winter, 1: Intermediate, 2: Summer
+    // Hysteresis for control mode in relation to buildings lim. Temp.
+    t_heat_lim_h: f32,  // degC
+    // save storage losses, to consider in temperature control
+    last_losses: f32,  // W
 
     #[pyo3(get)]
     con_e: Option<hist_memory::HistMemory>,
@@ -256,6 +261,9 @@ impl HeatpumpSystem {
                                               boiler: boiler,
                                               boiler_state: false,
                                               hp_state: false,
+                                              control_mode: 1,
+                                              t_heat_lim_h: 2.,
+                                              last_losses: 0.,
                                               con_e: con_e,
                                               gen_t: gen_t,
                                               };
