@@ -282,10 +282,10 @@ impl HeatpumpSystem {
 
 impl HeatpumpSystem {
     // Control Parameter
-    const STORAGE_LEVEL_1: f32 = 0.95;
-    const STORAGE_LEVEL_2: f32 = 0.6;
-    const STORAGE_LEVEL_3: f32 = 0.3;
-    const STORAGE_LEVEL_4: f32 = 0.2;
+    const STORAGE_LEVEL_HH: f32 = 0.95;
+    const STORAGE_LEVEL_H: f32 = 0.3;
+    const STORAGE_LEVEL_L: f32 = 0.1;
+    const STORAGE_LEVEL_LL: f32 = 0.05;
 
     fn control(&mut self){
         match self.control_mode {
@@ -302,6 +302,15 @@ impl HeatpumpSystem {
     }
 
     fn intermediate_mode(&mut self) {
+        let storage_state = self.storage.get_relative_charge();
+
+        if self.boiler_state {self.boiler_state = false;}
+
+        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
+            self.hp_state = true;
+        } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_H {
+            self.hp_state = false;
+        }
     }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
@@ -361,6 +370,15 @@ impl HeatpumpSystem {
     }
 
     fn summer_mode(&mut self) {
+        let storage_state = self.storage.get_relative_charge();
+
+        if self.boiler_state {self.boiler_state = false;}
+
+        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
+            self.hp_state = true;
+        } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
+            self.hp_state = false;
+        }
     }
 
     /// Change Control mode
@@ -404,6 +422,18 @@ impl HeatpumpSystem {
     fn winter_mode(&mut self) {
         let storage_state = self.storage.get_relative_charge();
 
+        if storage_state <=HeatpumpSystem::STORAGE_LEVEL_LL {
+            self.boiler_state = true;
+        }
 
+        if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
+            self.boiler_state = false;
+        } else {
+            self.hp_state = true;
+        }
+
+        if storage_state >= HeatpumpSystem::STORAGE_LEVEL_HH {
+            self.hp_state = false;
+        }
     }
 }
