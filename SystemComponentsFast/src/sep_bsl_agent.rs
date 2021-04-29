@@ -101,7 +101,7 @@ impl SepBSLagent {
     fn get_apv_demand(&mut self) {
         let mut rng = rand::thread_rng();
 
-        self.demand_apv = rng.gen_range(0.8, 1.2);
+        self.demand_apv = rng.gen_range(0.8..=1.2);
 
         let dist = FisherF::new(7.025235971695065, 2205.596792511838).unwrap();
         self.demand_apv *= dist.sample(&mut rng) * 0.299704041191481 + 0.1;
@@ -148,7 +148,7 @@ impl SepBSLagent {
         let mut electrical_generation = 0.;
 
         // calculate load
-        electrical_load += slp_data[self.a_type] * rng.gen_range(0.8, 1.2);
+        electrical_load += slp_data[self.a_type] * rng.gen_range(0.8..=1.2);
 
         // calculate generation
         // TODO: CHP

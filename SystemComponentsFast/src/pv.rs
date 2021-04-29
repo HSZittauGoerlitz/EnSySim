@@ -30,7 +30,7 @@ impl PV {
     pub fn new(eg: f32, coc: f32, demand: f32, hist: usize) -> Self {
         let mut rng = rand::thread_rng();
 
-        let a = rng.gen_range(0.8, 1.2) * coc * 1e3/eg * demand;
+        let a = rng.gen_range(0.8..=1.2) * coc * 1e3/eg * demand;
 
 
         let gen_e;

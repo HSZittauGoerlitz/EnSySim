@@ -74,7 +74,7 @@ impl Agent {
 
         let rnd: f32 = rng.gen();
 
-        self.demand_apv = rng.gen_range(0.8, 1.2);
+        self.demand_apv = rng.gen_range(0.8..=1.2);
 
         if self.a_type == 0 {
             if rnd < 0.7 {
@@ -132,7 +132,7 @@ impl Agent {
     /// * f32: agents hot water demand [W]
     fn get_hot_water_demand(&self, hw_profile: &f32) -> f32 {
         let mut rng = rand::thread_rng();
-        let r_f: f32 = rng.gen_range(0.8, 1.2);
+        let r_f: f32 = rng.gen_range(0.8..=1.2);
 
         self.hw_demand * r_f * hw_profile
     }
@@ -149,7 +149,7 @@ impl Agent {
         let mut rng = rand::thread_rng();
 
         let electrical = self.coc * slp_data[self.a_type] *
-                         rng.gen_range(0.8, 1.2);
+                         rng.gen_range(0.8..=1.2);
         let thermal = self.get_hot_water_demand(hw_profile);
 
         (electrical, thermal)
