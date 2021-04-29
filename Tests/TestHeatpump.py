@@ -3,6 +3,7 @@ from BoundaryConditions.Simulation.SimulationData import getSimData
 from GenericModel.Design import _addAgents, _loadBuildingData
 import numpy as np
 import pandas as pd
+import plotly.graph_objs as go
 from SystemComponentsFast import simulate, Building, Cell
 from PostProcesing import dataCollection, plots
 import logging
@@ -59,7 +60,7 @@ building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
                     isAtDHN, cell.t_out_n, nSteps
                     )
 # Create and add agents
-_addAgents(building, 1., 1., 0.)
+building = _addAgents(building, 1., 1., 0.)
 
 # %% Add heatpump
 # get reference year temperatures
@@ -115,9 +116,35 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 
 # %%
 b = cell.buildings[0]
-plots.buildingTemperature(b, time, Weather['T [degC]'])
+HPstate = np.array(b.heatpump_system.con_e.get_memory()) > 0.
 
-# %%
-plots.chargeState(b.heatpump_system.storage, time)
+fig_T = plots.buildingTemperature(b, time, Weather['T [degC]'], retFig=True)
+fig_S = plots.chargeState(b.heatpump_system.storage, time, retFig=True)
+
+fig_S.update_traces({'name': 'Storage'}, selector={'name': "charge"})
+
+fig_T = fig_T.set_subplots(rows=2, cols=1,
+                           shared_xaxes=True,
+                           vertical_spacing=0.02,
+                           subplot_titles=("",
+                                           fig_S.layout.title.text
+                                           ),
+                           specs=[[{"secondary_y": True}],
+                                  [{"secondary_y": False}]
+                                  ]
+                           )
+
+fig_T.add_trace(go.Scatter(x=time, y=HPstate,
+                           line={'color': 'rgba(100, 149, 237, 0.5)',
+                                 'width': 1},
+                           name="HP state"),
+                secondary_y=True
+                )
+
+fig_T.update_layout({'height': 1000, 'width': 1000})
+fig_T.update_xaxes(title_text="", row=1, col=1)
+fig_T.update_xaxes(title_text="", row=2, col=1)
+fig_T.append_trace(fig_S['data'][0], row=2, col=1)
+fig_T.update_yaxes(fig_S.layout['yaxis'], row=2, col=1)
 
 # %%
