@@ -53,7 +53,7 @@ impl ChpSystem {
     pub fn new(q_hln: f32, n: f32, hist: usize) -> Self {
 
         let mut rng = rand::thread_rng();
-        let f_chp: f32 = rng.gen_range(0.25..=0.45);
+        let f_chp: f32 = rng.gen_range(0.3..=0.6);
         // chp:
         let pow_t_chp = f_chp * q_hln;
         let chp = CHP::new(pow_t_chp, hist);
