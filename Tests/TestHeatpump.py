@@ -116,35 +116,42 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 
 # %%
 b = cell.buildings[0]
-HPstate = np.array(b.heatpump_system.con_e.get_memory()) > 0.
+HPstate = np.array(b.heatpump_system.heatpump.gen_t.get_memory()) > 0.
+Bstate = np.array(b.heatpump_system.boiler.gen_t.get_memory()) > 0.
 
 fig_T = plots.buildingTemperature(b, time, Weather['T [degC]'], retFig=True)
 fig_S = plots.chargeState(b.heatpump_system.storage, time, retFig=True)
 
 fig_S.update_traces({'name': 'Storage'}, selector={'name': "charge"})
 
-fig_T = fig_T.set_subplots(rows=2, cols=1,
+fig_T = fig_T.set_subplots(rows=3, cols=1,
                            shared_xaxes=True,
                            vertical_spacing=0.02,
                            subplot_titles=("",
-                                           fig_S.layout.title.text
-                                           ),
-                           specs=[[{"secondary_y": True}],
-                                  [{"secondary_y": False}]
-                                  ]
+                                           fig_S.layout.title.text,
+                                           ""
+                                           )
                            )
 
 fig_T.add_trace(go.Scatter(x=time, y=HPstate,
-                           line={'color': 'rgba(100, 149, 237, 0.5)',
+                           line={'color': 'rgba(6, 99, 142, 0.7)',
                                  'width': 1},
-                           name="HP state"),
-                secondary_y=True
+                           name="HeatPump"),
+                row=3, col=1
+                )
+fig_T.add_trace(go.Scatter(x=time, y=Bstate,
+                           line={'color': 'rgba(85, 27, 192, 0.6)',
+                                 'width': 1},
+                           name="Boiler"),
+                row=3, col=1
                 )
 
 fig_T.update_layout({'height': 1000, 'width': 1000})
 fig_T.update_xaxes(title_text="", row=1, col=1)
 fig_T.update_xaxes(title_text="", row=2, col=1)
+fig_T.update_xaxes(title_text="Time", row=3, col=1)
 fig_T.append_trace(fig_S['data'][0], row=2, col=1)
 fig_T.update_yaxes(fig_S.layout['yaxis'], row=2, col=1)
+fig_T.update_yaxes(title="State", row=3, col=1)
 
 # %%
