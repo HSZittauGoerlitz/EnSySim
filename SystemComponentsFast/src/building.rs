@@ -191,6 +191,7 @@ impl Building {
     fn add_heatpump(&mut self, heatpump_sytem: heatpump_system::HeatpumpSystem) {
         self.is_self_supplied_t = false;
         self.heat_building = Building::get_heatpump_generation;
+        self.heat_lim_temperature = 13.;
         // building can have either chp or heatpump
         match &self.chp_system {
             // for now only one heatpump per building is allowed
