@@ -35,18 +35,6 @@ fn average(numbers: &[f32]) -> f32 {
     average
 }
 
-/* fn average_bool_select(numbers: &[f32], bool_select: &[bool]) -> f32 {
-    let mut sum = 0.;
-    let mut count = 0;
-    for (idx, sel) in bool_select.iter().enumerate() {
-        if *sel {
-            sum += numbers[idx];
-            count += 1;
-        }
-    }
-    sum / (count as f32)
-} */
-
 fn average_bool_select_weighted(numbers: &[f32], weights: &[f32],
                                 bool_select: &[bool]) -> f32 {
     let mut sum = 0.;
@@ -156,9 +144,9 @@ impl HeatpumpSystem {
 
         // reference temperature for heating days
         let t_heat = 15.;
-        // local copy neccessary
+        // local copy necessary
         let reference_temperatures = t_ref.to_vec();
-        // get heating days bools (hourly)
+        // get heating days (hourly)
         let mut heating_days: [bool; 8760] = [false; 8760];
         for i in 0..=364 {
             // ToDo: idx created twice
@@ -221,20 +209,7 @@ impl HeatpumpSystem {
             //  minimum working temperature and power factor
             pow_t = ((-q_hln / (t_heat-t_out_n)) * t_min + intercept) /
                       q_from_coefficients(&pow_t, &t_min, &t_supply);
-            // calculate weights
-/*             for (idx, value) in heating_days.iter().enumerate() {
-                let mut div = 0.;
-                if *value == true {
-                    div = pow_heat[idx] / (pow_t * qs[idx]);
 
-                    if div > 1. {
-                        weights[idx] = 1.;
-                    }
-                    else {
-                        weights[idx] = div;
-                    }
-                }
-            } */
             // calculate mean cop
             cop_mean = average_bool_select_weighted(&cops, &weights,
                                                     &heating_days);
