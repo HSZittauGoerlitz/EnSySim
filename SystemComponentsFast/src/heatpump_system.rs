@@ -22,7 +22,7 @@ pub struct HeatpumpSystem {
 
     // Controller variables
     boiler_state: bool,
-    hp_state: bool,
+    hp_state: f32,
     control_mode: u8,  // 0: Winter, 1: Intermediate, 2: Summer
     // Hysteresis for control mode in relation to buildings lim. Temp.
     t_heat_lim_h: f32,  // degC
@@ -258,18 +258,6 @@ impl HeatpumpSystem {
             gen_t = None;
         }
 
-        let heatpump_system = HeatpumpSystem {heatpump: heatpump,
-                                              storage: storage,
-                                              boiler: boiler,
-                                              boiler_state: false,
-                                              hp_state: false,
-                                              control_mode: 1,
-                                              t_heat_lim_h: 2.,
-                                              last_losses: 0.,
-                                              con_e: con_e,
-                                              gen_t: gen_t,
-                                              };
-
         info!("
                designed heatpump system with following specifications:
                heatpump nominal power: {:.2}kW
@@ -277,7 +265,16 @@ impl HeatpumpSystem {
                boiler nominal power: {:.2}kW",
                pow_t/1000., cap/1000., q_hln/1000.);
 
-        heatpump_system
+        HeatpumpSystem {heatpump,
+                        storage,
+                        boiler,
+                        boiler_state: false,
+                        hp_state: 0.,
+                        control_mode: 1,
+                        t_heat_lim_h: 2.,
+                        last_losses: 0.,
+                        con_e,
+                        gen_t}
     }
 }
 
@@ -285,9 +282,9 @@ impl HeatpumpSystem {
 impl HeatpumpSystem {
     // Control Parameter
     const STORAGE_LEVEL_HH: f32 = 0.95;
-    const STORAGE_LEVEL_H: f32 = 0.3;
-    const STORAGE_LEVEL_L: f32 = 0.1;
-    const STORAGE_LEVEL_LL: f32 = 0.05;
+    const STORAGE_LEVEL_H: f32 = 0.2;
+    const STORAGE_LEVEL_L: f32 = 0.05;
+    const STORAGE_LEVEL_LL: f32 = 0.01;
 
     fn control(&mut self){
         match self.control_mode {
@@ -309,9 +306,9 @@ impl HeatpumpSystem {
         if self.boiler_state {self.boiler_state = false;}
 
         if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
-            self.hp_state = true;
+            self.hp_state = 1.;
         } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_H {
-            self.hp_state = false;
+            self.hp_state = 0.;
         }
     }
 
@@ -377,9 +374,9 @@ impl HeatpumpSystem {
         if self.boiler_state {self.boiler_state = false;}
 
         if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
-            self.hp_state = true;
+            self.hp_state = 0.2;
         } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
-            self.hp_state = false;
+            self.hp_state = 0.0;
         }
     }
 
@@ -426,16 +423,17 @@ impl HeatpumpSystem {
 
         if storage_state <=HeatpumpSystem::STORAGE_LEVEL_LL {
             self.boiler_state = true;
+            self.hp_state = 1.;
         }
 
         if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
             self.boiler_state = false;
         } else {
-            self.hp_state = true;
+            self.hp_state = 1.;
         }
 
         if storage_state >= HeatpumpSystem::STORAGE_LEVEL_HH {
-            self.hp_state = false;
+            self.hp_state = 0.;
         }
     }
 }

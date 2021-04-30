@@ -9,10 +9,10 @@ pub struct Heatpump {
     //pow_e: f32,  // electrical input power of  heatpump [W]
     #[pyo3(get)]
     pow_t: f32,  // thermalpower of heatpump [W]
-    state: bool,  // on/off switch for heatpump
+    state: f32,  // Operation mode for heatpump (f_min_load..1.)
     t_supply: f32,  // supply side temperature (heating system) [°C]
     t_min_working: f32,  // minimal source temperature [°C]
-
+    f_min_load: f32,  // Min. operation power factor 0..1
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -115,15 +115,20 @@ impl Heatpump {
     ///
     /// # Arguments
     /// * power_t (f32): installed thermal power of heatpump [W]
+    /// * t_supply (f32): supply temperature, dependent on building
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(power_t: f32, t_supply: f32,
-               t_min_working: f32, hist: usize) -> Self {
+               t_min_working: f32, hist: usize) -> Self
+    {
+        if power_t < 0. {
+            panic!("Installed thermal power of heatpump \
+                    must be greater than 0")
+        }
 
         // heatpump:
         let pow_t = power_t;
         let t_supply = t_supply;
-        let state = false;
 
         let con_e;
         let gen_t;
@@ -139,15 +144,14 @@ impl Heatpump {
             cop_hist = None;
         }
 
-        let heatpump = Heatpump {pow_t: pow_t,
-                     state: state,
-                     t_supply: t_supply,
-                     t_min_working: t_min_working,
-                     con_e: con_e,
-                     gen_t: gen_t,
-                     cop_hist: cop_hist,
-                    };
-        heatpump
+        Heatpump {pow_t,
+                  state: 0.,
+                  t_supply,
+                  t_min_working,
+                  f_min_load: 0.2,
+                  con_e,
+                  gen_t,
+                  cop_hist}
     }
 }
 
@@ -181,24 +185,30 @@ impl Heatpump {
     /// Calculate current electrical and thermal power
     ///
     /// # Arguments
-    /// * state (&bool): Current state of heatpump (on/off)
+    /// * state (&f32): Current operation state of heatpump
+    ///     0.: Off
+    ///     self.f_min_load..1.: Partial operation
+    ///     1.: On
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool, t_out: &f32) -> (f32, f32) {
+    pub fn step(&mut self, state: &f32, t_out: &f32) -> (f32, f32) {
         // update state
-        self.state = *state;
+        if *state > 0. {
+            self.state = state.max(self.f_min_load).min(1.);
+        } else {
+            self.state = 0.;
+        }
 
         // calculate power output
         let gen_t;
         let con_e;
         let cop;
 
-        if *state {
-            gen_t =  self.pow_t * q_from_coefficients(&self.pow_t,
-                                                      t_out,
-                                                      &self.t_supply);
+        if self.state > 0. {
+            gen_t = self.state * self.pow_t *
+                    q_from_coefficients(&self.pow_t, t_out, &self.t_supply);
             cop = cop_from_coefficients(&self.pow_t, t_out, &self.t_supply);
             con_e = gen_t / cop;
         }
@@ -207,7 +217,6 @@ impl Heatpump {
             con_e = 0.;
             cop = -1.;
         }
-        // ToDo: take modulation into account
 
         // save and return data
         self.save_hist(&con_e, &gen_t, &cop);
