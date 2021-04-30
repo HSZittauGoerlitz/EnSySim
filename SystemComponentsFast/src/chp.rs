@@ -28,6 +28,11 @@ impl CHP {
     #[new]
     pub fn new(power_t: f32, hist: usize) -> Self {
 
+        if power_t < 0. {
+            panic!("Installed thermal power of chp \
+                    must be greater than 0")
+        }
+
         // chp:
         let pow_t = power_t;
         let pow_e = 0.5 * pow_t;
@@ -45,13 +50,12 @@ impl CHP {
             gen_t = None;
         }
 
-        let chp = CHP {pow_e: pow_e,
-                     pow_t: pow_t,
-                     state: state,
-                     gen_e: gen_e,
-                     gen_t: gen_t,
-                    };
-        chp
+        CHP {pow_e: pow_e,
+             pow_t: pow_t,
+             state: state,
+             gen_e: gen_e,
+             gen_t: gen_t,
+             }
     }
 }
 
