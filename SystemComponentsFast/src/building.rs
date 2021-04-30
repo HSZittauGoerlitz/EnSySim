@@ -17,6 +17,8 @@ pub struct Building {
     n_max_agents: u32,
     #[pyo3(get)]
     n_agents: u32,
+    #[pyo3(get)]
+    a_living: f32,  // Buildings living space m^2
     areas_uv: Vec<[f32; 2]>,  // m^2; W / (K m^2)
     delta_u: f32,  // W / (K m^2)
     n_infiltration: f32,  // 1h
@@ -65,6 +67,7 @@ impl Building {
     /// # Arguments
     /// * nMaxAgents (u32): Number of max. possible agents
     ///                     living in this building
+    /// * a_living (f32): Buildings living space [m^2]
     /// * areas_uv: (Vec<[f32; 2]>): All building areas [m^2]
     ///                              and corresponding
     ///                              U-Values [W/(m^2 K)]
@@ -84,12 +87,17 @@ impl Building {
     ///                  region of building [°C]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    fn new(n_max_agents: u32, areas_uv: Vec<[f32; 2]>, delta_u: f32,
+    fn new(n_max_agents: u32, a_living:f32,
+           areas_uv: Vec<[f32; 2]>, delta_u: f32,
            n_infiltration: f32, n_ventilation: f32, cp_eff: f32, g: f32,
            volume: f32, is_at_dhn: bool, t_out_n: f32, hist: usize) -> Self {
         // check parameter
         if n_max_agents <= 0 {
             panic!("Number of max. Agents must be greater than 0");
+        }
+
+        if a_living < 0. {
+            panic!("Buildings living space must be greater than 0")
         }
 
         for a_uv in areas_uv.iter() {
@@ -134,34 +142,35 @@ impl Building {
 
         // Create object
         let mut building = Building {
-            n_max_agents: n_max_agents,
-            n_agents: 0,
-            agents: Vec::new(),
-            areas_uv: areas_uv,
-            delta_u: delta_u,
-            n_infiltration: n_infiltration,
-            n_ventilation: n_ventilation,
-            res_u_trans: 0.,
-            cp_eff: cp_eff,
-            g: g,
-            temperature: 20.,
-            nominal_temperature: 20.,
-            heat_lim_temperature: 15.,
-            mean_outside_temperature: 15.,
-            v: volume,
-            q_hln: 0.,
-            is_at_dhn: is_at_dhn,
-            is_self_supplied_t: !is_at_dhn,
-            controller: default_controller,
-            pv: None,
-            chp_system: None,
-            heatpump_system: None,
-            heat_building: Building::get_dhn_generation,
-            gen_e: gen_e,
-            gen_t: gen_t,
-            load_e: load_e,
-            load_t: load_t,
-            temperature_hist: temperature_hist,
+                            n_max_agents,
+                            n_agents: 0,
+                            agents: Vec::new(),
+                            a_living,
+                            areas_uv,
+                            delta_u,
+                            n_infiltration,
+                            n_ventilation,
+                            res_u_trans: 0.,
+                            cp_eff,
+                            g: g,
+                            temperature: 20.,
+                            nominal_temperature: 20.,
+                            heat_lim_temperature: 15.,
+                            mean_outside_temperature: 15.,
+                            v: volume,
+                            q_hln: 0.,
+                            is_at_dhn,
+                            is_self_supplied_t: !is_at_dhn,
+                            controller: default_controller,
+                            pv: None,
+                            chp_system: None,
+                            heatpump_system: None,
+                            heat_building: Building::get_dhn_generation,
+                            gen_e,
+                            gen_t,
+                            load_e,
+                            load_t,
+                            temperature_hist,
         };
         building.add_norm_heating_load(&t_out_n);
         // all other possible components are empty
@@ -210,7 +219,6 @@ impl Building {
     fn add_chp(&mut self, chp_system: chp_system::ChpSystem) {
         self.is_self_supplied_t = false;
         self.heat_building = Building::get_chp_generation;
-        self.heat_lim_temperature = 13.;
         match &self.chp_system {
             None => {self.chp_system = Some(chp_system);},
             Some(_building_chp) => error!("Building already has a \
@@ -309,6 +317,8 @@ impl Building {
                             (self.n_infiltration + self.n_ventilation);
         // Calculate normed heating load
         self.q_hln = self.res_u_trans * (20. - t_out_n);
+        // Update heating limit temperature
+        self.update_t_heat_lim();
     }
 
     fn get_pv_generation(&mut self, eg: &f32) -> f32 {
@@ -458,6 +468,18 @@ impl Building {
         } else {
             return 0.;
         }
+    }
+
+    /// Calculate the min. heat temperature by an simple lin. regression model
+    /// The model is based on data of "Energiedepesche 01/2007"
+    ///
+    ///     T(P) = 0.05 P + 10.34
+    ///
+    /// The resulting Temperature value is limited to the min / max values of
+    /// the data (9.5 degC / 17 degC)
+    fn update_t_heat_lim(&mut self) {
+        self.heat_lim_temperature =
+          (0.05 * self.q_hln / self.a_living + 10.34).min(17.).max(9.5);
     }
 
     pub fn q_hln(&self) -> &f32 {

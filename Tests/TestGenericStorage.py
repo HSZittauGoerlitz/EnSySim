@@ -13,7 +13,7 @@ eff = 0.95  # -
 selfDis = 0.05  # 1/h
 
 
-# %% test test functions
+# %% test functions
 def testStorage(pow_):
     storage = GenericStorage(cap, eff, eff, selfDis, maxPow, 0)
 

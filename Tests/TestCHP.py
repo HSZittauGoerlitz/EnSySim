@@ -50,7 +50,7 @@ else:
 
 # Building and Occupants
 building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
-                    a_uv_values,
+                    Geo.loc[('A_living', ''), 'Value'], a_uv_values,
                     U.loc['DeltaU', (bClass, mState)],
                     n.loc['Infiltration', infState],
                     n.loc[airState, infState],

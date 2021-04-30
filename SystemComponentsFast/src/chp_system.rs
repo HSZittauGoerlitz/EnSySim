@@ -99,19 +99,6 @@ impl ChpSystem {
             gen_t = None;
         }
 
-        let chp_system = ChpSystem {chp: chp,
-                                    storage: storage,
-                                    storage_hw: storage_hw,
-                                    boiler: boiler,
-                                    boiler_state: false,
-                                    chp_state: false,
-                                    control_mode: 1,
-                                    t_heat_lim_h: 2.,
-                                    last_losses: 0.,
-                                    gen_e: gen_e,
-                                    gen_t: gen_t,
-                                    };
-
         info!("
                designed chp system with following specifications:
                chp nominal power: {:.2}kW
@@ -120,7 +107,18 @@ impl ChpSystem {
                boiler nominal power: {:.2}kW",
                pow_t_chp/1000., cap/1000., cap_hw/1000., pow_t_boiler/1000.);
 
-        chp_system
+        ChpSystem {chp,
+                   storage,
+                   storage_hw,
+                   boiler,
+                   boiler_state: false,
+                   chp_state: false,
+                   control_mode: 1,
+                   t_heat_lim_h: 0.5,
+                   last_losses: 0.,
+                   gen_e,
+                   gen_t,
+                   }
     }
 }
 

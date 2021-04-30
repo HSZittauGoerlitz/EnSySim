@@ -115,7 +115,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, g, n,
         # create building
         # effective heat capacity with fixed C_eff of 15. (Wh)/(m^3K)
         building = Building(Geo.loc['nUnits'].values.astype(np.uint32)[0][0],
-                            a_uv_values,
+                            Geo.loc[('A_living', ''), 'Value'], a_uv_values,
                             U.loc[('DeltaU', ''),
                                   (classNames[classIdx], mState)],
                             n.loc['Infiltration', infState],
