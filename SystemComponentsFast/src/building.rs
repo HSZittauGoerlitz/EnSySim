@@ -414,7 +414,7 @@ impl Building {
         for view in irradiations.iter() {
             solar_gain += view * window_area / 4.;
         }
-        solar_gain
+        solar_gain * self.g
     }
 
 
