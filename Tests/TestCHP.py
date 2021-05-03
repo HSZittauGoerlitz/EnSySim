@@ -36,7 +36,7 @@ cell = Cell(climate.loc['EgNorm [kWh/m^2]', 'Value'],
 
 # %% Create Building
 # Parameter
-bClass = "class_1"
+bClass = "class_3"
 mState = "original"  # "modernised"
 airState = "VentilationFree"  # "VentilationMech"
 isAtDHN = False
@@ -116,7 +116,8 @@ fig_T.add_trace(go.Scatter(x=time, y=CHPstate,
                 secondary_y=True
                 )
 
-fig_T.update_layout({'height': 1000, 'width': 1000})
+fig_T.update_layout({'height': 1000, 'width': 1000,
+                     'title': "Building overview"})
 fig_T.update_xaxes(title_text="", row=1, col=1)
 fig_T.update_xaxes(title_text="", row=2, col=1)
 fig_T.update_xaxes(title_text="Time", row=3, col=1)
