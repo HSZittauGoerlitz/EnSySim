@@ -309,8 +309,8 @@ def chargeState(storage, time, retFig=False):
                              )
                   )
     fig.update_layout(height=600, width=600,
-                      title_text="Storage with max. capacity of {}kWh"
-                                 .format(storage.cap * 1e-3))
+                      title_text="Storage with max. capacity of {:.2f}kWh"
+                                 .format(np.round(storage.cap * 1e-3, 2)))
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Charge [kWh]")
     if retFig:
