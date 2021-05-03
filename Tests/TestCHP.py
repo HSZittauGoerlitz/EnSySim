@@ -101,6 +101,7 @@ fig_T = fig_T.set_subplots(rows=3, cols=1,
                            vertical_spacing=0.02,
                            subplot_titles=("",
                                            fig_S.layout.title.text,
+                                           "Hot Water " +
                                            fig_Shw.layout.title.text
                                            ),
                            specs=[[{"secondary_y": True}],
