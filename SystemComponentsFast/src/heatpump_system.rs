@@ -288,9 +288,11 @@ impl HeatpumpSystem {
         info!("
                designed heatpump system with following specifications:
                heatpump nominal power: {:.2}kW
+               predicted mean cop: {:.2}
+               minimal working temperature: {:.2}°C
                storage capacity: {:.2}kWh
                boiler nominal power: {:.2}kW",
-               pow_t/1000., cap/1000., q_hln/1000.);
+               pow_t/1000., cop_mean, t_min, cap/1000., q_hln/1000.);
 
         heatpump_system
     }
