@@ -124,7 +124,7 @@ def buildingTemperature(building, time, T, retFig=False):
     fig.update_layout(height=600, width=600,
                       title_text="Building Temperature Course")
     fig.update_xaxes(title_text="Time")
-    fig.update_yaxes(title_text="Temperature degC")
+    fig.update_yaxes(title_text="Temperature [degC]")
     if retFig:
         return fig
     else:  # show figure
