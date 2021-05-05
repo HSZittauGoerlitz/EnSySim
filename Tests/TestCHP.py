@@ -13,6 +13,13 @@ FORMAT = ('%(levelname)s %(name)s %(asctime)-15s '
 logging.basicConfig(format=FORMAT)
 logging.getLogger().setLevel(logging.WARNING)
 
+""" Following levels are used:
+DEBUG: add manually to debug
+INFO: feed back of successful operation
+WARNING: logical problems
+ERROR: operation failed
+CRITICAL: simulation failed """
+
 # %% Parameter
 # time
 start = "01.01.2020"
