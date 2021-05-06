@@ -54,7 +54,9 @@ resParameter = ["Electrical Energy Generated [MWh]",
                 "Max. Building Temperature [degC]",
                 "Min. Building Temperature [degC]",
                 "Mean. Building Temperature [degC]",
-                "CHP Full Load Hours [h]"]
+                "CHP Full Load Hours [h]",
+                "CHP Fuel used [MWh]",
+                "Boiler Fuel used [MWh]"]
 
 # data frame for results
 results = pd.DataFrame(columns=pd.MultiIndex.from_tuples(product(classes,
@@ -109,6 +111,8 @@ for bClass, mState, airState in results.columns.to_list():
     load_t = np.array(b.load_t.get_memory())
     bT = np.array(b.temperature_hist.get_memory())
     chp_gen_e = np.array(b.chp_system.gen_e.get_memory())
+    chp_fuel = np.array(b.chp_system.chp.fuel_used.get_memory())
+    boiler_fuel = np.array(b.chp_system.boiler.fuel_used.get_memory())
 
     results.loc['Electrical Energy Generated [MWh]',
                 (bClass, mState, airState)] = gen_e.sum() * 0.25 * 1e-6
@@ -126,6 +130,10 @@ for bClass, mState, airState in results.columns.to_list():
                 (bClass, mState, airState)] = bT.mean()
     results.loc['CHP Full Load Hours [h]',
                 (bClass, mState, airState)] = (chp_gen_e > 0.).sum() * 0.25
+    results.loc['CHP Fuel used [MWh]',
+                (bClass, mState, airState)] = chp_fuel.sum() * 0.25 * 1e-6
+    results.loc['Boiler Fuel used [MWh]',
+                (bClass, mState, airState)] = boiler_fuel.sum() * 0.25 * 1e-6
 
 # %%
 results
