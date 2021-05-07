@@ -31,7 +31,7 @@ pub struct Building {
     // min. outside temperature, where no heating is needed
     heat_lim_temperature: f32,  // degC
     mean_outside_temperature: f32,  // degC
-    #[pyo3(get)]
+    #[pyo3(set, get)]
     is_at_dhn: bool,
     #[pyo3(get)]
     is_self_supplied_t: bool,
@@ -260,12 +260,16 @@ impl Building {
                                 seas_perf_fac: f32,
                                 t_supply: f32,
                                 t_ref: Vec<f32>,
+                                t_out_n: f32,
                                 hist: usize) {
-        self.add_heatpump(heatpump_system::HeatpumpSystem::new(self.q_hln,
-                                                               seas_perf_fac,
-                                                               t_supply,
-                                                               t_ref,
-                                                               hist)
+        self.add_heatpump(
+            heatpump_system::HeatpumpSystem::new(self.q_hln,
+                                                 seas_perf_fac,
+                                                 t_supply,
+                                                 t_ref,
+                                                 self.heat_lim_temperature,
+                                                 t_out_n,
+                                                 hist)
                          );
     }
 

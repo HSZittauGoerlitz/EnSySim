@@ -107,3 +107,14 @@ pub fn find_hot_water_system_storage(n: &f32, delta_t: &f32) -> f32
 
     *MODELS.last().unwrap() * C_WATER * RHO_WATER * delta_t  // in Wh
 }
+
+pub fn find_minimum(vector: &Vec<f32>) -> f32
+{
+    let mut _min = vector[0];
+    for value in vector {
+        if *value < _min {
+            _min = *value;
+        }
+    }
+    _min
+}

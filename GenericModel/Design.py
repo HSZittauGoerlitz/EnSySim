@@ -136,14 +136,16 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, g, n,
                             key='Weather').reference['T [degC]'].tolist()
 
         if pHP[classNames[classIdx]] > np.random.random():
-            # choose supply temperature
-            classTemperatures = {"class_1": 55,
-                                 "class_2": 55,
-                                 "class_3": 55,
-                                 "class_4": 45,
-                                 "class_5": 35}
-            t_supply = classTemperatures[classNames[classIdx]]
-            seas_perf_fac = 3.
+            # supply temperatures for different classes of buildings
+            classTemperatures = {"class_1": {'original': 75, 'modernised': 65},
+                                 "class_2": {'original': 70, 'modernised': 60},
+                                 "class_3": {'original': 55, 'modernised': 45},
+                                 "class_4": {'original': 45, 'modernised': 40},
+                                 "class_5": {'original': 37, 'modernised': 32}}
+            # supply temperature
+            t_supply = classTemperatures[classNames[classIdx]][mState]
+
+            seas_perf_fac = 3.5
 
             if building.q_hln < 5000 or building.q_hln > 80000:
                 lg.warning("for this building no heatpump data is available, "
@@ -154,6 +156,7 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, g, n,
                 building.add_dimensioned_heatpump(seas_perf_fac,
                                                   t_supply,
                                                   t_ref,
+                                                  cell.t_out_n,
                                                   hist)
                 lg.debug("installed {:.2f}W thermal heatpump generation"
                          .format(building.q_hln))
