@@ -38,9 +38,9 @@ impl Boiler {
         }
 
         let boiler = Boiler {pow_t: pow_t,
-                     state: state,
-                     gen_t: gen_t,
-                    };
+                             state: state,
+                             gen_t: gen_t,
+                             };
         boiler
     }
 }
@@ -66,7 +66,7 @@ impl Boiler {
 
         // update state
         self.state = *state;
-        
+
         // calculate power output
         let pow_t;
         if self.state {

@@ -2,8 +2,8 @@
 use pyo3::prelude::*;
 use log::{info};
 
-use crate::helper::find_heating_system_storage;
-use crate::helper::find_minimum;
+use crate::helper::{find_heating_system_storage,
+                    find_heat_storage_loss_parameter};
 
 use crate::boiler::Boiler;
 use crate::heatpump::Heatpump;
@@ -22,7 +22,12 @@ pub struct HeatpumpSystem {
 
     // Controller variables
     boiler_state: bool,
-    hp_state: bool,
+    hp_state: f32,
+    control_mode: u8,  // 0: Winter, 1: Intermediate, 2: Summer
+    // Hysteresis for control mode in relation to buildings lim. Temp.
+    t_heat_lim_h: f32,  // degC
+    // save storage losses, to consider in temperature control
+    last_losses: f32,  // W
 
     #[pyo3(get)]
     con_e: Option<hist_memory::HistMemory>,
@@ -35,18 +40,6 @@ fn average(numbers: &[f32]) -> f32 {
     average = average / numbers.len() as f32;
     average
 }
-
-/* fn average_bool_select(numbers: &[f32], bool_select: &[bool]) -> f32 {
-    let mut sum = 0.;
-    let mut count = 0;
-    for (idx, sel) in bool_select.iter().enumerate() {
-        if *sel {
-            sum += numbers[idx];
-            count += 1;
-        }
-    }
-    sum / (count as f32)
-} */
 
 fn average_bool_select_weighted(numbers: &[f32], weights: &[f32],
                                 bool_select: &[bool]) -> f32 {
@@ -269,7 +262,8 @@ impl HeatpumpSystem {
         // 50l~kg per kW thermal generation, 40K difference -> 60°C
         // 5°C spread, 20°C room temperature
         let temp_diff = t_supply + 5. - 20.;
-        let (cap, _) = find_heating_system_storage(&pow_t, &temp_diff);
+        let (cap, volume) = find_heating_system_storage(&pow_t, &temp_diff);
+        let self_loss = find_heat_storage_loss_parameter(&volume, &cap);
 
         // make sure storage can handle max power from heatpump, 20°C used
         let max_q = q_from_coefficients(&pow_t, &20., &t_supply);
@@ -277,8 +271,8 @@ impl HeatpumpSystem {
         let storage = GenericStorage::new(cap,
                                           0.95,
                                           0.95,
-                                          0.05,
-                                          pow_t*max_q,
+                                          self_loss,
+                                          pow_t*max_q + q_hln,
                                           hist);
 
         let con_e;
@@ -292,15 +286,6 @@ impl HeatpumpSystem {
             con_e = None;
             gen_t = None;
         }
-
-        let heatpump_system = HeatpumpSystem {heatpump: heatpump,
-                                              storage: storage,
-                                              boiler: boiler,
-                                              boiler_state: false,
-                                              hp_state: false,
-                                              con_e: con_e,
-                                              gen_t: gen_t,
-                                              };
 
         info!("
                designed heatpump system with following specifications
@@ -317,17 +302,52 @@ impl HeatpumpSystem {
                cap/1000.,
                q_hln/1000.);
 
-        heatpump_system
+        HeatpumpSystem {heatpump,
+                        storage,
+                        boiler,
+                        boiler_state: false,
+                        hp_state: 0.,
+                        control_mode: 1,
+                        t_heat_lim_h: 2.,
+                        last_losses: 0.,
+                        con_e,
+                        gen_t}
     }
 }
 
 
 impl HeatpumpSystem {
     // Control Parameter
-    const STORAGE_LEVEL_1: f32 = 0.95;
-    const STORAGE_LEVEL_2: f32 = 0.6;
-    const STORAGE_LEVEL_3: f32 = 0.3;
-    const STORAGE_LEVEL_4: f32 = 0.2;
+    const STORAGE_LEVEL_HH: f32 = 0.95;
+    const STORAGE_LEVEL_H: f32 = 0.2;
+    const STORAGE_LEVEL_L: f32 = 0.05;
+    const STORAGE_LEVEL_LL: f32 = 0.01;
+
+    fn control(&mut self){
+        match self.control_mode {
+            0 => self.winter_mode(),
+            1 => self.intermediate_mode(),
+            2 => self.summer_mode(),
+            _ => panic!("Unknown control mode {} of heat pump system",
+                        self.control_mode),
+        }
+    }
+
+    pub fn get_losses(&self) -> &f32 {
+        &self.last_losses
+    }
+
+    fn intermediate_mode(&mut self) {
+        let storage_state = self.storage.get_relative_charge();
+
+        if self.boiler_state {self.boiler_state = false;}
+
+        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
+            self.hp_state = 1.;
+        } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_H {
+            self.hp_state = 0.;
+        }
+    }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
         match &mut self.con_e {
@@ -352,38 +372,18 @@ impl HeatpumpSystem {
     /// * hot_water_demand (&f32): Thermal power needed by agents for
     ///                            warm water [W]
     /// * t_out (&f32): Outside temperature [degC]
-    ///
+    /// * t_heat_lim (&f32): min. outside temperature of building,
+    ///                      where no heating is needed  [degC]
+    /// * t_out_mean (&f32): Mean outside temperature of buildings region in
+    ///                      last hours [degC]
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
     pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
-                t_out: &f32) -> (f32, f32)
+                t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32)
     {
-        let storage_state = self.storage.get_relative_charge();
-
         // TODO: respect minimal working temperature of heatpump
-
-        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_4 {
-            self.boiler_state = true;
-            self.hp_state = true;
-        }
-        else if (storage_state <= HeatpumpSystem::STORAGE_LEVEL_3) &
-                !self.hp_state {
-            self.boiler_state = false;
-            self.hp_state = true;
-        }
-        else if (storage_state >= HeatpumpSystem::STORAGE_LEVEL_2) &
-                self.boiler_state {
-            self.boiler_state = false;
-            self.hp_state = true;
-        }
-        else if storage_state >= HeatpumpSystem::STORAGE_LEVEL_1 {
-            self.hp_state = false;
-            self.boiler_state = false;
-        }
-
-        if t_out < &self.heatpump.get_t_min_working() {
-            self.hp_state = false;
-        }
+        self.update_control_mode(t_heat_lim, t_out_mean);
+        self.control();
 
         let (con_e, hp_t) = self.heatpump.step(&self.hp_state, t_out);
         let boiler_t = self.boiler.step(&self.boiler_state);
@@ -396,10 +396,81 @@ impl HeatpumpSystem {
         // call storage step -> check if all energy could be processed
         let (storage_diff, storage_loss) = self.storage.step(&storage_t);
 
+        self.last_losses = storage_loss;
+
         // save production data
         self.save_hist(&con_e, &pow_t);
 
         // return supply data
         return (con_e, thermal_load + storage_diff + storage_loss);
+    }
+
+    fn summer_mode(&mut self) {
+        let storage_state = self.storage.get_relative_charge();
+
+        if self.boiler_state {self.boiler_state = false;}
+
+        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
+            self.hp_state = 0.2;
+        } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
+            self.hp_state = 0.0;
+        }
+    }
+
+    /// Change Control mode
+    ///
+    /// 0: Winter
+    /// 1: Intermediate
+    /// 2: Summer
+    ///
+    /// # Arguments
+    /// * t_heat_lim (&f32): min. outside temperature of building,
+    ///                      where no heating is needed  [degC]
+    /// * t_out_mean (&f32): Mean outside temperature of buildings region in
+    ///                      last hours [degC]
+    fn update_control_mode(&mut self, t_heat_lim: &f32, t_out_mean: &f32)
+    {
+        // Get actual control mode
+        match self.control_mode {
+            0 => {
+                if *t_out_mean > (*t_heat_lim - 0.8*self.t_heat_lim_h) {
+                    self.control_mode = 1;
+                }
+            },
+            1 => {
+                if *t_out_mean > (*t_heat_lim + 1.2*self.t_heat_lim_h) {
+                    self.control_mode = 2;
+                }
+                else if *t_out_mean < (*t_heat_lim - 1.2*self.t_heat_lim_h) {
+                    self.control_mode = 0;
+                }
+            },
+            2 => {
+                if *t_out_mean < (*t_heat_lim + 0.8*self.t_heat_lim_h) {
+                    self.control_mode = 1;
+                }
+            },
+            _ => panic!("Unknown control mode {} of heat pump system",
+                        self.control_mode),
+        }
+    }
+
+    fn winter_mode(&mut self) {
+        let storage_state = self.storage.get_relative_charge();
+
+        if storage_state <=HeatpumpSystem::STORAGE_LEVEL_LL {
+            self.boiler_state = true;
+            self.hp_state = 1.;
+        }
+
+        if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
+            self.boiler_state = false;
+        } else {
+            self.hp_state = 1.;
+        }
+
+        if storage_state >= HeatpumpSystem::STORAGE_LEVEL_HH {
+            self.hp_state = 0.;
+        }
     }
 }

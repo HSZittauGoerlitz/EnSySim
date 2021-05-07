@@ -140,6 +140,10 @@ impl ChpSystem {
         }
     }
 
+    pub fn get_losses(&self) -> &f32 {
+        &self.last_losses
+    }
+
     fn intermediate_mode(&mut self) {
         let storage_state = self.storage.get_relative_charge();
         let storage_state_hw = self.storage_hw.get_relative_charge();
@@ -155,10 +159,6 @@ impl ChpSystem {
         {
             self.chp_state = false;
         }
-    }
-
-    pub fn get_losses(&self) -> &f32 {
-        &self.last_losses
     }
 
     /// Calculate current electrical and thermal power
