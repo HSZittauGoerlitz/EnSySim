@@ -3,7 +3,8 @@ use pyo3::prelude::*;
 use log::{info};
 
 use crate::helper::{find_heating_system_storage,
-                    find_heat_storage_loss_parameter};
+                    find_heat_storage_loss_parameter,
+                    find_minimum};
 
 use crate::boiler::Boiler;
 use crate::heatpump::Heatpump;
