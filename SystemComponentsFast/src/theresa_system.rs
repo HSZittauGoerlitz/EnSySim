@@ -1,6 +1,5 @@
 // external
 use pyo3::prelude::*;
-use log::{info};
 
 use crate::boiler::Boiler;
 use crate::chp::CHP;
@@ -119,7 +118,7 @@ impl TheresaSystem {
         let pow_t = chp_t + boiler_t;
 
         // call storage step -> check if all energy could be processed
-        let (storage_diff, storage_loss) =
+        let (storage_diff, _) =
             self.storage.step(&(pow_t - thermal_demand));
 
         // save production data
