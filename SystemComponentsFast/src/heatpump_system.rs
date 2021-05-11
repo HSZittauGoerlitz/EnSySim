@@ -144,7 +144,7 @@ impl HeatpumpSystem {
     pub fn new(q_hln: f32, seas_perf_fac: f32, t_supply: f32,
                t_ref: Vec<f32>, t_heat_lim: f32, t_out_n: f32,
                hist: usize) -> Self {
-        
+
         // ToDo: account for drinking water heating time
         // ?account for blocking times in final result
 
@@ -167,7 +167,7 @@ impl HeatpumpSystem {
                 heating_days[idx].fill(true);
             }
         }
-        
+
         // Q-intercept of heating line (at 0°C)
         let intercept = (t_heat_lim / (t_heat_lim - t_out_n)) * q_hln;
         // slope of heating line
@@ -207,7 +207,7 @@ impl HeatpumpSystem {
         while cop_mean < seas_perf_fac {
 
             if t_min >= t_heat_lim {
-                panic!("Heatpump minimum operating temperature must be greater 
+                panic!("Heatpump minimum operating temperature must be greater
                         then minimum heating temperature of building.
                         Apparantly cop was choosen too high.")
             }
@@ -227,7 +227,7 @@ impl HeatpumpSystem {
             pow_t = (slope * t_min + intercept) /
                     q_from_coefficients(&pow_t, &t_min, &t_supply);
             if pow_t < 1000. {
-                panic!("For this building heatpump cannot be configured. 
+                panic!("For this building heatpump cannot be configured.
                        Try decreasing minimum cop.")
             }
             // calculate weights
@@ -380,7 +380,7 @@ impl HeatpumpSystem {
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
     pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
-                t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32)
+        t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32)
     {
         // TODO: respect minimal working temperature of heatpump
         self.update_control_mode(t_heat_lim, t_out_mean);
@@ -403,7 +403,7 @@ impl HeatpumpSystem {
         self.save_hist(&con_e, &pow_t);
 
         // return supply data
-        return (con_e, thermal_load + storage_diff + storage_loss);
+        return (-con_e, thermal_load + storage_diff + storage_loss);
     }
 
     fn summer_mode(&mut self) {

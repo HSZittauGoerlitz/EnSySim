@@ -8,6 +8,57 @@ use crate::{agent, controller, pv, heatpump_system, chp_system,
 
 use crate::ambient::AmbientParameters;
 
+
+#[derive(Clone)]
+enum HeatingSystem {
+    ChpSystem(chp_system::ChpSystem),
+    HeatpumpSystem(heatpump_system::HeatpumpSystem),
+}
+
+
+impl HeatingSystem {
+    /// Calculate heating system and get generated thermal power and
+    /// generated (positive) or consumed (negative) electrical power
+    ///
+    /// # Arguments
+    /// * heating_demand (&f32): Thermal power needed for
+    ///                          heating the building [W]
+    /// * hot_water_demand (&f32): Thermal power needed by agents for
+    ///                            warm water [W]
+    /// * t_out (&f32): Outside temperature [degC]
+    /// * t_heat_lim (&f32): min. outside temperature of building,
+    ///                      where no heating is needed  [degC]
+    /// * t_out_mean (&f32): Mean outside temperature of buildings region in
+    ///                      last hours [degC]
+    /// # Returns
+    /// * (f32, f32): Resulting electrical and thermal power [W]
+    fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
+            t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32)
+    {
+        match self {
+            HeatingSystem::ChpSystem(system) => system.step(heating_demand,
+                                                            hot_water_demand,
+                                                            t_heat_lim, t_out_mean),
+            HeatingSystem::HeatpumpSystem(system) => system.step(heating_demand,
+                                                                 hot_water_demand, t_out,
+                                                                 t_heat_lim, t_out_mean),
+            //_ => (0., 0.)
+        }
+    }
+    /// Get last losses of specific heating system
+    ///
+    /// # Returns
+    /// * f32: Losses of last time step [W]
+    fn get_losses(&self) -> &f32
+    {
+        match self {
+            HeatingSystem::ChpSystem(system) => system.get_losses(),
+            HeatingSystem::HeatpumpSystem(system) => system.get_losses(),
+            //_ => &0.
+        }
+    }
+}
+
 #[pyclass]
 #[derive(Clone)]
 pub struct Building {
@@ -42,10 +93,7 @@ pub struct Building {
     controller: controller::Controller,
     #[pyo3(get)]
     pv: Option<pv::PV>,
-    #[pyo3(get)]
-    chp_system: Option<chp_system::ChpSystem>,
-    #[pyo3(get)]
-    heatpump_system: Option<heatpump_system::HeatpumpSystem>,
+    heating_system: Option<HeatingSystem>,
     heat_building: fn(&mut Building, &f32, &f32, &f32) -> (f32, f32),
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
@@ -163,8 +211,7 @@ impl Building {
                             is_self_supplied_t: !is_at_dhn,
                             controller: default_controller,
                             pv: None,
-                            chp_system: None,
-                            heatpump_system: None,
+                            heating_system: None,
                             heat_building: Building::get_dhn_generation,
                             gen_e,
                             gen_t,
@@ -197,33 +244,32 @@ impl Building {
         }
     }
 
-    fn add_heatpump(&mut self, heatpump_sytem: heatpump_system::HeatpumpSystem) {
-        self.is_self_supplied_t = false;
-        self.heat_building = Building::get_heatpump_generation;
-        self.heat_lim_temperature = 13.;
+    fn add_heatpump(&mut self, heatpump_sytem: heatpump_system::HeatpumpSystem)
+    {
         // building can have either chp or heatpump
-        match &self.chp_system {
+        match &self.heating_system {
             // for now only one heatpump per building is allowed
-            None => {
-                match &self.heatpump_system {
-                    None => {self.heatpump_system = Some(heatpump_sytem);},
-                    Some(_building_heatpump) =>
-                        error!("Building already has a \
-                               heatpump, nothing is added"),
-                };
+            None => {self.heating_system =
+                        Some(HeatingSystem::HeatpumpSystem(heatpump_sytem));
+                     self.is_self_supplied_t = false;
+                     self.heat_building = Building::get_hs_generation;
             },
-            Some(_building_chp) => error!("Building already has a chp, \
-                                          heatpump is not added"),
+            Some(_building_chp) => error!("Building already has a \
+                                           heating system"),
         }
     }
 
     fn add_chp(&mut self, chp_system: chp_system::ChpSystem) {
-        self.is_self_supplied_t = false;
-        self.heat_building = Building::get_chp_generation;
-        match &self.chp_system {
-            None => {self.chp_system = Some(chp_system);},
+        // building can have either chp or heatpump
+        match &self.heating_system {
+            // for now only one heatpump per building is allowed
+            None => {self.heating_system =
+                        Some(HeatingSystem::ChpSystem(chp_system));
+                     self.is_self_supplied_t = false;
+                     self.heat_building = Building::get_hs_generation;
+            },
             Some(_building_chp) => error!("Building already has a \
-                                          CHP plant, nothing is added"),
+                                           heating system"),
         }
     }
 
@@ -329,9 +375,7 @@ impl Building {
     fn get_pv_generation(&mut self, eg: &f32) -> f32 {
         match &mut self.pv {
             None => 0.,
-            Some(building_pv) => {
-                building_pv.step(eg)
-            },
+            Some(building_pv) => building_pv.step(eg)
         }
     }
 
@@ -355,10 +399,10 @@ impl Building {
             (0., sh_power_request + thermal_load_hw)
     }
 
-    /// Function to calculate thermal generation of building with chp plant.
+    /// Function to calculate thermal generation of buildings heating system.
     ///
-    /// Since the chp generates electrical energy, this value is returned as
-    /// positive number.
+    /// A positive electrical return means generation (e.g. chp)
+    /// A negative electrical return mean consumption (e.g. heatpump)
     ///
     /// Space heating demand is determined by internal control algorithm.
     ///
@@ -370,52 +414,19 @@ impl Building {
     ///
     /// # Returns
     /// * (f32, f32): (electrical generation/load, thermal generation)
-    fn get_chp_generation(&mut self, sh_power_request: &f32,
-                          thermal_load_hw: &f32, _t_out: &f32) -> (f32, f32)
+    fn get_hs_generation(&mut self, sh_power_request: &f32,
+                          thermal_load_hw: &f32, t_out: &f32) -> (f32, f32)
     {
-        match &mut self.chp_system {
+        match &mut self.heating_system {
             None => (0., 0.),
-            Some(building_chp) => {
-                building_chp.step(&(sh_power_request -
-                                    building_chp.get_losses()).max(0.),
-                                  thermal_load_hw,
-                                  &self.heat_lim_temperature,
-                                  &self.mean_outside_temperature)
+            Some(heating_system) => {
+                heating_system.step(&(sh_power_request -
+                                    heating_system.get_losses()).max(0.),
+                                    thermal_load_hw, t_out,
+                                    &self.heat_lim_temperature,
+                                    &self.mean_outside_temperature)
                 },
             }
-    }
-
-    /// Function to calculate thermal generation of building with heatpump.
-    ///
-    /// Since the heatpump consumes electrical energy,
-    /// this value is returned as negative number.
-    ///
-    /// Space heating demand is determined by internal control algorithm.
-    ///
-    /// # Arguments
-    /// * sh_power_request (&f32): Thermal power requested for
-    ///                            space heating [W]
-    /// * thermal_load_hw (&f32): Hot water demand [W]
-    /// * t_out (&f32): Outside temperature [degC]
-    ///
-    /// # Returns
-    /// * (f32, f32): (electrical generation/load, thermal generation)
-    fn get_heatpump_generation(&mut self, sh_power_request: &f32,
-                               thermal_load_hw: &f32, t_out: &f32)
-    -> (f32, f32)
-    {
-        match &mut self.heatpump_system {
-            None => (0., 0.),
-            Some(building_heatpump) => {
-                let (load_e, gen_t) = building_heatpump.step(
-                  &(sh_power_request-building_heatpump.get_losses()).max(0.),
-                  thermal_load_hw, t_out,
-                  &self.heat_lim_temperature,
-                  &self.mean_outside_temperature
-                );
-                (-load_e, gen_t)
-            },
-        }
     }
 
     /// Calculate solar gains in W
