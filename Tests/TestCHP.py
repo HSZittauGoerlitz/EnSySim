@@ -110,9 +110,10 @@ for bClass, mState, airState in results.columns.to_list():
     gen_t = np.array(b.gen_t.get_memory())
     load_t = np.array(b.load_t.get_memory())
     bT = np.array(b.temperature_hist.get_memory())
-    chp_gen_e = np.array(b.chp_system.gen_e.get_memory())
-    chp_fuel = np.array(b.chp_system.chp.fuel_used.get_memory())
-    boiler_fuel = np.array(b.chp_system.boiler.fuel_used.get_memory())
+    chpSys = b.get_chp_system()
+    chp_gen_e = np.array(chpSys.gen_e.get_memory())
+    chp_fuel = np.array(chpSys.chp.fuel_used.get_memory())
+    boiler_fuel = np.array(chpSys.boiler.fuel_used.get_memory())
 
     results.loc['Electrical Energy Generated [MWh]',
                 (bClass, mState, airState)] = gen_e.sum() * 0.25 * 1e-6

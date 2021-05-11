@@ -2,7 +2,6 @@
 use pyo3::prelude::*;
 use log::error;
 
-
 use crate::{agent, controller, pv, hist_memory, save_e, save_t};
 use crate::heating_systems::building::{heatpump_system, chp_system};
 
@@ -14,7 +13,6 @@ enum HeatingSystem {
     ChpSystem(chp_system::BuildingChpSystem),
     HeatpumpSystem(heatpump_system::BuildingHeatpumpSystem),
 }
-
 
 impl HeatingSystem {
     /// Calculate heating system and get generated thermal power and
@@ -58,6 +56,7 @@ impl HeatingSystem {
         }
     }
 }
+
 
 #[pyclass]
 #[derive(Clone)]
@@ -329,6 +328,26 @@ impl Building {
             chp_system::BuildingChpSystem::new(self.q_hln,
                                                self.n_max_agents as f32,
                                                hist));
+    }
+
+    fn get_chp_system(&self) -> Option<chp_system::BuildingChpSystem>
+    {
+        match &self.heating_system {
+            Some(HeatingSystem::ChpSystem(system)) => {
+                Some(system.clone())
+            },
+            _ => None,
+        }
+    }
+
+    fn get_hp_system(&self) -> Option<heatpump_system::BuildingHeatpumpSystem>
+    {
+        match &self.heating_system {
+            Some(HeatingSystem::HeatpumpSystem(system)) => {
+                Some(system.clone())
+            },
+            _ => None,
+        }
     }
 
     fn replace_agent(&mut self, agent_pos: usize, agent: agent::Agent){

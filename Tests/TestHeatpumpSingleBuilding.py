@@ -11,6 +11,7 @@ import logging
 # %% pid
 import os
 print(os.getpid())
+
 # %% logger config
 FORMAT = ('%(levelname)s %(name)s %(asctime)-15s '
           '%(filename)s:%(lineno)d %(message)s')
@@ -89,14 +90,14 @@ t_supply = classTemperatures[bClass][mState]
 
 seas_perf_fac = 3.5
 
-
 building.add_dimensioned_heatpump(seas_perf_fac,
                                   t_supply,
                                   t_ref,
                                   cell.t_out_n,
                                   nSteps)
+hpSys = building.get_hp_system()
 logging.debug("installed {:.2f}W thermal heatpump generation"
-              .format(building.heatpump_system.heatpump.pow_t))
+              .format(hpSys.heatpump.pow_t))
 logging.debug("maximum heat load is {:.2f}W"
               .format(building.q_hln))
 
@@ -107,10 +108,13 @@ cell.add_building(building)
 # %%
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
          Solar.to_dict('list'))
+# get objects with sim results
+b = cell.buildings[0]
+hpSys = b.get_hp_system()
 
 # %% yearly power factor
-electrical_energy = np.array(cell.buildings[0].heatpump_system.heatpump.con_e.get_memory())
-thermal_energy = np.array(cell.buildings[0].heatpump_system.heatpump.gen_t.get_memory())
+electrical_energy = np.array(hpSys.heatpump.con_e.get_memory())
+thermal_energy = np.array(hpSys.heatpump.gen_t.get_memory())
 
 power_factor = thermal_energy.sum() / electrical_energy.sum()
 
@@ -130,23 +134,14 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
                        'Thermal balance in test building')
 
 # %%
-b = cell.buildings[0]
 plots.buildingTemperature(b, time, Weather['T [degC]'])
 
 # %%
-plots.chargeState(b.heatpump_system.storage, time)
-
-# %%
-plots.compareCurves([time],
-                    [thermal_energy, Weather['T [degC]']],
-                    ['thermal output', 'outside  temperature'])
-
-# %%
-HPstate = np.array(b.heatpump_system.heatpump.gen_t.get_memory()) > 0.
-Bstate = np.array(b.heatpump_system.boiler.gen_t.get_memory()) > 0.
+HPstate = np.array(hpSys.heatpump.gen_t.get_memory()) > 0.
+Bstate = np.array(hpSys.boiler.gen_t.get_memory()) > 0.
 
 fig_T = plots.buildingTemperature(b, time, Weather['T [degC]'], retFig=True)
-fig_S = plots.chargeState(b.heatpump_system.storage, time, retFig=True)
+fig_S = plots.chargeState(hpSys.storage, time, retFig=True)
 
 fig_S.update_traces({'name': 'Storage'}, selector={'name': "charge"})
 

@@ -4,7 +4,6 @@ from GenericModel.Design import _addAgents, _loadBuildingData
 from itertools import product
 import numpy as np
 import pandas as pd
-import plotly.graph_objs as go
 from SystemComponentsFast import simulate, Building, Cell
 import logging
 
@@ -40,8 +39,6 @@ climate = pd.read_hdf("./BoundaryConditions/Weather/" + region +
 
 Geo, U, g, n = _loadBuildingData(bType)
 
-
-
 # Parameter
 classes = ["class_" + str(nr) for nr in range(1, 6)]
 mStates = ["original", "modernised"]
@@ -52,7 +49,7 @@ isAtDHN = False
 resParameter = ["Electrical Energy Generated [MWh]",
                 "Electrical Energy Consumed [MWh]",
                 "Thermal Energy Generated [MWh]",
-                "Supplied by Heatpump [MWh]", 
+                "Supplied by Heatpump [MWh]",
                 "Thermal Energy Consumed [MWh]",
                 "Max. Building Temperature [degC]",
                 "Min. Building Temperature [degC]",
@@ -64,8 +61,8 @@ results = pd.DataFrame(columns=pd.MultiIndex.from_tuples(product(classes,
                                                                  mStates,
                                                                  airStates)),
                        index=resParameter)
-# %% Create Building
 
+# %% Create Building
 # get reference year temperatures
 refWeather = pd.read_hdf("./BoundaryConditions/Weather/" + region +
                          ".h5", 'Weather')
@@ -104,7 +101,8 @@ for bClass, mState, airState in results.columns.to_list():
                             U.loc['DeltaU', (bClass, mState)],
                             n.loc['Infiltration', infState],
                             n.loc[airState, infState],
-                            (Geo.loc['cp_effective'] * Geo.loc['Volume']).Value,
+                            (Geo.loc['cp_effective'] *
+                             Geo.loc['Volume']).Value,
                             g.loc[mState, bClass],
                             Geo.loc[('Volume')].values.astype(np.uint32)[0][0],
                             isAtDHN, cell.t_out_n, nSteps
@@ -136,7 +134,8 @@ for bClass, mState, airState in results.columns.to_list():
         # %% Add building to cell
         cell.add_building(building)
 
-        simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
+        simulate(cell, nSteps, SLP.to_dict('list'), HWP,
+                 Weather.to_dict('list'),
                  Solar.to_dict('list'))
 
         # get results
@@ -144,11 +143,11 @@ for bClass, mState, airState in results.columns.to_list():
         gen_e = np.array(b.gen_e.get_memory())
         load_e = np.array(b.load_e.get_memory())
         gen_t = np.array(b.gen_t.get_memory())
-        hp_gen_t = np.array(cell.buildings[0].heatpump_system.
-                            heatpump.gen_t.get_memory())
+        hpSys = b.get_hp_system()
+        hp_gen_t = np.array(hpSys.heatpump.gen_t.get_memory())
         load_t = np.array(b.load_t.get_memory())
         bT = np.array(b.temperature_hist.get_memory())
-        hp_con_e = np.array(b.heatpump_system.con_e.get_memory())
+        hp_con_e = np.array(hpSys.con_e.get_memory())
 
         results.loc['Electrical Energy Generated [MWh]',
                     (bClass, mState, airState)] = gen_e.sum() * 0.25 * 1e-6
@@ -171,14 +170,14 @@ for bClass, mState, airState in results.columns.to_list():
         power_factor = hp_gen_t.sum() / hp_con_e.sum()
         logging.debug("yearly power factor:  {:.2f}"
                       .format(power_factor))
-
     except:
-        logging.debug("heatpump configuration not feasable!!!!!!!!!")
+        logging.debug("heatpump configuration not feasable")
         # %% Add building to cell
         building.is_at_dhn = True
         cell.add_building(building)
 
-        simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
+        simulate(cell, nSteps, SLP.to_dict('list'), HWP,
+                 Weather.to_dict('list'),
                  Solar.to_dict('list'))
 
         # get results

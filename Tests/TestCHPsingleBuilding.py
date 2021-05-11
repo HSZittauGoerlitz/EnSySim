@@ -86,12 +86,13 @@ plots.arbitraryBalance(gen_t*1e-3, load_t*1e-3, time, 'k',
 # %%
 b = cell.buildings[0]
 
-chp_gen_e = np.array(b.chp_system.gen_e.get_memory())
+chpSys = b.get_chp_system()
+chp_gen_e = np.array(chpSys.chp.gen_e.get_memory())
 CHPstate = chp_gen_e > 0.
 
 fig_T = plots.buildingTemperature(b, time, Weather['T [degC]'], retFig=True)
-fig_S = plots.chargeState(b.chp_system.storage, time, retFig=True)
-fig_Shw = plots.chargeState(b.chp_system.storage_hw, time, retFig=True)
+fig_S = plots.chargeState(chpSys.storage, time, retFig=True)
+fig_Shw = plots.chargeState(chpSys.storage_hw, time, retFig=True)
 
 fig_S.update_traces({'name': 'Storage'}, selector={'name': "charge"})
 fig_Shw.update_traces({'name': 'Storage hw'}, selector={'name': "charge"})
