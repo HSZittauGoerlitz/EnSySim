@@ -115,13 +115,13 @@ impl Cell {
 
     /// # Returns
     /// PyResult<f32>: Mean yearly electrical cell demand [Wh]
-    fn get_electrical_demand(&self) -> f32
+    fn get_electrical_demand(&self) -> PyResult<f32>
     {
         // get the sum of coc's in cell
         let mut coc = 0.;
 
         for sub_cell in self.sub_cells.iter() {
-            coc += sub_cell.get_electrical_demand();
+            coc += sub_cell.get_electrical_demand().unwrap();
         }
         for building in self.buildings.iter() {
             for agent in building.agents.iter() {
@@ -132,7 +132,7 @@ impl Cell {
             coc += agent.coc();
         }
 
-        coc*1e6  // coc is mean yearly demand per 1000 kWh -> * 1e3 * 1e3
+        Ok(coc*1e6)  // coc is mean yearly demand per 1000 kWh -> * 1e3 * 1e3
     }
 
 
