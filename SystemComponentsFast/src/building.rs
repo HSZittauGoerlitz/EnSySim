@@ -350,6 +350,14 @@ impl Building {
         }
     }
 
+    fn has_heating_system(&self) -> PyResult<bool>
+    {
+        match &self.heating_system {
+            Some(_) => Ok(true),
+            None => Ok(false)
+        }
+    }
+
     fn replace_agent(&mut self, agent_pos: usize, agent: agent::Agent){
         if agent_pos > (self.n_agents - 1) as usize {
             error!("Agent position exceeds number of available Agents. \
