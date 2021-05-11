@@ -62,7 +62,7 @@ impl HeatingSystem {
 #[derive(Clone)]
 pub struct Building {
     #[pyo3(get)]
-    agents: Vec<agent::Agent>,
+    pub agents: Vec<agent::Agent>,
     #[pyo3(get)]
     n_max_agents: u32,
     #[pyo3(get)]

@@ -68,23 +68,20 @@ impl Cell {
             load_t = None;
         }
 
-        let cell = Cell {
-            sub_cells: Vec::new(),
-            n_cells: 0,
-            buildings: Vec::new(),
-            n_buildings: 0,
-            sep_bsl_agents: Vec::new(),
-            n_sep_bsl_agents: 0,
-            eg: eg,
-            t_out_n: t_out_n,
-            pv: None,
-            gen_e: gen_e,
-            gen_t: gen_t,
-            load_e: load_e,
-            load_t: load_t,
-        };
-
-        cell
+        Cell {sub_cells: Vec::new(),
+              n_cells: 0,
+              buildings: Vec::new(),
+              n_buildings: 0,
+              sep_bsl_agents: Vec::new(),
+              n_sep_bsl_agents: 0,
+              eg: eg,
+              t_out_n: t_out_n,
+              pv: None,
+              gen_e: gen_e,
+              gen_t: gen_t,
+              load_e: load_e,
+              load_t: load_t,
+              }
     }
 
     fn add_building(&mut self, building: building::Building) {
@@ -115,6 +112,29 @@ impl Cell {
         self.sep_bsl_agents.push(sep_bsl_agent);
         self.n_sep_bsl_agents += 1;
     }
+
+    /// # Returns
+    /// PyResult<f32>: Mean yearly electrical cell demand [Wh]
+    fn get_electrical_demand(&self) -> f32
+    {
+        // get the sum of coc's in cell
+        let mut coc = 0.;
+
+        for sub_cell in self.sub_cells.iter() {
+            coc += sub_cell.get_electrical_demand();
+        }
+        for building in self.buildings.iter() {
+            for agent in building.agents.iter() {
+                coc += agent.coc();
+            }
+        }
+        for agent in self.sep_bsl_agents.iter() {
+            coc += agent.coc();
+        }
+
+        coc*1e6  // coc is mean yearly demand per 1000 kWh -> * 1e3 * 1e3
+    }
+
 
     fn replace_building(&mut self, building_pos: usize,
                         building: building::Building)

@@ -189,10 +189,8 @@ def addCHPtoCellBuildings(cell, pCHP, hist=0):
     # this is maybe not the fastest way to do this, could be moved to rust
     # get electricity consumption of cell
     buildings_q_hln = []
-    COC = 0
+    electricalDemand = cell.get_electrical_demand()
     for building in cell.buildings:
-        for agent in building.agents:
-            COC += agent.coc
         buildings_q_hln.append(building.q_hln)
 
     # installed power gets scaled by hours/year

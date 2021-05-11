@@ -96,6 +96,10 @@ impl SepBSLagent {
 
 /// Agent to simulate electrical profile of bigger business
 impl SepBSLagent {
+    pub fn coc(&self) -> &f32 {
+        &self.coc
+    }
+
     /// Calculate the demand for PV area to cover a part of the
     /// electrical energy consumption, using BSL statistics.
     fn get_apv_demand(&mut self) {
