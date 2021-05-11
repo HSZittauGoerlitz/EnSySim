@@ -194,7 +194,7 @@ def addCHPtoCellBuildings(cell, pCHP, hist=0):
         buildings_q_hln.append(building.q_hln)
 
     # installed power gets scaled by hours/year
-    instPower_el = 1000000. * COC * pCHP / full
+    instPower_el = electricalDemand * pCHP / full
 
     # generate CHP powers from ...
     # ... distribution:
