@@ -14,11 +14,10 @@ mod cell;
 // Components
 mod boiler;
 mod chp;
-mod chp_system;
 mod controller;
 mod generic_storage;
+mod heating_systems;
 mod heatpump;
-mod heatpump_system;
 mod pv;
 mod sep_bsl_agent;
 mod theresa_system;
@@ -37,8 +36,10 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<cell::Cell>()?;
     m.add_class::<sep_bsl_agent::SepBSLagent>()?;
     m.add_class::<pv::PV>()?;
-    m.add_class::<heatpump_system::HeatpumpSystem>()?;
-    m.add_class::<chp_system::ChpSystem>()?;
+    m.add_class::<heating_systems::building
+                  ::heatpump_system::BuildingHeatpumpSystem>()?;
+    m.add_class::<heating_systems::building
+                  ::chp_system::BuildingChpSystem>()?;
     m.add_class::<generic_storage::GenericStorage>()?;
     m.add_class::<theresa_system::TheresaSystem>()?;
     m.add_function(wrap_pyfunction!(simulate, m)?).unwrap();

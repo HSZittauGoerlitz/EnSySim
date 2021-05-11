@@ -3,16 +3,16 @@ use pyo3::prelude::*;
 use log::error;
 
 
-use crate::{agent, controller, pv, heatpump_system, chp_system,
-            hist_memory, save_e, save_t};
+use crate::{agent, controller, pv, hist_memory, save_e, save_t};
+use crate::heating_systems::building::{heatpump_system, chp_system};
 
 use crate::ambient::AmbientParameters;
 
 
 #[derive(Clone)]
 enum HeatingSystem {
-    ChpSystem(chp_system::ChpSystem),
-    HeatpumpSystem(heatpump_system::HeatpumpSystem),
+    ChpSystem(chp_system::BuildingChpSystem),
+    HeatpumpSystem(heatpump_system::BuildingHeatpumpSystem),
 }
 
 
@@ -244,7 +244,8 @@ impl Building {
         }
     }
 
-    fn add_heatpump(&mut self, heatpump_sytem: heatpump_system::HeatpumpSystem)
+    fn add_heatpump(&mut self,
+                    heatpump_sytem: heatpump_system::BuildingHeatpumpSystem)
     {
         // building can have either chp or heatpump
         match &self.heating_system {
@@ -259,7 +260,8 @@ impl Building {
         }
     }
 
-    fn add_chp(&mut self, chp_system: chp_system::ChpSystem) {
+    fn add_chp(&mut self,
+               chp_system: chp_system::BuildingChpSystem) {
         // building can have either chp or heatpump
         match &self.heating_system {
             // for now only one heatpump per building is allowed
@@ -308,23 +310,25 @@ impl Building {
                                 t_supply: f32,
                                 t_ref: Vec<f32>,
                                 t_out_n: f32,
-                                hist: usize) {
+                                hist: usize)
+    {
         self.add_heatpump(
-            heatpump_system::HeatpumpSystem::new(self.q_hln,
-                                                 seas_perf_fac,
-                                                 t_supply,
-                                                 t_ref,
-                                                 self.heat_lim_temperature,
-                                                 t_out_n,
-                                                 hist)
-                         );
+            heatpump_system::BuildingHeatpumpSystem
+                ::new(self.q_hln,
+                      seas_perf_fac,
+                      t_supply,
+                      t_ref,
+                      self.heat_lim_temperature,
+                      t_out_n,
+                      hist));
     }
 
-    fn add_dimensioned_chp(&mut self, hist: usize) {
-        self.add_chp(chp_system::ChpSystem::new(self.q_hln,
-                                                self.n_max_agents as f32,
-                                                hist)
-                     );
+    fn add_dimensioned_chp(&mut self, hist: usize)
+    {
+        self.add_chp(
+            chp_system::BuildingChpSystem::new(self.q_hln,
+                                               self.n_max_agents as f32,
+                                               hist));
     }
 
     fn replace_agent(&mut self, agent_pos: usize, agent: agent::Agent){

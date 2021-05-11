@@ -13,7 +13,7 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct HeatpumpSystem {
+pub struct BuildingHeatpumpSystem {
     #[pyo3(get)]
     heatpump: Heatpump,  // heatpump
     #[pyo3(get)]
@@ -125,7 +125,7 @@ fn q_from_coefficients(pow_t: &f32, t_out: &f32, t_supply: &f32) -> f32 {
 }
 
 #[pymethods]
-impl HeatpumpSystem {
+impl BuildingHeatpumpSystem {
     ///  Create heatpump system with thermal storage and boiler
     ///  The technical design is based on norm heating load.
     ///
@@ -303,7 +303,7 @@ impl HeatpumpSystem {
                cap/1000.,
                q_hln/1000.);
 
-        HeatpumpSystem {heatpump,
+        BuildingHeatpumpSystem {heatpump,
                         storage,
                         boiler,
                         boiler_state: false,
@@ -317,7 +317,7 @@ impl HeatpumpSystem {
 }
 
 
-impl HeatpumpSystem {
+impl BuildingHeatpumpSystem {
     // Control Parameter
     const STORAGE_LEVEL_HH: f32 = 0.95;
     const STORAGE_LEVEL_H: f32 = 0.2;
@@ -343,9 +343,9 @@ impl HeatpumpSystem {
 
         if self.boiler_state {self.boiler_state = false;}
 
-        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
+        if storage_state <= BuildingHeatpumpSystem::STORAGE_LEVEL_LL {
             self.hp_state = 1.;
-        } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_H {
+        } else if storage_state > BuildingHeatpumpSystem::STORAGE_LEVEL_H {
             self.hp_state = 0.;
         }
     }
@@ -411,9 +411,9 @@ impl HeatpumpSystem {
 
         if self.boiler_state {self.boiler_state = false;}
 
-        if storage_state <= HeatpumpSystem::STORAGE_LEVEL_LL {
+        if storage_state <= BuildingHeatpumpSystem::STORAGE_LEVEL_LL {
             self.hp_state = 0.2;
-        } else if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
+        } else if storage_state > BuildingHeatpumpSystem::STORAGE_LEVEL_L {
             self.hp_state = 0.0;
         }
     }
@@ -459,18 +459,18 @@ impl HeatpumpSystem {
     fn winter_mode(&mut self) {
         let storage_state = self.storage.get_relative_charge();
 
-        if storage_state <=HeatpumpSystem::STORAGE_LEVEL_LL {
+        if storage_state <=BuildingHeatpumpSystem::STORAGE_LEVEL_LL {
             self.boiler_state = true;
             self.hp_state = 1.;
         }
 
-        if storage_state > HeatpumpSystem::STORAGE_LEVEL_L {
+        if storage_state > BuildingHeatpumpSystem::STORAGE_LEVEL_L {
             self.boiler_state = false;
         } else {
             self.hp_state = 1.;
         }
 
-        if storage_state >= HeatpumpSystem::STORAGE_LEVEL_HH {
+        if storage_state >= BuildingHeatpumpSystem::STORAGE_LEVEL_HH {
             self.hp_state = 0.;
         }
     }

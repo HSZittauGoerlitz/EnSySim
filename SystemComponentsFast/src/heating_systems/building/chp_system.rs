@@ -14,7 +14,7 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct ChpSystem {
+pub struct BuildingChpSystem {
     #[pyo3(get)]
     chp: CHP,  // chp plant
     #[pyo3(get)]
@@ -39,7 +39,7 @@ pub struct ChpSystem {
 }
 
 #[pymethods]
-impl ChpSystem {
+impl BuildingChpSystem {
     /// Create CHP system with thermal storage and boiler
     /// The technical design is based on norm heating load.
     ///
@@ -107,7 +107,7 @@ impl ChpSystem {
                boiler nominal power: {:.2}kW",
                pow_t_chp/1000., cap/1000., cap_hw/1000., pow_t_boiler/1000.);
 
-        ChpSystem {chp,
+        BuildingChpSystem {chp,
                    storage,
                    storage_hw,
                    boiler,
@@ -123,7 +123,7 @@ impl ChpSystem {
 }
 
 /// CHP plant
-impl ChpSystem {
+impl BuildingChpSystem {
     // Control Parameter
     const STORAGE_LEVEL_HH: f32 = 0.95;
     const STORAGE_LEVEL_H: f32 = 0.3;
@@ -149,13 +149,13 @@ impl ChpSystem {
         let storage_state_hw = self.storage_hw.get_relative_charge();
 
         if self.boiler_state {self.boiler_state = false;}
-        if (storage_state <= ChpSystem::STORAGE_LEVEL_LL) |
-           (storage_state_hw <= ChpSystem::STORAGE_LEVEL_LL)
+        if (storage_state <= BuildingChpSystem::STORAGE_LEVEL_LL) |
+           (storage_state_hw <= BuildingChpSystem::STORAGE_LEVEL_LL)
         {
             self.chp_state = true;
         }
-        else if (storage_state >= ChpSystem::STORAGE_LEVEL_H) &
-                (storage_state_hw >= ChpSystem::STORAGE_LEVEL_HH)
+        else if (storage_state >= BuildingChpSystem::STORAGE_LEVEL_H) &
+                (storage_state_hw >= BuildingChpSystem::STORAGE_LEVEL_HH)
         {
             self.chp_state = false;
         }
@@ -235,10 +235,10 @@ impl ChpSystem {
         let storage_state_hw = self.storage_hw.get_relative_charge();
 
         if self.boiler_state {self.boiler_state = false;}
-        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_LL {
+        if storage_state_hw <= BuildingChpSystem::STORAGE_LEVEL_LL {
             self.chp_state = true;
         }
-        else if storage_state_hw >= ChpSystem::STORAGE_LEVEL_HH {
+        else if storage_state_hw >= BuildingChpSystem::STORAGE_LEVEL_HH {
             self.chp_state = false;
         }
     }
@@ -285,28 +285,28 @@ impl ChpSystem {
         let storage_state = self.storage.get_relative_charge();
         let storage_state_hw = self.storage_hw.get_relative_charge();
 
-        if storage_state <= ChpSystem::STORAGE_LEVEL_LL {
+        if storage_state <= BuildingChpSystem::STORAGE_LEVEL_LL {
             self.boiler_state = true;
             self.chp_state = true;
         }
-        else if (storage_state <= ChpSystem::STORAGE_LEVEL_L) &
+        else if (storage_state <= BuildingChpSystem::STORAGE_LEVEL_L) &
                 !self.chp_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if (storage_state >= ChpSystem::STORAGE_LEVEL_H) &
+        else if (storage_state >= BuildingChpSystem::STORAGE_LEVEL_H) &
                 self.boiler_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if storage_state >= ChpSystem::STORAGE_LEVEL_HH {
-            if storage_state_hw >= ChpSystem::STORAGE_LEVEL_HH {
+        else if storage_state >= BuildingChpSystem::STORAGE_LEVEL_HH {
+            if storage_state_hw >= BuildingChpSystem::STORAGE_LEVEL_HH {
                 self.chp_state = false;
             }
             self.boiler_state = false;
         }
 
-        if storage_state_hw <= ChpSystem::STORAGE_LEVEL_LL {
+        if storage_state_hw <= BuildingChpSystem::STORAGE_LEVEL_LL {
             self.chp_state = true;
         }
     }
