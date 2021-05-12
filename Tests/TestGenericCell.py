@@ -52,7 +52,7 @@ cell = generateGenericCell(nBuildings, pAgents,
 
 # %%
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
-         Solar.to_dict('lists'))
+         Solar.to_dict('list'))
 
 # %%
 plots.cellPowerBalance(cell, time)
