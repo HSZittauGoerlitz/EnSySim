@@ -51,6 +51,13 @@ impl BuildingChpSystem {
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(q_hln: f32, n: f32, hist: usize) -> Self {
+        if q_hln < 0. {
+            panic!("Norm heating load of building must be a positive number")
+        }
+        if n < 0. {
+            panic!("Characteristic number for buildings hot water demand \
+                    must be positive")
+        }
 
         let mut rng = rand::thread_rng();
         let f_chp: f32 = rng.gen_range(0.3..=0.6);
