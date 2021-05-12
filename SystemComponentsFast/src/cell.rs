@@ -4,8 +4,37 @@ use log::error;
 
 use crate::{building, pv, sep_bsl_agent,
             hist_memory, save_e, save_t};
+use crate::heating_systems::cell::{chp_system, theresa_system};
 
 use crate::ambient::AmbientParameters;
+
+
+#[derive(Clone)]
+enum ThermalSystem {
+    ChpSystem(chp_system::CellChpSystem),
+    TheresaSystem(theresa_system::TheresaSystem),
+}
+
+impl ThermalSystem {
+    /// Calculate thermal system and get generated thermal power and
+    /// generated (positive) or consumed (negative) electrical power
+    ///
+    /// # Arguments
+    /// * thermal_demand (&f32): Thermal power requested by dhn [W]
+    ///
+    /// # Returns
+    /// * (f32, f32): Resulting electrical and thermal power [W]
+    fn step(&mut self, thermal_demand: &f32) -> (f32, f32)
+    {
+        match self {
+            ThermalSystem::ChpSystem(system) => system.step(thermal_demand),
+            ThermalSystem::TheresaSystem(system) =>
+                system.step(thermal_demand),
+            //_ => (0., 0.)
+        }
+    }
+}
+
 
 #[pyclass]
 #[derive(Clone)]
@@ -28,6 +57,7 @@ pub struct Cell {
     pub t_out_n: f32,
     #[pyo3(get)]
     pv: Option<pv::PV>,
+    thermal_system: Option<ThermalSystem>,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -77,6 +107,7 @@ impl Cell {
               eg: eg,
               t_out_n: t_out_n,
               pv: None,
+              thermal_system: None,
               gen_e: gen_e,
               gen_t: gen_t,
               load_e: load_e,
@@ -89,14 +120,20 @@ impl Cell {
         self.n_buildings += 1;
     }
 
-    fn update_building(&mut self, building_idx: usize,
-                       building: building::Building) {
-        self.buildings[building_idx] = building;
-    }
-
     fn add_cell(&mut self, cell:Cell) {
         self.sub_cells.push(cell);
         self.n_cells += 1;
+    }
+
+    fn add_chp(&mut self,
+               chp_system: chp_system::CellChpSystem)
+    {
+        // only one thermal system per cell
+        match &self.thermal_system {
+            None => self.thermal_system =
+                        Some(ThermalSystem::ChpSystem(chp_system)),
+            Some(_) => error!("Cell already has thermal system")
+        }
     }
 
     fn add_pv(&mut self, pv: pv::PV) {
@@ -111,6 +148,17 @@ impl Cell {
                          sep_bsl_agent: sep_bsl_agent::SepBSLagent) {
         self.sep_bsl_agents.push(sep_bsl_agent);
         self.n_sep_bsl_agents += 1;
+    }
+
+    fn add_theresa(&mut self,
+                   theresa_system: theresa_system::TheresaSystem)
+    {
+        // only one thermal system per cell
+        match &self.thermal_system {
+            None => self.thermal_system =
+                        Some(ThermalSystem::TheresaSystem(theresa_system)),
+            Some(_) => error!("Cell already has thermal system")
+        }
     }
 
     /// # Returns
@@ -135,7 +183,6 @@ impl Cell {
         Ok(coc*1e6)  // coc is mean yearly demand per 1000 kWh -> * 1e3 * 1e3
     }
 
-
     fn replace_building(&mut self, building_pos: usize,
                         building: building::Building)
     {
@@ -147,9 +194,14 @@ impl Cell {
             self.buildings[building_pos] = building;
         }
     }
+
+    fn update_building(&mut self, building_idx: usize,
+                       building: building::Building)
+    {
+        self.buildings[building_idx] = building;
+    }
 }
 
-/// PV plant
 impl Cell {
     fn get_pv_generation(&mut self, eg: &f32) -> f32 {
         match &mut self.pv {
@@ -199,6 +251,10 @@ impl Cell {
 
 
     /// Calculate and return current power consumption and generation
+    /// This is the amount of power which can't be supplied by the cell itself.
+    /// Hence this power is communicated, to be supplied by other cells.
+    ///
+    /// The total cell power balance can be found in the cell history.
     ///
     /// # Arguments
     /// * slp_data (&[f32; 3]): Standard load Profile of all agent types
@@ -252,12 +308,22 @@ impl Cell {
         });
 
 
-        // calculate generation
-        // TODO: CHP
+        // calculate generation systems
         electrical_generation += self.get_pv_generation(&amb.irradiation_glob);
-
-        // TODO: Storage, Controller
-
+        match &mut self.thermal_system {
+            None => (),
+            Some(system) =>
+                {
+                    let (ts_e, ts_t_gen) = system.step(&thermal_load);
+                    thermal_generation += ts_t_gen;
+                    // check if thermal system generated or consumed electrical energy
+                    if ts_e > 0. {
+                        electrical_generation += ts_e;
+                    } else {
+                        electrical_load -= ts_e;  // ts_e is negative -> - is +
+                    }
+                }
+        }
         // save data
         save_e!(self, electrical_generation, electrical_load);
         save_t!(self, thermal_generation, thermal_load);
