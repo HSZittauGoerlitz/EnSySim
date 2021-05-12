@@ -25,6 +25,8 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<building::Building>()?;
     m.add_class::<cell::Cell>()?;
     m.add_class::<sep_bsl_agent::SepBSLagent>()?;
+    m.add_class::<components::boiler::Boiler>()?;
+    m.add_class::<components::chp::CHP>()?;
     m.add_class::<components::pv::PV>()?;
     m.add_class::<thermal_systems::building
                   ::heatpump_system::BuildingHeatpumpSystem>()?;

@@ -5,7 +5,7 @@
 from BoundaryConditions.Simulation.SimulationData import getSimData
 from GenericModel.Design import generateGenericCell
 from GenericModel.PARAMETER import PBTYPES_NOW as pBTypes
-from SystemComponentsFast import simulate
+from SystemComponentsFast import simulate, CellChpSystemThermal
 from PostProcesing import plots
 import logging
 
@@ -49,6 +49,11 @@ cell = generateGenericCell(nBuildings, pAgents,
                            pDHN, pPVplants, pHeatpumps, pCHP, pBTypes,
                            nSepBSLagents, pAgricultureBSLsep,
                            region, nSteps)
+
+demand = cell.get_thermal_demand(True)
+chpSystem = CellChpSystemThermal(demand, 0.75, 2*demand, 0.,
+                                 0.98, 0.98, nSteps)
+cell.add_chp_thermal(chpSystem)
 
 # %%
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
