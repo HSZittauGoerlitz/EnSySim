@@ -190,8 +190,9 @@ def addCHPtoCellBuildings(cell, pCHP, hist=0):
     # get electricity consumption of cell
     buildings_q_hln = []
     electricalDemand = cell.get_electrical_demand()
-    for building in cell.buildings:
-        buildings_q_hln.append(building.q_hln)
+    for idx, building in enumerate(cell.buildings):
+        if not building.has_heating_system():
+            buildings_q_hln.append((idx, building.q_hln))
 
     # installed power gets scaled by hours/year
     instPower_el = electricalDemand * pCHP / full
@@ -215,8 +216,11 @@ def addCHPtoCellBuildings(cell, pCHP, hist=0):
     # find first building with matching heat need
     instPower_th = 0
     for power in powers_th:
-        idx, q_hln = min(enumerate(buildings_q_hln),
-                         key=lambda x: abs(x[1]*relPow-power))
+        L_idx, B_idx_q_hln = min(enumerate(buildings_q_hln),
+                                 key=lambda Lidx_Bidx_qhln:
+                                 abs(Lidx_Bidx_qhln[1][1]*relPow-power))
+        idx = B_idx_q_hln[0]
+        q_hln = B_idx_q_hln[1]
 
         # add chp to building if difference is below threshold
         if upLim < power/q_hln < lowLim:
@@ -234,7 +238,7 @@ def addCHPtoCellBuildings(cell, pCHP, hist=0):
                                                             q_hln,
                                                             power/q_hln))
             # prevent doubling
-            buildings_q_hln[idx] = 0
+            del buildings_q_hln[L_idx]
         else:
             lg.warning("for chp with thermal power {:.2f}W closest "
                        "building had {:.2f}W maximum heat load."
@@ -245,10 +249,10 @@ def addCHPtoCellBuildings(cell, pCHP, hist=0):
              .format(instPower_th/1000))
     lg.debug("corresponds to {:.2f}kW electrical generation"
              .format(instPower_th/1000/2))
-    lg.debug("electrical demand is {:.2f}kWh"
-             .format(COC*1000))
+    lg.debug("electrical demand is {:.2f}MWh"
+             .format(electricalDemand*1e-6))
     lg.debug("5000h full load generate {:.2f}% of electrical supply"
-             .format(instPower_th/2*5000/(COC*1000000)))
+             .format(instPower_th/2*5000/(electricalDemand)))
 
 
 def addSepBSLAgents(cell, nAgents, pAgriculture, pPV, hist=0):
