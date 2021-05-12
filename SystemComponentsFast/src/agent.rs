@@ -163,4 +163,8 @@ impl Agent {
     pub fn demand_apv(&self) -> &f32 {
         &self.demand_apv
     }
+
+    pub fn hw_demand(&self) -> &f32 {
+        &self.hw_demand
+    }
 }
