@@ -20,7 +20,6 @@ mod heating_systems;
 mod heatpump;
 mod pv;
 mod sep_bsl_agent;
-mod theresa_system;
 // Misc
 mod helper;
 mod hist_memory;
@@ -41,7 +40,8 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<heating_systems::building
                   ::chp_system::BuildingChpSystem>()?;
     m.add_class::<generic_storage::GenericStorage>()?;
-    m.add_class::<theresa_system::TheresaSystem>()?;
+    m.add_class::<heating_systems::cell::chp_system::CellChpSystem>()?;
+    m.add_class::<heating_systems::cell::theresa_system::TheresaSystem>()?;
     m.add_function(wrap_pyfunction!(simulate, m)?).unwrap();
     m.add_function(wrap_pyfunction!(test_generic_storage, m)?).unwrap();
     Ok(())

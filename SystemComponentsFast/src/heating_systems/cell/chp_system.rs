@@ -9,7 +9,7 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct TheresaSystem {
+pub struct CellChpSystem {
     #[pyo3(get)]
     chp: CHP,  // chp plant
     #[pyo3(get)]
@@ -28,24 +28,35 @@ pub struct TheresaSystem {
 }
 
 #[pymethods]
-impl TheresaSystem {
+impl CellChpSystem {
+    /// Create thermal supply system for a cell,
+    /// based on chp, boiler and thermal storage.
+    ///
+    /// # Arguments
+    /// * p_th (f32): Thermal power of complete system [W]
+    /// * chp_prop (f32): Proportion of chp on p_th
+    /// * storage_cap (f32): Capacity of storage [Wh]
+    /// * storage_self_loss (f32): Self loss storage [1/h]
+    /// * storage_charge_eff (f32): Storage charging efficiency [-]
+    /// * storage_discharge_eff (f32): Storage discharging efficiency [-]
+    /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(hist: usize) -> Self {
+    pub fn new(p_th: f32, chp_prop: f32,
+               storage_cap: f32, storage_self_loss: f32,
+               storage_charge_eff: f32, storage_discharge_eff: f32,
+               hist: usize) -> Self
+    {
+        let chp = CHP::new(chp_prop*p_th, hist);
 
-        let p_max = 200e3;  // Max. available thermal power [W]
-        let chp_proportion = 0.6;  // proportion of chp at p_max
-
-        let chp = CHP::new(chp_proportion*p_max, hist);
-
-        let storage = GenericStorage::new(73.6e3,
-                                          0.98,
-                                          0.98,
-                                          0.,
-                                          p_max,
-                                          hist,);
+        let storage = GenericStorage::new(storage_cap,
+                                          storage_charge_eff,
+                                          storage_discharge_eff,
+                                          storage_self_loss,
+                                          p_th,
+                                          hist);
 
         // boiler
-        let boiler = Boiler::new((1. - chp_proportion)*p_max, hist);
+        let boiler = Boiler::new((1. - chp_prop)*p_th, hist);
 
         let gen_e;
         let gen_t;
@@ -59,7 +70,7 @@ impl TheresaSystem {
             gen_t = None;
         }
 
-        TheresaSystem {chp,
+        CellChpSystem {chp,
                        storage,
                        boiler,
                        boiler_state: false,
@@ -70,7 +81,7 @@ impl TheresaSystem {
     }
 }
 
-impl TheresaSystem {
+impl CellChpSystem {
     // Control Parameter
     const STORAGE_LEVEL_HH: f32 = 0.95;
     const STORAGE_LEVEL_H: f32 = 0.3;
@@ -80,21 +91,21 @@ impl TheresaSystem {
     fn control(&mut self){
         let storage_state = self.storage.get_relative_charge();
 
-        if storage_state <= TheresaSystem::STORAGE_LEVEL_LL {
+        if storage_state <= CellChpSystem::STORAGE_LEVEL_LL {
             self.boiler_state = true;
             self.chp_state = true;
         }
-        else if (storage_state <= TheresaSystem::STORAGE_LEVEL_L) &
+        else if (storage_state <= CellChpSystem::STORAGE_LEVEL_L) &
                 !self.chp_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if (storage_state >= TheresaSystem::STORAGE_LEVEL_H) &
+        else if (storage_state >= CellChpSystem::STORAGE_LEVEL_H) &
                 self.boiler_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if storage_state >= TheresaSystem::STORAGE_LEVEL_HH {
+        else if storage_state >= CellChpSystem::STORAGE_LEVEL_HH {
             self.chp_state = false;
             self.boiler_state = false;
         }
