@@ -34,12 +34,14 @@ impl HeatingSystem {
             t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32)
     {
         match self {
-            HeatingSystem::ChpSystem(system) => system.step(heating_demand,
-                                                            hot_water_demand,
-                                                            t_heat_lim, t_out_mean),
-            HeatingSystem::HeatpumpSystem(system) => system.step(heating_demand,
-                                                                 hot_water_demand, t_out,
-                                                                 t_heat_lim, t_out_mean),
+            HeatingSystem::ChpSystem(system) =>
+                system.step(heating_demand,
+                            hot_water_demand,
+                            t_heat_lim, t_out_mean),
+            HeatingSystem::HeatpumpSystem(system) =>
+                system.step(heating_demand,
+                            hot_water_demand, t_out,
+                            t_heat_lim, t_out_mean),
             //_ => (0., 0.)
         }
     }
