@@ -33,6 +33,10 @@ impl GenericStorage {
     ///
     /// # Arguments
     /// * cap (f32): installed capacity [Wh]
+    /// * charging_efficiency (f32): Efficiency of charging storage [-]
+    /// * discharging_efficiency (f32): Efficiency of discharging storage [-]
+    /// * self_discharge:(f32): Self discharge of storage [1/h]
+    /// * pow_max (f32): Max. power flow in or out of storage [W]
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
     pub fn new(cap: f32,
