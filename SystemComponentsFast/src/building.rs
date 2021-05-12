@@ -271,8 +271,7 @@ impl Building {
                      self.is_self_supplied_t = false;
                      self.heat_building = Building::get_hs_generation;
             },
-            Some(_building_chp) => error!("Building already has a \
-                                           heating system"),
+            Some(_) => error!("Building already has a heating system"),
         }
     }
 
