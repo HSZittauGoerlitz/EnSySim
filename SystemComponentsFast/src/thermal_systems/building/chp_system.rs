@@ -3,14 +3,14 @@ use pyo3::prelude::*;
 use rand::Rng;
 use log::{info};
 
-use crate::helper::{find_heating_system_storage,
-                    find_heat_storage_loss_parameter,
-                    find_hot_water_system_storage};
+use crate::misc::helper::{find_heating_system_storage,
+                          find_heat_storage_loss_parameter,
+                          find_hot_water_system_storage};
 
-use crate::boiler::Boiler;
-use crate::chp::CHP;
-use crate::generic_storage::GenericStorage;
-use crate::hist_memory;
+use crate::components::boiler::Boiler;
+use crate::components::chp::CHP;
+use crate::components::generic_storage::GenericStorage;
+use crate::misc::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]

@@ -4,7 +4,9 @@ use log::{error};
 use rand::Rng;
 use rand_distr::{Distribution, FisherF, Gamma};
 
-use crate::{pv, hist_memory, save_e};
+use crate::save_e;
+use crate::components::pv;
+use crate::misc::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]

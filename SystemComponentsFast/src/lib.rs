@@ -4,25 +4,16 @@ use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use numpy::PyReadonlyArrayDyn;
 // local
-// Environment
-mod ambient;
 // Entities
 #[macro_use]
 mod agent;
 mod building;
 mod cell;
-// Components
-mod boiler;
-mod chp;
-mod controller;
-mod generic_storage;
-mod heating_systems;
-mod heatpump;
-mod pv;
 mod sep_bsl_agent;
-// Misc
-mod helper;
-mod hist_memory;
+// Additional
+mod components;
+mod misc;
+mod thermal_systems;
 
 
 #[pymodule]
@@ -34,15 +25,15 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<building::Building>()?;
     m.add_class::<cell::Cell>()?;
     m.add_class::<sep_bsl_agent::SepBSLagent>()?;
-    m.add_class::<pv::PV>()?;
-    m.add_class::<heating_systems::building
+    m.add_class::<components::pv::PV>()?;
+    m.add_class::<thermal_systems::building
                   ::heatpump_system::BuildingHeatpumpSystem>()?;
-    m.add_class::<heating_systems::building
+    m.add_class::<thermal_systems::building
                   ::chp_system::BuildingChpSystem>()?;
-    m.add_class::<generic_storage::GenericStorage>()?;
-    m.add_class::<heating_systems::cell
+    m.add_class::<components::generic_storage::GenericStorage>()?;
+    m.add_class::<thermal_systems::cell
                   ::chp_system_thermal::CellChpSystemThermal>()?;
-    m.add_class::<heating_systems::cell::theresa_system::TheresaSystem>()?;
+    m.add_class::<thermal_systems::cell::theresa_system::TheresaSystem>()?;
     m.add_function(wrap_pyfunction!(simulate, m)?).unwrap();
     m.add_function(wrap_pyfunction!(test_generic_storage, m)?).unwrap();
     Ok(())
@@ -75,7 +66,7 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
     let slp_bslc = slp_data.get("BSLc").unwrap();
     let hot_water_data = hot_water_data.as_array();
     // Get Environment data and create object
-    let mut amb = ambient::AmbientParameters::new(0., 0., 0., 0., 0.);
+    let mut amb = misc::ambient::AmbientParameters::new(0., 0., 0., 0., 0.);
     let t = env_data.get("T [degC]").unwrap();
     let e_global = env_data.get("Eg [W/m^2]").unwrap();
     let e_diffuse = env_data.get("E diffuse [W/m^2]").unwrap();
@@ -119,8 +110,9 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
 ///     requested and handled power
 ///   - Losses due charging/discharging as well as self discharge [W]
 #[pyfunction]
-pub fn test_generic_storage(storage: &mut generic_storage::GenericStorage,
-                            pow: f32) -> (f32, f32)
+pub fn test_generic_storage(
+    storage: &mut components::generic_storage::GenericStorage,
+    pow: f32) -> (f32, f32)
 {
     storage.step(&pow)
 }

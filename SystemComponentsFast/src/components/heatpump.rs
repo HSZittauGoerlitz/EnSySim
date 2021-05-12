@@ -1,7 +1,7 @@
 // external
 use pyo3::prelude::*;
 
-use crate::hist_memory;
+use crate::misc::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]

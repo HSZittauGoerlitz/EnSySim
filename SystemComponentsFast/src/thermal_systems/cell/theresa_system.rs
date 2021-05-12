@@ -1,10 +1,10 @@
 // external
 use pyo3::prelude::*;
 
-use crate::boiler::Boiler;
-use crate::chp::CHP;
-use crate::generic_storage::GenericStorage;
-use crate::hist_memory;
+use crate::components::boiler::Boiler;
+use crate::components::chp::CHP;
+use crate::components::generic_storage::GenericStorage;
+use crate::misc::hist_memory;
 
 
 #[pyclass]

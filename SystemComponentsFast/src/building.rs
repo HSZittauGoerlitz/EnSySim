@@ -2,10 +2,13 @@
 use pyo3::prelude::*;
 use log::error;
 
-use crate::{agent, controller, pv, hist_memory, save_e, save_t};
-use crate::heating_systems::building::{heatpump_system, chp_system};
+use crate::{agent, save_e, save_t};
+use crate::components::{controller, pv};
+use crate::misc::hist_memory;
 
-use crate::ambient::AmbientParameters;
+use crate::thermal_systems::building::{heatpump_system, chp_system};
+
+use crate::misc::ambient::AmbientParameters;
 
 
 #[derive(Clone)]

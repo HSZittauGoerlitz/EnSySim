@@ -2,14 +2,14 @@
 use pyo3::prelude::*;
 use log::{info};
 
-use crate::helper::{find_heating_system_storage,
-                    find_heat_storage_loss_parameter,
-                    find_minimum};
+use crate::misc::helper::{find_heating_system_storage,
+                          find_heat_storage_loss_parameter,
+                          find_minimum};
 
-use crate::boiler::Boiler;
-use crate::heatpump::Heatpump;
-use crate::generic_storage::GenericStorage;
-use crate::hist_memory;
+use crate::components::boiler::Boiler;
+use crate::components::heatpump::Heatpump;
+use crate::components::generic_storage::GenericStorage;
+use crate::misc::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
