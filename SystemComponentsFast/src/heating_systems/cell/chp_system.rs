@@ -46,6 +46,11 @@ impl CellChpSystem {
                storage_charge_eff: f32, storage_discharge_eff: f32,
                hist: usize) -> Self
     {
+        if p_th <= 0. {
+            panic!("Thermal power of complete CHP system must be \
+                    greater than 0")
+        }
+
         let chp = CHP::new(chp_prop*p_th, hist);
 
         let storage = GenericStorage::new(storage_cap,
