@@ -1,2 +1,2 @@
-pub mod chp_system;
+pub mod chp_system_thermal;
 pub mod theresa_system;

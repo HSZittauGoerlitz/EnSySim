@@ -4,14 +4,14 @@ use log::error;
 
 use crate::{building, pv, sep_bsl_agent,
             hist_memory, save_e, save_t};
-use crate::heating_systems::cell::{chp_system, theresa_system};
+use crate::heating_systems::cell::{chp_system_thermal, theresa_system};
 
 use crate::ambient::AmbientParameters;
 
 
 #[derive(Clone)]
 enum ThermalSystem {
-    ChpSystem(chp_system::CellChpSystem),
+    ChpSystem(chp_system_thermal::CellChpSystemThermal),
     TheresaSystem(theresa_system::TheresaSystem),
 }
 
@@ -125,8 +125,8 @@ impl Cell {
         self.n_cells += 1;
     }
 
-    fn add_chp(&mut self,
-               chp_system: chp_system::CellChpSystem)
+    fn add_chp_thermal(&mut self,
+                       chp_system: chp_system_thermal::CellChpSystemThermal)
     {
         // only one thermal system per cell
         match &self.thermal_system {
@@ -182,6 +182,42 @@ impl Cell {
 
         Ok(coc*1e6)  // coc is mean yearly demand per 1000 kWh -> * 1e3 * 1e3
     }
+
+    /// Calculate a max. expectable thermal demand in current cell.
+    /// If this cell is supplying sub-cells, it's recommended to consider
+    /// also their demand for the dimensioning of the thermal system. Hence,
+    /// this function can include all sub-cells, by setting the
+    /// appropriate flag. In more specific cases, the thermal demand must be
+    /// determined directly by the python model.
+    ///
+    /// # Arguments
+    /// * include_sub_cells (bool): If true, the thermal demand from sub-cells
+    ///                             is added to the current cell demand
+    ///
+    /// # Returns
+    /// f32: Max. expectable thermal demand of cell [W]
+    fn get_thermal_demand(&self, include_sub_cells: bool) -> PyResult<f32>
+    {
+        let mut demand_t = 0.;
+
+        if include_sub_cells {
+            for sub_cell in self.sub_cells.iter() {
+                demand_t += sub_cell.get_thermal_demand(include_sub_cells)
+                                .unwrap();
+            }
+        }
+        for building in self.buildings.iter() {
+            demand_t += building.q_hln();
+            for agent in building.agents.iter() {
+                demand_t += agent.hw_demand();
+            }
+        }
+
+        // BSL Agents cannot be connected to dhn
+
+        Ok(demand_t)
+    }
+
 
     fn replace_building(&mut self, building_pos: usize,
                         building: building::Building)
@@ -248,8 +284,6 @@ impl Cell {
         amb.specific_gains = irradiations;
     }
 
-
-
     /// Calculate and return current power consumption and generation
     /// This is the amount of power which can't be supplied by the cell itself.
     /// Hence this power is communicated, to be supplied by other cells.
@@ -307,16 +341,18 @@ impl Cell {
                 electrical_load += sub_load_e;
         });
 
-
         // calculate generation systems
         electrical_generation += self.get_pv_generation(&amb.irradiation_glob);
         match &mut self.thermal_system {
             None => (),
             Some(system) =>
                 {
-                    let (ts_e, ts_t_gen) = system.step(&thermal_load);
+                    let (ts_e, ts_t_gen) =
+                        system.step(&((thermal_load -
+                                       thermal_generation).max(0.)));
                     thermal_generation += ts_t_gen;
-                    // check if thermal system generated or consumed electrical energy
+                    // check if thermal system generated or
+                    // consumed electrical energy
                     if ts_e > 0. {
                         electrical_generation += ts_e;
                     } else {

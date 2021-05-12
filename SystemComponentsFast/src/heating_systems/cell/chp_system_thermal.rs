@@ -9,7 +9,7 @@ use crate::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct CellChpSystem {
+pub struct CellChpSystemThermal {
     #[pyo3(get)]
     chp: CHP,  // chp plant
     #[pyo3(get)]
@@ -28,7 +28,7 @@ pub struct CellChpSystem {
 }
 
 #[pymethods]
-impl CellChpSystem {
+impl CellChpSystemThermal {
     /// Create thermal supply system for a cell,
     /// based on chp, boiler and thermal storage.
     ///
@@ -75,7 +75,7 @@ impl CellChpSystem {
             gen_t = None;
         }
 
-        CellChpSystem {chp,
+        CellChpSystemThermal {chp,
                        storage,
                        boiler,
                        boiler_state: false,
@@ -86,7 +86,7 @@ impl CellChpSystem {
     }
 }
 
-impl CellChpSystem {
+impl CellChpSystemThermal {
     // Control Parameter
     const STORAGE_LEVEL_HH: f32 = 0.95;
     const STORAGE_LEVEL_H: f32 = 0.3;
@@ -96,21 +96,21 @@ impl CellChpSystem {
     fn control(&mut self){
         let storage_state = self.storage.get_relative_charge();
 
-        if storage_state <= CellChpSystem::STORAGE_LEVEL_LL {
+        if storage_state <= CellChpSystemThermal::STORAGE_LEVEL_LL {
             self.boiler_state = true;
             self.chp_state = true;
         }
-        else if (storage_state <= CellChpSystem::STORAGE_LEVEL_L) &
+        else if (storage_state <= CellChpSystemThermal::STORAGE_LEVEL_L) &
                 !self.chp_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if (storage_state >= CellChpSystem::STORAGE_LEVEL_H) &
+        else if (storage_state >= CellChpSystemThermal::STORAGE_LEVEL_H) &
                 self.boiler_state {
             self.boiler_state = false;
             self.chp_state = true;
         }
-        else if storage_state >= CellChpSystem::STORAGE_LEVEL_HH {
+        else if storage_state >= CellChpSystemThermal::STORAGE_LEVEL_HH {
             self.chp_state = false;
             self.boiler_state = false;
         }
