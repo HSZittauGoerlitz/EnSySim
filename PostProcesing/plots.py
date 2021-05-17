@@ -131,13 +131,17 @@ def buildingTemperature(building, time, T, retFig=False):
         fig.show()
 
 
-def cellPowerBalance(cell, time):
+def cellPowerBalance(cell, time, retFig=False):
     """ Plot the electrical and thermal power balance of a cell
         for a simulation with known simulation time.
 
     Args:
         cell (Cell): Cell for which the data is plotted
         time (pd series of datetime): Time
+
+    Keyword Arguments:
+        retFig {bool} -- When True figure is not showed, but returned
+                         (default: {False})
     """
     # get data
     gen_e = np.array(cell.gen_e.get_memory()) * 1e-6
@@ -200,8 +204,11 @@ def cellPowerBalance(cell, time):
     fig.update_xaxes(title_text="Time", row=2, col=1)
     fig.update_yaxes(title_text="Electrical Power [MW]", row=1, col=1)
     fig.update_yaxes(title_text="Thermal Power [MW]", row=2, col=1)
-    # show figure
-    fig.show()
+
+    if retFig:
+        return fig
+    else:  # show figure
+        fig.show()
 
 
 def cellEnergyBalance(cell, time):
