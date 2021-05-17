@@ -8,6 +8,7 @@ import pandas as pd
 import logging as lg
 from SystemComponentsFast import Agent, Building, Cell, SepBSLagent
 
+
 lg.basicConfig(level=lg.DEBUG)
 
 
@@ -45,7 +46,7 @@ def _addAgents(building, pAgent, pPHH, pAgriculture):
     return building
 
 
-def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, g, n,
+def _addBuildings(cell, nBuilding, pBuilding, pDHN, t_ref, Geo, U, g, n,
                   pAgent, pPHH, pAgriculture, pPV, pHP, hist=0):
     """ Add Buildings of one type to cell
 
@@ -57,9 +58,8 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, g, n,
                           ventilation method
         pDHN (float32): Proportion of buildings connected
                         to the district heating network
-        region (string): Region location of cell (determines climate / weather)
-                         Supported regions:
-                            East, West, South, North
+        t_ref ([float]): Reference temperature curve for ragion of buildings
+                         as list [degC]
         Geo (pd DataFrame): Geometry data of building type
         U (pd DataFrame): U-Values of building type
         g (pd DataFrame): Solar factors for building type
@@ -131,10 +131,8 @@ def _addBuildings(cell, nBuilding, pBuilding, pDHN, region, Geo, U, g, n,
         # add PV to buildings
         if np.random.random() <= pPV:
             building.add_dimensioned_pv(cell.eg, hist)
-        # add heatpump to building
-        t_ref = pd.read_hdf('BoundaryConditions/Weather/{}.h5'.format(region),
-                            key='Weather').reference['T [degC]'].tolist()
 
+        # add heatpump to building
         if pHP[classNames[classIdx]] > np.random.random():
             # supply temperatures for different classes of buildings
             classTemperatures = {"class_1": {'original': 75, 'modernised': 65},
@@ -472,6 +470,10 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
                 climate.loc['ToutNorm [degC]', 'Value'],
                 hist)
 
+    # get reference temperatrue once
+    t_ref = pd.read_hdf('BoundaryConditions/Weather/{}.h5'.format(region),
+                        key='Weather').reference['T [degC]'].tolist()
+
     # init buildings and agents
     for key in pBTypes.keys():
         bType = pBTypes[key]['type']
@@ -480,7 +482,7 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
         _checkParameter(U, pBTypes[key])
 
         _addBuildings(cell, nBuildings[bType], pBTypes[bType], pDHN[bType],
-                      region, Geo, U, g, n,
+                      t_ref, Geo, U, g, n,
                       pAgents[bType], pPHHagents[bType], pAgriculture[bType],
                       pPVplants, pHeatpumps, hist)
 
