@@ -30,14 +30,21 @@ pub struct TheresaSystem {
 #[pymethods]
 impl TheresaSystem {
     #[new]
-    pub fn new(hist: usize) -> Self {
+    /// # Arguments
+    /// * p_scale(f32): Scaling factor for max. thermal power
+    /// * s_scale(f32): Scaling factor for thermal storage capacity
+    /// * hist (usize): Size of history memory (0 for no memory)
+    pub fn new(p_scale: f32, s_scale: f32, hist: usize) -> Self {
+        if (p_scale <= 0.) | (s_scale <= 0.) {
+            panic!("Scaling factors must be greater than 0")
+        }
 
-        let p_max = 200e3;  // Max. available thermal power [W]
+        let p_max = 200e3 * p_scale;  // Max. available thermal power [W]
         let chp_proportion = 0.6;  // proportion of chp at p_max
 
         let chp = CHP::new(chp_proportion*p_max, hist);
 
-        let storage = GenericStorage::new(73.6e3,
+        let storage = GenericStorage::new(73.6e3 * s_scale,
                                           0.98,
                                           0.98,
                                           0.,
@@ -46,7 +53,6 @@ impl TheresaSystem {
 
         // boiler
         let boiler = Boiler::new((1. - chp_proportion)*p_max, 0);
-
 
         let gen_e;
         let gen_t;
