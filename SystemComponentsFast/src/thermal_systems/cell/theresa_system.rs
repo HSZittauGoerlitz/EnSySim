@@ -52,7 +52,8 @@ impl TheresaSystem {
                                           hist,);
 
         // boiler
-        let boiler = Boiler::new((1. - chp_proportion)*p_max, 0);
+        let mut boiler = Boiler::new((1. - chp_proportion)*p_max, 0);
+        boiler.set_efficiency(0.99);
 
         let gen_e;
         let gen_t;
@@ -119,8 +120,12 @@ impl TheresaSystem {
     {
         self.control();
 
-        let (pow_e, chp_t) = self.chp.step(&self.chp_state);
+        let (chp_gen_e, chp_t) = self.chp.step(&self.chp_state);
         let boiler_t = self.boiler.step(&self.boiler_state);
+
+        let boiler_demand_e = self.boiler.get_fuel(&boiler_t);
+
+        let pow_e = chp_gen_e - boiler_demand_e;
 
         let pow_t = chp_t + boiler_t;
 

@@ -73,7 +73,7 @@ impl Boiler {
     ///
     /// # Returns
     /// f32: Power of fuel needed to provide given thermal power [W]
-    fn get_fuel(&self, pow_t: &f32) -> f32 {
+    pub fn get_fuel(&self, pow_t: &f32) -> f32 {
         pow_t / self.efficiency
     }
 
