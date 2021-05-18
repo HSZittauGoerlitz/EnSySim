@@ -9,7 +9,7 @@ import logging as lg
 from SystemComponentsFast import Agent, Building, Cell, SepBSLagent
 
 
-lg.basicConfig(level=lg.DEBUG)
+lg.basicConfig(level=lg.WARNING)
 
 
 def _addAgents(building, pAgent, pPHH, pAgriculture):

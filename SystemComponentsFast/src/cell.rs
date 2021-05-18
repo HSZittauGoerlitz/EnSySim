@@ -219,6 +219,15 @@ impl Cell {
         Ok(demand_t)
     }
 
+    fn get_theresa_system(&self) -> Option<theresa_system::TheresaSystem>
+    {
+        match &self.thermal_system {
+            Some(ThermalSystem::TheresaSystem(system)) => {
+                Some(system.clone())
+            },
+            _ => None,
+        }
+    }
 
     fn replace_building(&mut self, building_pos: usize,
                         building: building::Building)
