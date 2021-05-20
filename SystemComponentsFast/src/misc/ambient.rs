@@ -20,12 +20,12 @@ impl AmbientParameters {
         let specific_gains = [0., 0., 0., 0.];
 
         AmbientParameters {irradiation_dir: direct,
-                     irradiation_diff: diffuse,
-                     irradiation_glob: irradiation_glob,
-                     solar_elevation: elevation,
-                     solar_azimuth: azimuth,
-                     specific_gains: specific_gains,
-                     t_out: t_out
-                    }
+                           irradiation_diff: diffuse,
+                           irradiation_glob: irradiation_glob,
+                           solar_elevation: elevation,
+                           solar_azimuth: azimuth,
+                           specific_gains: specific_gains,
+                           t_out: t_out
+                           }
     }
 }
