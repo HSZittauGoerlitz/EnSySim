@@ -2,7 +2,6 @@
 # %% Imports
 # Model
 from Examples.TheresaExp.Basic.Model import getDefaultCellData
-from SystemComponentsFast import simulate
 
 
 # %% prepare Simulation
