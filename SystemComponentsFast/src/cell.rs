@@ -1,5 +1,6 @@
 // external
 use pyo3::prelude::*;
+use std::collections::HashMap;
 use log::error;
 
 use crate::{building, sep_bsl_agent, save_e, save_t};
@@ -239,6 +240,66 @@ impl Cell {
         } else {
             self.buildings[building_pos] = building;
         }
+    }
+
+    /// Step cell from python
+    ///
+    /// # Arguments
+    /// pe (f32): Electrical power [W]
+    ///     - negative: Load
+    ///     - positive: Generation
+    /// pt (f32): Thermal power [W]
+    ///     - negative: Load
+    ///     - positive: Generation
+    /// * slp_data (HashMap<&str, Vec<f32>>): Standard load profile data for
+    ///     - "PHH": phh agents
+    ///     - "BSLa": agriculture business agents
+    ///     - "BSLc": common business agents
+    /// * hw_profile (f32): Actual hot water day profile factor [-]
+    /// * env_data (HashMap<&str, Vec<f32>>): All Environment/Weather data
+    ///     needed for the simulation
+    /// * sol_data (HashMap<&str, Vec<f32>>): Elevation and azimut of sun
+    ///
+    /// # Returns
+    /// * (f32, f32, f32, f32): Current electrical and thermal
+    ///                         power consumption and generation [W]
+    fn py_step(&mut self, pe: f32, pt: f32,
+               slp_data: HashMap<&str, f32>, hw_profile: f32,
+               env_data: HashMap<&str, f32>,
+               sol_data: HashMap<&str, f32>)
+    -> PyResult<(f32, f32, f32, f32)>
+    {
+        // Prepare data for cell step
+        let slp: [f32; 3] = [
+            *slp_data.get("PHH").unwrap(),
+            *slp_data.get("BSLa").unwrap(),
+            *slp_data.get("BSLc").unwrap()
+        ];
+        let mut amb = AmbientParameters::new(
+            *env_data.get("E direct [W/m^2]").unwrap(),
+            *env_data.get("E diffuse [W/m^2]").unwrap(),
+            *sol_data.get("elevation [degree]").unwrap(),
+            *sol_data.get("azimuth [degree]").unwrap(),
+            *env_data.get("T [degC]").unwrap()
+        );
+
+        let t_out_n = self.t_out_n;
+
+        let (mut gen_e, mut load_e, mut gen_t, mut load_t) =
+            self.step(&slp, &hw_profile, &t_out_n, &mut amb);
+
+        if pe > 0. {
+            gen_e += pe;
+        } else {
+            load_e -= pe;
+        }
+        if pt > 0. {
+            gen_t += pt;
+        } else {
+            load_t -= pt;
+        }
+
+        Ok((gen_e, load_e, gen_t, load_t))
     }
 
     fn update_building(&mut self, building_idx: usize,
