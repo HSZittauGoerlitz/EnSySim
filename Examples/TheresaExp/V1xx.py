@@ -1,7 +1,8 @@
 """ Design of HiL experiments with THERESA """
 # %% Imports
 # Model
-from Examples.TheresaExp.Basic.Model import getDefaultCellData
+from Examples.TheresaExp.Basic.Model import (addTheresaSystem,
+                                             getDefaultCellData)
 from SystemComponentsFast import simulate
 # Post processing
 import numpy as np
@@ -16,6 +17,7 @@ start = '01.01.2020'
 end = '01.01.2021'
 
 nSteps, time, SLP, HWP, Weather, Solar, cell = getDefaultCellData(start, end)
+cell = addTheresaSystem(cell, nSteps)
 
 # %%
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),

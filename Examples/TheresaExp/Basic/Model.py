@@ -5,6 +5,14 @@ from GenericModel.PARAMETER import PBTYPES_NOW
 from SystemComponentsFast import TheresaSystem
 
 
+def addTheresaSystem(cell, nSteps):
+    theresa = TheresaSystem(250., 500., nSteps)
+
+    cell.add_theresa(theresa)
+
+    return cell
+
+
 def getDefaultCellData(start, end):
     """ Return simulation data and default cell for HiL Simulation
 
@@ -38,9 +46,5 @@ def getDefaultCellData(start, end):
                                pDHN, pPVplants, pHeatpumps, pCHP, PBTYPES_NOW,
                                nSepBSLagents, pAgricultureBSLsep,
                                region, nSteps)
-
-    theresa = TheresaSystem(250., 500., nSteps)
-
-    cell.add_theresa(theresa)
 
     return nSteps, time, SLP, HWP, Weather, Solar, cell
