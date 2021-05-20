@@ -44,7 +44,7 @@ impl TheresaSystem {
 
         let chp = CHP::new(chp_proportion*p_max, hist);
 
-        let storage = GenericStorage::new(73.6e3 * s_scale,
+        let storage = GenericStorage::new(50.76e3 * s_scale,
                                           0.98,
                                           0.98,
                                           0.,
