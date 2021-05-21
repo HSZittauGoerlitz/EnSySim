@@ -11,6 +11,16 @@ APP_URI = "urn:HiLExperiment:client"
 DV_TRUE = ua.DataValue(ua.Variant(True, ua.VariantType.Boolean))
 DV_TRUE.ServerTimestamp = None
 DV_TRUE.SourceTimestamp = None
+DV_FALSE = ua.DataValue(ua.Variant(False, ua.VariantType.Boolean))
+DV_FALSE.ServerTimestamp = None
+DV_FALSE.SourceTimestamp = None
+
+
+def checkModelStep(stepModelNode):
+    if stepModelNode.get_value():
+        stepModelNode.set_value(DV_FALSE)
+        return True
+    return False
 
 
 def createClient(pw):
@@ -81,13 +91,10 @@ def getSubNode(prgNode, NodeName):
             return child
 
 
-def maintainConnection(aliveNode, endNode):
+def maintainConnection(aliveNode, endNode, endToggleNode):
     if endNode.get_value():
         # reset button on PLC
-        dv_false = ua.DataValue(ua.Variant(False, ua.VariantType.Boolean))
-        dv_false.ServerTimestamp = None
-        dv_false.SourceTimestamp = None
-        endNode.set_value(dv_false)
+        endToggleNode.set_value(DV_FALSE)
         # end Simulation loop
         return False
     else:  # maintain connection
