@@ -7,6 +7,10 @@ CERT = "D:/cert.pem"
 KEY = "D:/key.pem"
 SECURITY_STRING = "Basic256Sha256,SignAndEncrypt,{},{}".format(CERT, KEY)
 APP_URI = "urn:HiLExperiment:client"
+# Prepare True value once
+DV_TRUE = ua.DataValue(ua.Variant(True, ua.VariantType.Boolean))
+DV_TRUE.ServerTimestamp = None
+DV_TRUE.SourceTimestamp = None
 
 
 def createClient(pw):
@@ -75,3 +79,18 @@ def getSubNode(prgNode, NodeName):
     for child in prgNode.get_children():
         if child.get_display_name().Text == NodeName:
             return child
+
+
+def maintainConnection(aliveNode, endNode):
+    if endNode.get_value():
+        # reset button on PLC
+        dv_false = ua.DataValue(ua.Variant(False, ua.VariantType.Boolean))
+        dv_false.ServerTimestamp = None
+        dv_false.SourceTimestamp = None
+        endNode.set_value(dv_false)
+        # end Simulation loop
+        return False
+    else:  # maintain connection
+        if not aliveNode.get_value():
+            aliveNode.set_value(DV_TRUE)
+        return True

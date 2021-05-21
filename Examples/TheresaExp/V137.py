@@ -2,7 +2,7 @@
 # Model
 import Examples.TheresaExp.Basic.Communication as c
 from Examples.TheresaExp.Basic.Model import getDefaultCellData
-
+from time import sleep
 
 # %% prepare Simulation
 start = '23.01.2020'
@@ -17,7 +17,22 @@ c.initClient(client)
 devSetNode = c.getDeviceSetNode(client)
 # Node of Prg where Measurement values are read in
 theresaNode = c.getPrgNode(devSetNode, "THERESAtoOPC")
-# Node of Interface Prg between THERESA and Simulatin
+# Node of Interface Prg between THERESA and Simulation
 ifNode = c.getPrgNode(devSetNode, "StateSteamGenerator")
+# Node for Simulation Communication Prg
+simAlive = c.getPrgNode(devSetNode, "SimAlive")
+simCtrl = c.getPrgNode(devSetNode, "SimCtrl")
+aliveNode = c.getSubNode(simAlive, "alive")
+endNode = c.getSubNode(simCtrl, "endSim")
 # Measurement values
 SG = c.getSubNode(theresaNode, "SG")
+
+# %% Start Simulation Loop (Maintained by SPS)
+try:
+    run = c.maintainConnection(aliveNode, endNode)
+    while run:
+        # reduce load
+        sleep(0.1)  # 100ms
+        run = c.maintainConnection(aliveNode, endNode)
+finally:
+    client.disconnect()
