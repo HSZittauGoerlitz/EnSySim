@@ -250,17 +250,17 @@ impl Cell {
     /// pe (f32): Electrical power [W]
     ///     - negative: Load
     ///     - positive: Generation
-    /// pt (f32): Thermal power [W]
+    /// pt (f32): Thermal power of dhn [W]
     ///     - negative: Load
     ///     - positive: Generation
-    /// * slp_data (HashMap<&str, Vec<f32>>): Standard load profile data for
+    /// * slp_data (HashMap<&str, f32>): Standard load profile data for
     ///     - "PHH": phh agents
     ///     - "BSLa": agriculture business agents
     ///     - "BSLc": common business agents
     /// * hw_profile (f32): Actual hot water day profile factor [-]
-    /// * env_data (HashMap<&str, Vec<f32>>): All Environment/Weather data
+    /// * env_data (HashMap<&str, f32>): All Environment/Weather data
     ///     needed for the simulation
-    /// * sol_data (HashMap<&str, Vec<f32>>): Elevation and azimut of sun
+    /// * sol_data (HashMap<&str, f32>): Elevation and azimut of sun
     ///
     /// # Returns
     /// * (f32, f32, f32, f32): Current electrical and thermal
