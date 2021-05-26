@@ -2,6 +2,7 @@
 # Model
 import Examples.TheresaExp.Basic.Communication as c
 from Examples.TheresaExp.Basic.Model import getDefaultCellData
+from opcua import ua
 from time import sleep
 
 # %% prepare Simulation
@@ -29,9 +30,12 @@ stepModel = c.getSubNode(simCtrl, "stepModel")
 # Measurement values
 steamGen = c.getSubNode(theresaNode, "SG")
 cellState = c.getSubNode(simCtrl, "cellState")
-cellStateValue = cellState.get_data_value()
-cellStateValue.SourceTimestamp = None
-cellStateValue.ServerTimestamp = None
+cellStateDataValue = cellState.get_data_value()
+# prepare writing (wago doesn't support timestamps)
+cellWriteValue = ua.DataValue(ua.Variant(cellStateDataValue.Value,
+                              ua.VariantType.ExtensionObject))
+cellWriteValue.ServerTimestamp = None
+cellWriteValue.SourceTimestamp = None
 
 # %% Start Simulation Loop (Maintained by SPS)
 # count steps, to assign input values
@@ -48,15 +52,18 @@ try:
             env_in = Weather.loc[stepIdx].to_dict()
             sol_in = Solar.loc[stepIdx].to_dict()
             # run cell
-            gen_e, load_e, gen_t, load_t = cell.py_step(0., 0., slp_in, hwp[0],
+            gen_e, load_e, gen_t, load_t = cell.py_step(0., 0., slp_in,
+                                                        hwp[stepIdx],
                                                         env_in, sol_in)
             # send Results to GateWay (in MW)
-            cellStateValue.Value.Value.electrical_generation = gen_e * 1e-6
-            cellStateValue.Value.Value.electrical_load = load_e * 1e-6
-            cellStateValue.Value.Value.thermal_generation = gen_t * 1e-6
-            cellStateValue.Value.Value.thermal_load = load_t * 1e-6
-            cellState.set_value(cellStateValue)
+            cellWriteValue.Value.Value.electrical_generation = gen_e * 1e-6
+            cellWriteValue.Value.Value.electrical_load = load_e * 1e-6
+            cellWriteValue.Value.Value.thermal_generation = gen_t * 1e-6
+            cellWriteValue.Value.Value.thermal_load = load_t * 1e-6
+            cellState.set_value(cellWriteValue)
             # prepare next step
             stepIdx += 1
 finally:
     client.disconnect()
+
+# %%
