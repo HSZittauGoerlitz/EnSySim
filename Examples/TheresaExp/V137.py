@@ -63,6 +63,11 @@ try:
             cellState.set_value(cellWriteValue)
             # prepare next step
             stepIdx += 1
+
+            # send acknowledge of model step to PLC
+            sleep(0.05)  # 50ms
+            c.ackModelStep(stepModel)
+
 finally:
     client.disconnect()
 

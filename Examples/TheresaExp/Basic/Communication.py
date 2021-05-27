@@ -16,9 +16,12 @@ DV_FALSE.ServerTimestamp = None
 DV_FALSE.SourceTimestamp = None
 
 
+def ackModelStep(stepModelNode):
+    stepModelNode.set_value(DV_FALSE)
+
+
 def checkModelStep(stepModelNode):
     if stepModelNode.get_value():
-        stepModelNode.set_value(DV_FALSE)
         return True
     return False
 
