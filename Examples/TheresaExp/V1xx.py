@@ -13,8 +13,8 @@ from plotly.subplots import make_subplots
 
 
 # %% prepare Simulation
-start = '01.01.2020'
-end = '01.01.2021'
+start = '23.01.2020'
+end = '24.01.2020'
 
 nSteps, time, SLP, HWP, Weather, Solar, cell = getDefaultCellData(start, end)
 cell = addTheresaSystem(cell, nSteps)

@@ -31,20 +31,19 @@ pub struct TheresaSystem {
 impl TheresaSystem {
     #[new]
     /// # Arguments
-    /// * p_scale(f32): Scaling factor for max. thermal power
-    /// * s_scale(f32): Scaling factor for thermal storage capacity
+    /// * scale(f32): Scaling factor thermal storage and power
     /// * hist (usize): Size of history memory (0 for no memory)
-    pub fn new(p_scale: f32, s_scale: f32, hist: usize) -> Self {
-        if (p_scale <= 0.) | (s_scale <= 0.) {
+    pub fn new(scale: f32, hist: usize) -> Self {
+        if scale <= 0. {
             panic!("Scaling factors must be greater than 0")
         }
 
-        let p_max = 200e3 * p_scale;  // Max. available thermal power [W]
+        let p_max = 200e3 * scale;  // Max. available thermal power [W]
         let chp_proportion = 0.6;  // proportion of chp at p_max
 
         let chp = CHP::new(chp_proportion*p_max, hist);
 
-        let storage = GenericStorage::new(50.76e3 * s_scale,
+        let storage = GenericStorage::new(50.76e3 * scale,
                                           0.98,
                                           0.98,
                                           0.,

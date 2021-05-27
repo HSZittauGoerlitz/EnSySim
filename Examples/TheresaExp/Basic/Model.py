@@ -6,7 +6,7 @@ from SystemComponentsFast import TheresaSystem
 
 
 def addTheresaSystem(cell, nSteps):
-    theresa = TheresaSystem(250., 500., nSteps)
+    theresa = TheresaSystem(250., nSteps)
 
     cell.add_theresa(theresa)
 
