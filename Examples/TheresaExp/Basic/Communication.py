@@ -53,6 +53,21 @@ def getDeviceSetNode(client):
     print("ERROR: DeviseSet Node not found")
 
 
+def getPLC_Parameter(ifNode):
+    pNode = getSubNode(ifNode, 'Parameter')
+    parameter = pNode.get_value()
+
+    return {'Scaling Factor [-]': parameter.scale,
+            'Fraction CHP [%]': parameter.fCHP,
+            'Fraction Boiler [%]': parameter.fBoiler,
+            'Total thermal Power [MW]': (parameter.PmaxCHP +
+                                         parameter.PmaxBoiler),
+            'Max. Power CHP [MW]': parameter.PmaxCHP,
+            'Max. Power Boiler [MW]': parameter.PmaxBoiler,
+            'Capacity Storage [MWh]': parameter.StorageCapacity
+            }
+
+
 # common server browsing functions
 def getPrgNode(Node, prgName="PLC_PRG"):
     # Catch bad node configuration
