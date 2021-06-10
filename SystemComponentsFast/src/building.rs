@@ -87,7 +87,7 @@ pub struct Building {
     heat_lim_temperature: f32,  // degC
     mean_outside_temperature: f32,  // degC
     #[pyo3(set, get)]
-    is_at_dhn: bool,
+    pub is_at_dhn: bool,
     #[pyo3(get)]
     is_self_supplied_t: bool,
     v: f32,  // m3

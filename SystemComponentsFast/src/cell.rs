@@ -209,9 +209,11 @@ impl Cell {
             }
         }
         for building in self.buildings.iter() {
-            demand_t += building.q_hln();
-            for agent in building.agents.iter() {
-                demand_t += agent.hw_demand();
+            if building.is_at_dhn {
+                demand_t += building.q_hln();
+                for agent in building.agents.iter() {
+                    demand_t += agent.hw_demand();
+                }
             }
         }
 
