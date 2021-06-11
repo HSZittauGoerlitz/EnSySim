@@ -51,6 +51,7 @@ cell = generateGenericCell(nBuildings, pAgents,
                            region, nSteps)
 
 demand = cell.get_thermal_demand(True)
+# chp system is big enough to fulfill thermal demand
 chpSystem = CellChpSystemThermal(demand, 0.75, 2*demand, 0.,
                                  0.98, 0.98, nSteps)
 cell.add_chp_thermal(chpSystem)

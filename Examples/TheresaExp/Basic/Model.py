@@ -7,8 +7,8 @@ from SystemComponentsFast import TheresaSystem
 import pandas as pd
 
 
-def addTheresaSystem(cell, nSteps):
-    theresa = TheresaSystem(250., nSteps)
+def addTheresaSystem(cell, nSteps, scale=250):
+    theresa = TheresaSystem(scale, nSteps)
 
     cell.add_theresa(theresa)
 

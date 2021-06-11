@@ -38,7 +38,7 @@ impl TheresaSystem {
             panic!("Scaling factors must be greater than 0")
         }
 
-        let p_max = 200e3 * scale;  // Max. available thermal power [W]
+        let p_max = 180e3 * scale;  // Max. available thermal power [W]
         let chp_proportion = 0.6;  // proportion of chp at p_max
 
         let chp = CHP::new(chp_proportion*p_max, hist);
@@ -51,7 +51,7 @@ impl TheresaSystem {
                                           hist,);
 
         // boiler
-        let mut boiler = Boiler::new((1. - chp_proportion)*p_max, 0);
+        let mut boiler = Boiler::new((1. - chp_proportion)*p_max, hist);
         boiler.set_efficiency(0.99);
 
         let gen_e;

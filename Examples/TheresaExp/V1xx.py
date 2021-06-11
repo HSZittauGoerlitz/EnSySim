@@ -17,7 +17,12 @@ start = '23.01.2020'
 end = '24.01.2020'
 
 nSteps, time, SLP, HWP, Weather, Solar, cell = getDefaultCellData(start, end)
-cell = addTheresaSystem(cell, nSteps)
+demand = cell.get_thermal_demand(True)
+
+# %% Add THERESA
+scale = demand / 180000
+cell = addTheresaSystem(cell, nSteps, scale)
+scale
 
 # %%
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
@@ -76,3 +81,13 @@ CellFig.update_yaxes({'title': {'text': "Temperature in degC"}},
 
 # %%
 plots.cellEnergyBalance(cell, time)
+
+
+# %% energy requested
+thermal_energy = sum(cell.load_t.get_memory()) * 1e-6 * 0.25  # MWh
+mean_power = np.mean(cell.load_t.get_memory()) * 1e-6
+print("needed energy: ", thermal_energy / scale, "MWh")
+print("mean power: ", mean_power / scale, "MW")
+
+
+# %%
