@@ -326,6 +326,33 @@ def chargeState(storage, time, retFig=False):
         fig.show()
 
 
+def runningState(utility, time, retFig=False):
+    """ Plot on/state for given utility on basis of thermal generation
+
+    Args:
+            utility: chp or heatpump etc.
+            time (pd series of datetime): Time
+    """
+    states = np.array(utility.gen_t.get_memory()).astype(bool).astype(int)
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=time,
+                             y=states,
+                             line={'color': COL_BAL,
+                                   'width': 1},
+                             name="charge",
+                             )
+                  )
+    fig.update_layout(height=600, width=600,
+                      title_text="On/Off states of Utility")
+    fig.update_xaxes(title_text="Time")
+    fig.update_yaxes(title_text="State")
+    if retFig:
+        return fig
+    else:  # show figure
+        fig.show()
+
+
 def compareCurves(time, values, names,
                   xLabel='Time', yLabel='', title='', retFig=False):
     """Create comparison plot for given curves
