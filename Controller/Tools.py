@@ -10,7 +10,7 @@ Transition = namedtuple('Transition',
 
 class ReplayMemory(object):
     """ Source: pytorch DQN tutorial """
-    def __init__(self, capacity):
+    def __init__(self, capacity: int):
         self.capacity = capacity
         self.memory = []
         self.position = 0
@@ -22,7 +22,7 @@ class ReplayMemory(object):
         self.memory[self.position] = Transition(*args)
         self.position = (self.position + 1) % self.capacity
 
-    def sample(self, batch_size):
+    def sample(self, batch_size: int):
         return random.sample(self.memory, batch_size)
 
     def __len__(self):
@@ -30,7 +30,7 @@ class ReplayMemory(object):
 
 
 class DQN_MLP(nn.Module):
-    def __init__(self, nState, nActions, nHL1, nHL2):
+    def __init__(self, nState: int, nActions: int, nHL1: int, nHL2: int):
         """ Init DQN network
 
         Args:
