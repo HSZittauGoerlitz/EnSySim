@@ -366,10 +366,9 @@ impl Cell {
     /// # Arguments
     /// * slp_data (&[f32; 3]): Standard load Profile of all agent types
     /// * hw_profile (&f32): Actual hot water day profile factor [-]
-    /// * t_out (&f32): Current (daily mean) outside temperature [°C]
     /// * t_out_n (&f32): Normed outside temperature for
     ///                   region of building [°C]
-    /// * eg (&f32): Current irradiation on PV module [W/m^2]
+    /// * amb (&mut AmbientParameters): Current Ambient Measurements
     ///
     /// # Returns
     /// * (f32, f32, f32, f32): Current electrical and thermal
