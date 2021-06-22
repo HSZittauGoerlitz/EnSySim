@@ -3,6 +3,7 @@
 # %%
 # Imports
 from BoundaryConditions.Simulation.SimulationData import getSimData
+from Controller.Cell.CHP_SystemThermal import CtrlDefault
 from GenericModel.Design import generateGenericCell
 from GenericModel.PARAMETER import PBTYPES_NOW as pBTypes
 from SystemComponentsFast import simulate, CellChpSystemThermal
@@ -39,6 +40,9 @@ pCHP = 0.1
 # environment
 region = "East"
 
+# set controller to use it or set variable to None
+controller = CtrlDefault()
+
 # %%
 # prepare simulation
 nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
@@ -53,6 +57,7 @@ cell = generateGenericCell(nBuildings, pAgents,
 demand = cell.get_thermal_demand(True)
 chpSystem = CellChpSystemThermal(demand, 0.75, 2*demand, 0.,
                                  0.98, 0.98, nSteps)
+chpSystem.controller = controller
 cell.add_chp_thermal(chpSystem)
 
 # %%
