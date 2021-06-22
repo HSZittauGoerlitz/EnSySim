@@ -18,8 +18,11 @@ pub struct CellChpSystemThermal {
     boiler: Boiler,  // peak load boiler (electric)
 
     // Controller variables
+    #[pyo3(get, set)]
+    controller: Option<PyObject>,
     boiler_state: bool,
     chp_state: bool,
+
 
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
@@ -78,6 +81,7 @@ impl CellChpSystemThermal {
         CellChpSystemThermal {chp,
                        storage,
                        boiler,
+                       controller: None,
                        boiler_state: false,
                        chp_state: false,
                        gen_e,
@@ -126,7 +130,24 @@ impl CellChpSystemThermal {
     pub fn step(&mut self, thermal_demand: &f32)
     -> (f32, f32)
     {
-        self.control();
+        match &self.controller {
+            None => self.control(),
+            Some(ctrl) => {
+                let chp_boiler_state: (bool, bool);
+                let gil = Python::acquire_gil();
+                let py = gil.python();
+                let storage_state = self.storage
+                                      .get_relative_charge()
+                                      .to_object(py);
+                chp_boiler_state =
+                  ctrl.call_method1(py, "step", (&storage_state,))
+                    .unwrap()
+                    .extract(py)
+                    .unwrap();
+                self.chp_state = chp_boiler_state.0;
+                self.boiler_state = chp_boiler_state.1;
+            },
+        }
 
         let (pow_e, chp_t) = self.chp.step(&self.chp_state);
         let boiler_t = self.boiler.step(&self.boiler_state);
