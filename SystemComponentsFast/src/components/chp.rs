@@ -7,12 +7,14 @@ use crate::misc::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct CHP {
+    #[pyo3(get)]
     pow_e: f32,  // electrical power of chp plant [W]
+    #[pyo3(get)]
     pow_t: f32,  // installed power of chp plant [W]
-    state: bool,  // on/off switch for chp plant
-
     #[pyo3(get)]
     efficiency: f32, // total efficiency of chp 0 .. 1
+
+    state: bool,  // on/off switch for chp plant
 
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
