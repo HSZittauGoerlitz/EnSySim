@@ -28,4 +28,14 @@ impl AmbientParameters {
                            t_out: t_out
                            }
     }
+
+    /// Returns eg, sun position and temperature as tuple, so it can easily
+    /// be send to python.
+    pub fn get_values(&self) -> (&f32, &f32, &f32, &f32)
+    {
+        (&self.irradiation_glob,
+         &self.solar_elevation, &self.solar_azimuth,
+         &self.t_out
+         )
+    }
 }

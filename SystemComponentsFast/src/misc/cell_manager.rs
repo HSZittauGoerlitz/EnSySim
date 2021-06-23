@@ -20,6 +20,12 @@ impl CellManager{
         }
     }
 
+    /// Returns all state values as tuple, so it can easily be send to python
+    pub fn get_state(&self) -> (&f32, &f32, &f32, &f32)
+    {
+        (&self.generation_e, &self.load_e, &self.generation_t, &self.load_t)
+    }
+
     pub fn update(&mut self, generation_e: &f32, load_e: &f32,
                   generation_t: &f32, load_t: &f32)
     {
