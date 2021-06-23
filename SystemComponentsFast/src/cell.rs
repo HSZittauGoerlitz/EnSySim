@@ -27,10 +27,11 @@ impl ThermalSystem {
     /// * amb (&AmbientParameters): Current Ambient Measurements
     ///
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
+    /// * (f32, f32, f32): Resulting electrical and thermal power
+    ///                    and fuel used by system [W]
     fn step(&mut self, thermal_demand: &f32, cell_state: &CellManager,
             amb: &AmbientParameters)
-    -> (f32, f32)
+    -> (f32, f32, f32)
     {
         match self {
             ThermalSystem::ChpSystem(system) => system.step(thermal_demand,
@@ -38,7 +39,7 @@ impl ThermalSystem {
                                                             amb),
             ThermalSystem::TheresaSystem(system) =>
                 system.step(thermal_demand),
-            //_ => (0., 0.)
+            //_ => (0., 0., 0.)
         }
     }
 }
@@ -423,27 +424,38 @@ impl Cell {
 
         // calculate generation systems
         electrical_generation += self.get_pv_generation(&amb.irradiation_glob);
+        let (ts_e, ts_t_gen, ts_fuel);
         match &mut self.thermal_system {
-            None => (),
+            None =>
+            {
+                ts_e = 0.;
+                ts_t_gen = 0.;
+                ts_fuel = 0.;
+            },
             Some(system) =>
-                {
-                    let (ts_e, ts_t_gen) =
-                        system.step(&((thermal_load -
-                                       thermal_generation).max(0.)),
-                                    &self.state, amb
-                                    );
-                    thermal_generation += ts_t_gen;
-                    // check if thermal system generated or
-                    // consumed electrical energy
-                    if ts_e > 0. {
-                        electrical_generation += ts_e;
-                    } else {
-                        electrical_load -= ts_e;  // ts_e is negative -> - is +
-                    }
+            {
+                let ts_e_t_f =
+                    system.step(&((thermal_load -
+                                    thermal_generation).max(0.)),
+                                &self.state, amb
+                                );
+                // unpack tuple, since unpacking without let is buggy
+                ts_e = ts_e_t_f.0;
+                ts_t_gen = ts_e_t_f.1;
+                ts_fuel = ts_e_t_f.2;
+                thermal_generation += ts_t_gen;
+                // check if thermal system generated or
+                // consumed electrical energy
+                if ts_e > 0. {
+                    electrical_generation += ts_e;
+                } else {
+                    electrical_load -= ts_e;  // ts_e is negative -> - is +
                 }
+            }
         }
         self.state.update(&electrical_generation, &electrical_load,
-                          &thermal_generation, &thermal_load);
+                          &thermal_generation, &thermal_load,
+                          &ts_e, &ts_t_gen, &ts_fuel);
         // save data
         save_e!(self, electrical_generation, electrical_load);
         save_t!(self, thermal_generation, thermal_load);

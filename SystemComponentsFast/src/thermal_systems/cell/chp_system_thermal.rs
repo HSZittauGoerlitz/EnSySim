@@ -128,10 +128,11 @@ impl CellChpSystemThermal {
     /// * thermal_demand (&f32): Thermal power needed by dhn [W]
     ///
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
+    /// * (f32, f32): Resulting electrical and thermal power
+    ///               and fuel used by system [W]
     pub fn step(&mut self, thermal_demand: &f32, cell_state: &CellManager,
                 amb: &AmbientParameters)
-    -> (f32, f32)
+    -> (f32, f32, f32)
     {
         match &self.controller {
             None => self.control(),
@@ -142,8 +143,11 @@ impl CellChpSystemThermal {
                 let storage_state = self.storage
                                       .get_relative_charge()
                                       .to_object(py);
+                let cell_state_py = cell_state.get_state().to_object(py);
+                let amb_py = amb.get_values().to_object(py);
                 chp_boiler_state =
-                  ctrl.call_method1(py, "step", (&storage_state,))
+                  ctrl.call_method1(py, "step", (&storage_state,
+                                                 &cell_state_py, &amb_py))
                     .unwrap()
                     .extract(py)
                     .unwrap();
@@ -152,8 +156,8 @@ impl CellChpSystemThermal {
             },
         }
 
-        let (pow_e, chp_t) = self.chp.step(&self.chp_state);
-        let boiler_t = self.boiler.step(&self.boiler_state);
+        let (pow_e, chp_t, chp_fuel) = self.chp.step(&self.chp_state);
+        let (boiler_t, boiler_fuel) = self.boiler.step(&self.boiler_state);
 
         let pow_t = chp_t + boiler_t;
 
@@ -165,7 +169,7 @@ impl CellChpSystemThermal {
         self.save_hist(&pow_e, &pow_t);
 
         // return supply data
-        return (pow_e, thermal_demand + storage_diff);
+        return (pow_e, thermal_demand + storage_diff, chp_fuel + boiler_fuel);
     }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {

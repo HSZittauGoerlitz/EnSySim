@@ -97,8 +97,8 @@ impl Boiler {
     /// * state (&bool): Current state of boiler (on/off)
     ///
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool) -> f32 {
+    /// * (f32, f32): Resulting thermal power and fuel used [W]
+    pub fn step(&mut self, state: &bool) -> (f32, f32) {
 
         // update state
         self.state = *state;
@@ -112,8 +112,10 @@ impl Boiler {
             pow_t = 0.0;
         }
 
+        let fuel_used = self.get_fuel(&pow_t);
         // save and return data
-        self.save_hist_t(&pow_t, &self.get_fuel(&pow_t));
-        return pow_t;
+        self.save_hist_t(&pow_t, &fuel_used);
+
+        return (pow_t, fuel_used);
     }
 }

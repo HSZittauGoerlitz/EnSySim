@@ -181,10 +181,11 @@ impl BuildingChpSystem {
     ///                      last hours [degC]
     ///
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
+    /// * (f32, f32): Resulting electrical and thermal power as well as
+    ///               fuel used [W]
     pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
                 t_heat_lim: &f32, t_out_mean: &f32)
-    -> (f32, f32)
+    -> (f32, f32, f32)
     {
         // system satisfies heat demand from building
         // this is done by emptying storage
@@ -198,8 +199,8 @@ impl BuildingChpSystem {
         self.update_control_mode(t_heat_lim, t_out_mean);
         self.control();
 
-        let (pow_e, chp_t) = self.chp.step(&self.chp_state);
-        let boiler_t = self.boiler.step(&self.boiler_state);
+        let (pow_e, chp_t, chp_fuel) = self.chp.step(&self.chp_state);
+        let (boiler_t, boiler_fuel) = self.boiler.step(&self.boiler_state);
 
         // call hot water storage with CHP power
         //-> differences will be used by heating system
@@ -219,8 +220,10 @@ impl BuildingChpSystem {
         self.save_hist(&pow_e, &pow_t);
 
         // return supply data
-        return (pow_e, *heating_demand + *hot_water_demand + storage_diff +
-                       storage_hw_loss + storage_loss);
+        return (pow_e,
+                *heating_demand + *hot_water_demand + storage_diff +
+                storage_hw_loss + storage_loss,
+                chp_fuel + boiler_fuel);
     }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {

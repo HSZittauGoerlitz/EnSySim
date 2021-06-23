@@ -118,8 +118,8 @@ impl CHP {
     /// * state (&bool): Current state of CHP plant (on/off)
     ///
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool) -> (f32, f32) {
+    /// * (f32, f32, f32): Resulting electrical and thermal power and fuel used [W]
+    pub fn step(&mut self, state: &bool) -> (f32, f32, f32) {
 
         // update state
         self.state = *state;
@@ -136,9 +136,10 @@ impl CHP {
             pow_e = 0.0;
         }
 
+        let fuel_used = self.get_fuel(&pow_e, &pow_t);
         // save and return data
-        self.save_hist(&pow_e, &pow_t, &self.get_fuel(&pow_e, &pow_t));
+        self.save_hist(&pow_e, &pow_t, &fuel_used);
 
-        return (pow_e, pow_t);
+        return (pow_e, pow_t, fuel_used);
     }
 }

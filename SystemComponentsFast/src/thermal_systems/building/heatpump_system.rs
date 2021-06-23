@@ -378,16 +378,17 @@ impl BuildingHeatpumpSystem {
     /// * t_out_mean (&f32): Mean outside temperature of buildings region in
     ///                      last hours [degC]
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
+    /// * (f32, f32, f32): Resulting electrical and thermal power and
+    ///                    fuel used by boiler [W]
     pub fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
-        t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32)
+        t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32, f32)
     {
         // TODO: respect minimal working temperature of heatpump
         self.update_control_mode(t_heat_lim, t_out_mean);
         self.control();
 
         let (con_e, hp_t) = self.heatpump.step(&self.hp_state, t_out);
-        let boiler_t = self.boiler.step(&self.boiler_state);
+        let (boiler_t, boiler_fuel) = self.boiler.step(&self.boiler_state);
 
         let thermal_load = heating_demand + hot_water_demand;
 
@@ -403,7 +404,8 @@ impl BuildingHeatpumpSystem {
         self.save_hist(&con_e, &pow_t);
 
         // return supply data
-        return (-con_e, thermal_load + storage_diff + storage_loss);
+        return (-con_e, thermal_load + storage_diff + storage_loss,
+                boiler_fuel);
     }
 
     fn summer_mode(&mut self) {

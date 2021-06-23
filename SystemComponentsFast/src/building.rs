@@ -32,9 +32,10 @@ impl HeatingSystem {
     /// * t_out_mean (&f32): Mean outside temperature of buildings region in
     ///                      last hours [degC]
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
+    /// * (f32, f32, f32): Resulting electrical and thermal power
+    ///                    and fuel used by heating system [W]
     fn step(&mut self, heating_demand: &f32, hot_water_demand: &f32,
-            t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32)
+            t_out: &f32, t_heat_lim: &f32, t_out_mean: &f32) -> (f32, f32, f32)
     {
         match self {
             HeatingSystem::ChpSystem(system) =>
@@ -42,10 +43,12 @@ impl HeatingSystem {
                             hot_water_demand,
                             t_heat_lim, t_out_mean),
             HeatingSystem::HeatpumpSystem(system) =>
+            {
                 system.step(heating_demand,
                             hot_water_demand, t_out,
-                            t_heat_lim, t_out_mean),
-            //_ => (0., 0.)
+                            t_heat_lim, t_out_mean)
+            }
+            //_ => (0., 0., 0.)
         }
     }
     /// Get last losses of specific heating system
@@ -98,7 +101,7 @@ pub struct Building {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     heating_system: Option<HeatingSystem>,
-    heat_building: fn(&mut Building, &f32, &f32, &f32) -> (f32, f32),
+    heat_building: fn(&mut Building, &f32, &f32, &f32) -> (f32, f32, f32),
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -426,12 +429,15 @@ impl Building {
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
-    /// * (f32, f32): (electrical generation/load = 0., thermal generation)
+    /// * (f32, f32, f32): (electrical generation/load = 0.,
+    ///                     thermal generation,
+    ///                     fuel used = 0.)
     fn get_dhn_generation(&mut self, sh_power_request: &f32,
-                          thermal_load_hw: &f32, _t_out: &f32) -> (f32, f32)
+                          thermal_load_hw: &f32, _t_out: &f32)
+    -> (f32, f32, f32)
     {
             // Building is self-supplied
-            (0., sh_power_request + thermal_load_hw)
+            (0., sh_power_request + thermal_load_hw, 0.)
     }
 
     /// Function to calculate thermal generation of buildings heating system.
@@ -448,12 +454,14 @@ impl Building {
     /// * t_out (&f32): Outside temperature [degC]
     ///
     /// # Returns
-    /// * (f32, f32): (electrical generation/load, thermal generation)
+    /// * (f32, f32, f32): (electrical generation/load, thermal generation,
+    ///                     fuel used)
     fn get_hs_generation(&mut self, sh_power_request: &f32,
-                          thermal_load_hw: &f32, t_out: &f32) -> (f32, f32)
+                          thermal_load_hw: &f32, t_out: &f32)
+    -> (f32, f32, f32)
     {
         match &mut self.heating_system {
-            None => (0., 0.),
+            None => (0., 0., 0.),
             Some(heating_system) => {
                 heating_system.step(&(sh_power_request -
                                     heating_system.get_losses()).max(0.),
@@ -582,7 +590,7 @@ impl Building {
         // Heating
         let sh_power_request = self.temperature_control(&internal_gains,
                                                         &amb.t_out);
-        let (sub_e, thermal_generation) = (self.heat_building)
+        let (sub_e, thermal_generation, _) = (self.heat_building)
             (self, &sh_power_request, &thermal_load_hw, &amb.t_out);
 
         // electrical effect of heating systems must not be considered
