@@ -6,9 +6,9 @@ use log::error;
 use crate::{building, sep_bsl_agent, save_e, save_t};
 use crate::components::pv;
 use crate::misc::{hist_memory};
-use crate::thermal_systems::cell::{chp_system_thermal, theresa_system};
-
 use crate::misc::ambient::AmbientParameters;
+use crate::misc::cell_manager::CellManager;
+use crate::thermal_systems::cell::{chp_system_thermal, theresa_system};
 
 
 #[derive(Clone)]
@@ -23,13 +23,19 @@ impl ThermalSystem {
     ///
     /// # Arguments
     /// * thermal_demand (&f32): Thermal power requested by dhn [W]
+    /// * cell_state (&CellManager): All necessary cell informations
+    /// * amb (&AmbientParameters): Current Ambient Measurements
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    fn step(&mut self, thermal_demand: &f32) -> (f32, f32)
+    fn step(&mut self, thermal_demand: &f32, cell_state: &CellManager,
+            amb: &AmbientParameters)
+    -> (f32, f32)
     {
         match self {
-            ThermalSystem::ChpSystem(system) => system.step(thermal_demand),
+            ThermalSystem::ChpSystem(system) => system.step(thermal_demand,
+                                                            cell_state,
+                                                            amb),
             ThermalSystem::TheresaSystem(system) =>
                 system.step(thermal_demand),
             //_ => (0., 0.)
@@ -60,6 +66,7 @@ pub struct Cell {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     thermal_system: Option<ThermalSystem>,
+    state: CellManager,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -110,6 +117,7 @@ impl Cell {
               t_out_n: t_out_n,
               pv: None,
               thermal_system: None,
+              state: CellManager::new(),
               gen_e: gen_e,
               gen_t: gen_t,
               load_e: load_e,
@@ -421,7 +429,9 @@ impl Cell {
                 {
                     let (ts_e, ts_t_gen) =
                         system.step(&((thermal_load -
-                                       thermal_generation).max(0.)));
+                                       thermal_generation).max(0.)),
+                                    &self.state, amb
+                                    );
                     thermal_generation += ts_t_gen;
                     // check if thermal system generated or
                     // consumed electrical energy
@@ -432,6 +442,8 @@ impl Cell {
                     }
                 }
         }
+        self.state.update(&electrical_generation, &electrical_load,
+                          &thermal_generation, &thermal_load);
         // save data
         save_e!(self, electrical_generation, electrical_load);
         save_t!(self, thermal_generation, thermal_load);

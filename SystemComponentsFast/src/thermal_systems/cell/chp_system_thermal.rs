@@ -5,6 +5,8 @@ use crate::components::boiler::Boiler;
 use crate::components::chp::CHP;
 use crate::components::generic_storage::GenericStorage;
 use crate::misc::hist_memory;
+use crate::misc::cell_manager::CellManager;
+use crate::misc::ambient::AmbientParameters;
 
 
 #[pyclass]
@@ -127,7 +129,8 @@ impl CellChpSystemThermal {
     ///
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, thermal_demand: &f32)
+    pub fn step(&mut self, thermal_demand: &f32, cell_state: &CellManager,
+                amb: &AmbientParameters)
     -> (f32, f32)
     {
         match &self.controller {
