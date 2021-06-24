@@ -149,7 +149,7 @@ class CtrlSmart(CtrlTemplate):
 
         # evaluation of training progress
         self.visualise = visualise
-        self.trainHistSize = trainHistSize
+        self.trainHistSize = max(trainHistSize, 1)
         self.cEpoch = 0.
         if self.visualise:
             self._initTrainVis()
