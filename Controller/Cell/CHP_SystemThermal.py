@@ -148,13 +148,13 @@ class CtrlSmart(CtrlTemplate):
         self.lastState = np.zeros(self.stateSize)
 
         # evaluation of training progress
+        self.visualise = visualise
         self.trainHistSize = trainHistSize
         self.cEpoch = 0.
-        self.cHist = np.zeros(self.trainHistSize)
-        self.visualise = visualise
-
         if self.visualise:
             self._initTrainVis()
+        else:
+            self.cHist = np.zeros(self.trainHistSize)
 
         # System Parameter
         self.MaxPower_e = MaxPower_e
@@ -190,10 +190,12 @@ class CtrlSmart(CtrlTemplate):
 
     def _initTrainVis(self):
         self.VisWin = 50
+        self.trainHistSize = max(self.trainHistSize, self.VisWin+1)
         self.xEpochs = np.arange(self.trainHistSize)
-        self.cMean = np.zeros(self.trainHistSize - self.VisWin)
-        self.cStdU = np.zeros(self.trainHistSize - self.VisWin)
-        self.cStdL = np.zeros(self.trainHistSize - self.VisWin)
+        self.cHist = np.zeros(self.trainHistSize)
+        self.cMean = np.zeros(self.trainHistSize - self.VisWin+1)
+        self.cStdU = np.zeros(self.trainHistSize - self.VisWin+1)
+        self.cStdL = np.zeros(self.trainHistSize - self.VisWin+1)
 
         fig = go.Figure()
         fig.update_xaxes(title_text="Number of Epoch")
