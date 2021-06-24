@@ -7,12 +7,14 @@ use crate::misc::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct CHP {
+    #[pyo3(get)]
     pow_e: f32,  // electrical power of chp plant [W]
+    #[pyo3(get)]
     pow_t: f32,  // installed power of chp plant [W]
-    state: bool,  // on/off switch for chp plant
-
     #[pyo3(get)]
     efficiency: f32, // total efficiency of chp 0 .. 1
+
+    state: bool,  // on/off switch for chp plant
 
     #[pyo3(get)]
     gen_t: Option<hist_memory::HistMemory>,
@@ -118,8 +120,8 @@ impl CHP {
     /// * state (&bool): Current state of CHP plant (on/off)
     ///
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
-    pub fn step(&mut self, state: &bool) -> (f32, f32) {
+    /// * (f32, f32, f32): Resulting electrical and thermal power and fuel used [W]
+    pub fn step(&mut self, state: &bool) -> (f32, f32, f32) {
 
         // update state
         self.state = *state;
@@ -136,9 +138,10 @@ impl CHP {
             pow_e = 0.0;
         }
 
+        let fuel_used = self.get_fuel(&pow_e, &pow_t);
         // save and return data
-        self.save_hist(&pow_e, &pow_t, &self.get_fuel(&pow_e, &pow_t));
+        self.save_hist(&pow_e, &pow_t, &fuel_used);
 
-        return (pow_e, pow_t);
+        return (pow_e, pow_t, fuel_used);
     }
 }

@@ -113,16 +113,15 @@ impl TheresaSystem {
     /// * thermal_demand (&f32): Thermal power needed by dhn [W]
     ///
     /// # Returns
-    /// * (f32, f32): Resulting electrical and thermal power [W]
+    /// * (f32, f32, f32): Resulting electrical and thermal power
+    ///                    and fuel used by chp [W]
     pub fn step(&mut self, thermal_demand: &f32)
-    -> (f32, f32)
+    -> (f32, f32, f32)
     {
         self.control();
 
-        let (chp_gen_e, chp_t) = self.chp.step(&self.chp_state);
-        let boiler_t = self.boiler.step(&self.boiler_state);
-
-        let boiler_demand_e = self.boiler.get_fuel(&boiler_t);
+        let (chp_gen_e, chp_t, chp_fuel) = self.chp.step(&self.chp_state);
+        let (boiler_t, boiler_demand_e) = self.boiler.step(&self.boiler_state);
 
         let pow_e = chp_gen_e - boiler_demand_e;
 
@@ -136,7 +135,7 @@ impl TheresaSystem {
         self.save_hist(&pow_e, &pow_t);
 
         // return supply data
-        return (pow_e, thermal_demand + storage_diff);
+        return (pow_e, thermal_demand + storage_diff, chp_fuel);
     }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {

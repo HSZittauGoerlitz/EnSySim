@@ -10,3 +10,6 @@
 
 /SystemComponentsFast/build_cmd/*
 !/SystemComponentsFast/build_cmd/*Example*
+
+*.npz
+*.pt

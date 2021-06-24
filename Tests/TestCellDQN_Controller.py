@@ -3,13 +3,17 @@
 # %%
 # Imports
 from BoundaryConditions.Simulation.SimulationData import getSimData
-from Controller.Cell.CHP_SystemThermal import CtrlDefault
+from Controller.Cell.CHP_SystemThermal import CtrlSmart
 from GenericModel.Design import generateGenericCell
 from GenericModel.PARAMETER import PBTYPES_NOW as pBTypes
 from SystemComponentsFast import simulate, CellChpSystemThermal
 from PostProcesing import plots
 import logging
 
+# %% debug
+import os
+
+print(os.getpid())
 
 # %%
 FORMAT = ("%(levelname)s %(name)s %(asctime)-15s "
@@ -40,8 +44,19 @@ pCHP = 0.1
 # environment
 region = "East"
 
-# set controller to use it or set variable to None
-controller = CtrlDefault()
+# %% DQN Parameter
+capacity = 96 * 300
+batchSize = 48
+epsStart = 0.9
+epsMin = 0.5
+epsDecay = 1000
+cMax = 1.
+targetUpdate = 100
+nHL1 = 24
+nHL2 = 12
+trainHistSize = 365
+
+visualise = True
 
 # %%
 # prepare simulation
@@ -57,12 +72,29 @@ cell = generateGenericCell(nBuildings, pAgents,
 demand = cell.get_thermal_demand(True)
 chpSystem = CellChpSystemThermal(demand, 0.75, 2*demand, 0.,
                                  0.98, 0.98, nSteps)
+
+MaxPower_e = chpSystem.chp.pow_e
+MaxPower_t = chpSystem.chp.pow_t + chpSystem.boiler.pow_t
+MaxFuelDemand = ((chpSystem.chp.pow_e + chpSystem.chp.pow_t) /
+                 chpSystem.chp.efficiency +
+                 chpSystem.boiler.pow_t / chpSystem.boiler.efficiency)
+
+controller = CtrlSmart(capacity, batchSize, epsStart, epsMin, epsDecay,
+                       cMax, targetUpdate, nHL1, nHL2, trainHistSize,
+                       MaxPower_e, MaxPower_t, MaxFuelDemand, visualise)
+# Recommendation: load controller (at first make init run and save manually)
 chpSystem.controller = controller
 cell.add_chp_thermal(chpSystem)
 
 # %%
+if visualise:
+    display(controller.trainVis)
+
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
          Solar.to_dict('list'))
+
+# Recommendation: Upate stats weighted
+# and save controller for further use / training
 
 # %%
 plots.cellPowerBalance(cell, time)

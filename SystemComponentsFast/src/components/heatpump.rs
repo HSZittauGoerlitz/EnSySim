@@ -6,7 +6,6 @@ use crate::misc::hist_memory;
 #[pyclass]
 #[derive(Clone)]
 pub struct Heatpump {
-    //pow_e: f32,  // electrical input power of  heatpump [W]
     #[pyo3(get)]
     pow_t: f32,  // thermalpower of heatpump [W]
     state: f32,  // Operation mode for heatpump (f_min_load..1.)
