@@ -115,7 +115,7 @@ class CtrlSmart(CtrlTemplate):
         self.std = 1.
 
         # Training parameter (exploration)
-        self.EpsilonStart = max(epsStart, 1.)
+        self.EpsilonStart = min(epsStart, 1.)
         self.Epsilon = self.EpsilonStart
         self.EpsilonDecay = epsDecay
         self.EpsilonEnd = epsMin
