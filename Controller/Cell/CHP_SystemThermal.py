@@ -386,8 +386,9 @@ class CtrlSmart(CtrlTemplate):
                 self.cHist[self.Epoch] = self.cEpoch
                 if self.visualise:
                     idx = max(self.Epoch - self.VisWin, 0)
-                    self.cMean[idx] = self.cHist[idx:self.Epoch].mean()
-                    cStd = self.cHist[idx:self.Epoch].std()
+                    idxEnd = max(self.Epoch, self.VisWin)
+                    self.cMean[idx] = self.cHist[idx:idxEnd].mean()
+                    cStd = self.cHist[idx:idxEnd].std()
                     self.cStdU[idx] = self.cMean[idx] + cStd
                     self.cStdL[idx] = self.cMean[idx] - cStd
             else:
