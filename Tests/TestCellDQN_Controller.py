@@ -1,7 +1,6 @@
 # To add a new cell, type '# %%'
 # To add a new markdown cell, type '# %% [markdown]'
-# %%
-# Imports
+# %% imports
 from BoundaryConditions.Simulation.SimulationData import getSimData
 from Controller.Cell.CHP_SystemThermal import CtrlSmart
 from GenericModel.Design import generateGenericCell
@@ -10,19 +9,22 @@ from SystemComponentsFast import simulate, CellChpSystemThermal
 from PostProcesing import plots
 import logging
 
-# %% debug
+# %% 
+# debugging
 import os
 
 print(os.getpid())
 
-# %%
+# %% 
+# logging
 FORMAT = ("%(levelname)s %(name)s %(asctime)-15s "
           "%(filename)s:%(lineno)d %(message)s")
 logging.basicConfig(format=FORMAT)
 logging.getLogger().setLevel(logging.WARNING)
 
-# %%
-# Parameter
+# %% 
+# model parameters
+
 # time
 start = '01.01.2020'
 end = '01.01.2021'
@@ -36,6 +38,7 @@ pAgriculture = {'FSH': 0.2, 'REH': 0.2, 'SAH': 0.0, 'BAH': 0.0}
 # district heating and PV
 pDHN = {'FSH': 0.1, 'REH': 0.1, 'SAH': 0.1, 'BAH': 0.1}
 pPVplants = 0.2
+# heatpumps and chp
 pHeatpumps = {'class_1': 0, 'class_2': 0,
               'class_3': 0, 'class_4': 0.12,
               'class_5': 0.27}
@@ -44,7 +47,8 @@ pCHP = 0.1
 # environment
 region = "East"
 
-# %% DQN Parameter
+# %% 
+# DQN parameters
 capacity = 96 * 300
 batchSize = 48
 epsStart = 0.9
@@ -63,6 +67,7 @@ visualise = True
 nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
 
 # %%
+# generate cell, add systems
 cell = generateGenericCell(nBuildings, pAgents,
                            pPHHagents, pAgriculture,
                            pDHN, pPVplants, pHeatpumps, pCHP, pBTypes,
@@ -82,16 +87,18 @@ MaxFuelDemand = ((chpSystem.chp.pow_e + chpSystem.chp.pow_t) /
 controller = CtrlSmart(capacity, batchSize, epsStart, epsMin, epsDecay,
                        cMax, targetUpdate, nHL1, nHL2, trainHistSize,
                        MaxPower_e, MaxPower_t, MaxFuelDemand, visualise)
-# Recommendation: load controller (at first make init run and save manually)
+controller.loadStats()
 chpSystem.controller = controller
 cell.add_chp_thermal(chpSystem)
 
+
 # %%
+# simulate
 if visualise:
     display(controller.trainVis)
 
-simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
-         Solar.to_dict('list'))
+while True:
+
 
 # Recommendation: Upate stats weighted
 # and save controller for further use / training
