@@ -115,7 +115,7 @@ class CtrlSmart(CtrlTemplate):
         self.std = 1.
 
         # Training parameter (exploration)
-        self.EpsilonStart = min(epsStart, 1.)
+        self.EpsilonStart = max(epsStart, 1.)
         self.Epsilon = self.EpsilonStart
         self.EpsilonDecay = epsDecay
         self.EpsilonEnd = epsMin
@@ -381,7 +381,7 @@ class CtrlSmart(CtrlTemplate):
         # handle Batch / Epoch
         # since the system is not time limited, one batch is defined as one day
         self.Batch += 1
-        if self.Batch >= 96:
+        if self.Batch >= 96:  # transitions per epoch
             if self.Epoch < self.trainHistSize:
                 self.cHist[self.Epoch] = self.cEpoch
                 if self.visualise:
