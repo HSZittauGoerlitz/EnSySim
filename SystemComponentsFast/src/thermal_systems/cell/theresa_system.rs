@@ -43,7 +43,7 @@ impl TheresaSystem {
 
         let chp = CHP::new(chp_proportion*p_max, hist);
 
-        let storage = GenericStorage::new(50.76e3 * scale,
+        let storage = GenericStorage::new(271.11e3 * scale,
                                           0.98,
                                           0.98,
                                           0.,
@@ -51,7 +51,7 @@ impl TheresaSystem {
                                           hist,);
 
         // boiler
-        let mut boiler = Boiler::new((1. - chp_proportion)*p_max, 0);
+        let mut boiler = Boiler::new((1. - chp_proportion)*p_max, hist);
         boiler.set_efficiency(0.99);
 
         let gen_e;
