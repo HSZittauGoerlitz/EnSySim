@@ -8,7 +8,7 @@ import pandas as pd
 
 
 def addTheresaSystem(cell, nSteps):
-    theresa = TheresaSystem(250., nSteps)
+    theresa = TheresaSystem(200, nSteps)
 
     cell.add_theresa(theresa)
 

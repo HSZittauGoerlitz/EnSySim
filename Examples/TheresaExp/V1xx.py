@@ -6,15 +6,15 @@ from Examples.TheresaExp.Basic.Model import (addTheresaSystem,
 from SystemComponentsFast import simulate
 # Post processing
 import numpy as np
-from PostProcesing.plots import COL_BAL
+from PostProcesing.plots import COL_BAL, COL_GEN, COL_CON
 from PostProcesing import plots
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 
 # %% prepare Simulation
-start = '23.01.2020'
-end = '24.01.2020'
+start = '23.02.2020'
+end = '25.02.2020'
 
 nSteps, time, SLP, HWP, Weather, Solar, cell = getDefaultCellData(start, end)
 cell = addTheresaSystem(cell, nSteps)
@@ -28,7 +28,7 @@ ts = cell.get_theresa_system()
 fig_S = plots.chargeState(ts.storage, time, retFig=True)
 PBfig = plots.cellPowerBalance(cell, time, True)
 
-CellFig = make_subplots(rows=4, cols=1,
+CellFig = make_subplots(rows=5, cols=1,
                         shared_xaxes=True,
                         vertical_spacing=0.02,
                         subplot_titles=("", "",
@@ -36,7 +36,8 @@ CellFig = make_subplots(rows=4, cols=1,
                                          "{:.2f}MWh")
                                         .format(np.round(ts.storage.cap * 1e-6,
                                                          2)),
-                                        "Environment Temperature"
+                                        "Environment Temperature",
+                                        "CHP thermal generation"
                                         ),
                         )
 
@@ -58,13 +59,26 @@ CellFig.add_trace(go.Scatter(x=time,
 CellFig.add_trace(go.Scatter(x=time, y=Weather['T [degC]'].values,
                              line={'color': 'rgba(100, 149, 237, 0.5)',
                                    'width': 1},
-                             name="CHP state"),
+                             name="temperature"),
                   row=4, col=1
                   )
+CellFig.add_trace(go.Scatter(x=time,
+                             y=np.array(ts.chp.gen_t.get_memory())*1e-6,
+                             line={'color': COL_GEN,
+                                   'width': 1},
+                             name="CHP",
+                             ), row=5, col=1)
+CellFig.add_trace(go.Scatter(x=time,
+                             y=np.array(ts.boiler.gen_t.get_memory())*1e-6,
+                             line={'color': COL_CON,
+                                   'width': 1},
+                             name="boiler",
+                             ), row=5, col=1)
 CellFig.update_xaxes(title_text="", row=1, col=1)
 CellFig.update_xaxes(title_text="", row=2, col=1)
 CellFig.update_xaxes(title_text="", row=3, col=1)
-CellFig.update_xaxes(title_text="Time", row=4, col=1)
+CellFig.update_xaxes(title_text="", row=4, col=1)
+CellFig.update_xaxes(title_text="Time", row=5, col=1)
 CellFig.update_yaxes({'title': {'text': PBfig.layout.yaxis.title.text}},
                      row=1, col=1)
 CellFig.update_yaxes({'title': {'text': PBfig.layout.yaxis2.title.text}},
@@ -73,6 +87,14 @@ CellFig.update_yaxes({'title': {'text': "Charge [MWh]"}},
                      row=3, col=1)
 CellFig.update_yaxes({'title': {'text': "Temperature in degC"}},
                      row=4, col=1)
-
+CellFig.update_yaxes({'title': {'text': "Thermal generation [MW]"}},
+                     row=5, col=1)
 # %%
 plots.cellEnergyBalance(cell, time)
+
+# %% 
+#Weather.to_hdf("C:/Users/mh73jyne/V137/Weather.h5", "Weather")
+#Solar.to_hdf("C:/Users/mh73jyne/V137/Solar.h5", "Solar")
+
+
+# %%
