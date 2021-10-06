@@ -5,7 +5,7 @@ Generic, statistics based energy system modell for testing and validation of con
 # Getting started
 
 Since compiled files are not beeing synced for this repository, you'll have to build them on your own. Here's how:
-__At this point I'm explaining the toolchain used by us. Of course you asre free to use different IDEs and compilers__
+__At this point I'm explaining the toolchain used by us. Of course you are free to use different IDEs and compilers__
 
 
 1. Download and install vs code and vs code buildtools from [here](https://visualstudio.microsoft.com/de/downloads/) and [here](ttps://visualstudio.microsoft.com/de/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16). Also install the Marketplace extension for Python/Jupyter notebooks.
@@ -23,12 +23,6 @@ __At this point I'm explaining the toolchain used by us. Of course you asre free
 1. Try to execute the TestGenericCell.ipynb to see if everything works.
     - Set the current working directory to the root directory
 1. make sure to install the vs code extensions (python, jupyter)
-1. "jupyter.notebookFileRoot": "${workspaceFolder}"
+1. `"jupyter.notebookFileRoot": "${workspaceFolder}"`
 1. choose the right python environment for jupyter (blue bar bottom)
 1. conda config --env --add channels conda-forge (weil python kernel version)
-
-
-<a href=""></a>
-
-
-
