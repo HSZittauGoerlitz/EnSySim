@@ -87,7 +87,7 @@ def arbitraryBalance(generation, load, time, unitPrefix,
     fig.update_xaxes(title_text="Time", row=2, col=1)
     fig.update_yaxes(title_text="Power [{}W]".format(unitPrefix),
                      row=1, col=1)
-    fig.update_yaxes(title_text="Energy [{}W]".format(unitPrefix),
+    fig.update_yaxes(title_text="Energy [{}Wh]".format(unitPrefix),
                      row=2, col=1)
     if retFig:
         return fig
