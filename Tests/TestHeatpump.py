@@ -171,7 +171,7 @@ for bClass, mState, airState in results.columns.to_list():
         logging.debug("yearly power factor:  {:.2f}"
                       .format(power_factor))
     except:
-        logging.debug("heatpump configuration not feasable")
+        logging.debug("heatpump configuration not feasible")
         # %% Add building to cell
         building.is_at_dhn = True
         cell.add_building(building)
