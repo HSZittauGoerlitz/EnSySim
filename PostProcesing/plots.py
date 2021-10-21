@@ -26,10 +26,13 @@ def arbitraryBalance(generation, load, time, unitPrefix,
     """
     # calculate resulting energy course
     dt = time.diff().dt.seconds / 3600.  # time difference in h
-    energy_gen = generation.cumsum()
-    energy_gen[1:] *= dt[1:]
-    energy_load = load.cumsum()
-    energy_load[1:] *= dt[1:]
+    # assume first time step length is equal to first known step
+    energy_gen = generation * 0.
+    energy_gen[0] = generation[0] * dt[1]
+    energy_gen[1:] = (generation[1:] * dt[1:]).cumsum()
+    energy_load = load * 0.
+    energy_load[0] = load[0] * dt[1]
+    energy_load[1:] = (load[1:] * dt[1:]).cumsum()
 
     # Create Figure
     fig = make_subplots(rows=2, cols=1,
@@ -226,14 +229,15 @@ def cellEnergyBalance(cell, time):
     load_e = np.array(cell.load_e.get_memory()) * 1e-6
     load_t = np.array(cell.load_t.get_memory()) * 1e-6
     # calculate energy
-    gen_e = gen_e.cumsum()
-    gen_e[1:] *= dt[1:]
-    gen_t = gen_t.cumsum()
-    gen_t[1:] *= dt[1:]
-    load_e = load_e.cumsum()
-    load_e[1:] *= dt[1:]
-    load_t = load_t.cumsum()
-    load_t[1:] *= dt[1:]
+    # assume first time step length is equal to first known step
+    gen_e[0] = gen_e[0] * dt[1]
+    gen_e[1:] = (gen_e[1:] * dt[1:]).cumsum()
+    gen_t[0] = gen_t[0] * dt[1]
+    gen_t[1:] = (gen_t[1:] * dt[1:]).cumsum()
+    load_e[0] = load_e[0] * dt[1]
+    load_e[1:] = (load_e[1:] * dt[1:]).cumsum()
+    load_t[0] = load_t[0] * dt[1]
+    load_t[1:] = (load_t[1:] * dt[1:]).cumsum()
     # calculate balance
     bal_e = gen_e - load_e
     bal_t = gen_t - load_t
