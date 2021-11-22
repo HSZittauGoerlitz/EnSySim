@@ -362,6 +362,7 @@ impl Cell {
                    (delta < std::f32::consts::FRAC_PI_2) {
                     irradiations[idx] += i_b * (h.sin()*tilt.cos() +
                                                 h.cos()*delta.cos()*tilt.sin()
+                                                ) / h.sin();
                    }
             }
         }
