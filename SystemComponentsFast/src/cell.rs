@@ -241,6 +241,17 @@ impl Cell {
         }
     }
 
+    fn get_thermal_chp_system(&self) -> Option<chp_system_thermal::
+                                        CellChpSystemThermal>
+    {
+        match &self.thermal_system {
+            Some(ThermalSystem::ChpSystem(system)) => {
+                Some(system.clone())
+            },
+            _ => None,
+        }
+    }
+
     fn replace_building(&mut self, building_pos: usize,
                         building: building::Building)
     {
@@ -351,7 +362,6 @@ impl Cell {
                    (delta < std::f32::consts::FRAC_PI_2) {
                     irradiations[idx] += i_b * (h.sin()*tilt.cos() +
                                                 h.cos()*delta.cos()*tilt.sin()
-                                                );
                    }
             }
         }
