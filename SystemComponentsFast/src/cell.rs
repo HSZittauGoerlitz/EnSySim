@@ -302,7 +302,8 @@ impl Cell {
             *env_data.get("E diffuse [W/m^2]").unwrap(),
             *sol_data.get("elevation [degree]").unwrap(),
             *sol_data.get("azimuth [degree]").unwrap(),
-            *env_data.get("T [degC]").unwrap()
+            *env_data.get("T [degC]").unwrap(),
+            *env_data.get("T mean [degC]").unwrap()
         );
 
         let t_out_n = self.t_out_n;
