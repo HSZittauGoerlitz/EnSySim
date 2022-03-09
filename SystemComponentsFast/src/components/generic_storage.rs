@@ -91,6 +91,12 @@ impl GenericStorage {
                                               };
         generic_storage
     }
+
+    pub fn initialize_random(&mut self) {
+        let mut rng = rand::thread_rng();
+        self.charge = rng.gen::<f32>() * self.cap;
+    }
+
 }
 
 /// thermal storage
@@ -100,6 +106,10 @@ impl GenericStorage {
 
     pub fn get_relative_charge(& self) -> f32 {
         return self.charge / self.cap
+    }
+
+    pub fn get_absolute_charge(& self) -> f32 {
+        return self.charge
     }
 
     /// Charge storage with given power
