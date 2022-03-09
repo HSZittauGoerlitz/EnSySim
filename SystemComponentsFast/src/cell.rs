@@ -44,7 +44,6 @@ impl ThermalSystem {
     }
 }
 
-
 #[pyclass]
 #[derive(Clone)]
 pub struct Cell {
