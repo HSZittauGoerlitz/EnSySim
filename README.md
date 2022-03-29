@@ -17,3 +17,6 @@ __At this point I'm explaining the toolchain used by us. Of course you are free 
 1. Change to nightly build with shell command `rustup default nightly` (needed for pyo3-python connection)
 1. build with `cargo +nightly build --release`, make sure to rename the compiled .dll to .pyd and move it to the \SystemComponentsFast folder. For this you can use the ReleaseExample.cmd, rename it to Release.cmd and replace the placeholders concerning the path to activate.bat (in your conda installation path under Scripts/) and conda environment name. For building you can use Ctrl+Shift+P -> Run Task -> SCfast release.
 1. Try to execute the different scenarios under Tests/ to see if everything works. This should be done using the jupyter cell commands (Run Cell / Run Below). Make sure default interpreter is set to your appropriate conda environment.
+
+# Debugging:
+[https://daveceddia.com/debug-electron-native-rust-with-vscode/]
