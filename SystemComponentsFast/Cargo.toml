@@ -14,6 +14,7 @@ rand_distr = ">=0.4.0"
 log = "~0.4"
 pyo3-log = "0.3"
 num-integer = "0.1.44"
+ndarray = "0.14.0"
 
 [lib]
 name = "SystemComponentsFast"

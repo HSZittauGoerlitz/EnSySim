@@ -111,6 +111,9 @@ class CtrlSmartSimple(CtrlTemplate):
                         (False, True), (True, True)]
         self.actionSize = len(self.ACTIONS)
 
+        self._done = False
+        self._observers = []
+
         self.mean = 0.
         self.std = 1.
 
@@ -161,13 +164,27 @@ class CtrlSmartSimple(CtrlTemplate):
         self.MaxPower_t = MaxPower_t
         self.MaxFuelDemand = MaxFuelDemand
 
+    @property
+    def done(self):
+        return self._done
+
+    @done.setter
+    def done(self, value):
+        self._done = value
+        if self.done:
+            for callback in self._observers:
+                callback(self._done)
+
+    def report_done(self, callback):
+        self._observers.append(callback)
+
     def _getCosts(self, state):
         # check fulfilment of thermal demand -> stop criterion
         eDemand_t = state[1] - state[2]  # gen - load
         if eDemand_t < -0.1 * self.MaxPower_t:
-            return (self.cMax, 0.)
+            return (self.cMax, 1.)
         elif eDemand_t > 0.1 * self.MaxPower_t:
-            return (self.cMax, 0,)
+            return (self.cMax, 1.)
 
         # check electrical autarky and fuel demand
         costs = 0.
@@ -382,13 +399,14 @@ class CtrlSmartSimple(CtrlTemplate):
                          gen_t, load_t, Tmean], dtype=np.float32)
 
         # get Costs and init done
-        costs, done = self._getCosts(state)
+        costs, self.done = self._getCosts(state)
         self.cEpoch += costs
-
         # handle Batch / Epoch
         # since the system is not time limited, one batch is defined as one day
         self.Batch += 1
-        if self.Batch >= 96:  # transitions per epoch
+        print(self.done)
+        print(self._done)
+        if self.done: # Batch >= 96:  # transitions per epoch
             if self.Epoch < self.trainHistSize:
                 self.cHist[self.Epoch] = self.cEpoch
                 if self.visualise:
@@ -417,7 +435,7 @@ class CtrlSmartSimple(CtrlTemplate):
 
             self.Epoch += 1
             self.Batch = 0
-            done = 1.
+            self.done = False
             self.cEpoch = 0.
 
             if self.visualise:
@@ -432,7 +450,7 @@ class CtrlSmartSimple(CtrlTemplate):
                     self.trainVis.data[3].y = self.cStdL
 
         # build replay memory
-        self.remember(self.lastState, self.lastAction, costs, state, done)
+        self.remember(self.lastState, self.lastAction, costs, state, self.done)
         # train model
         self.replay(True)
 
