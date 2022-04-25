@@ -204,7 +204,7 @@ impl EnSySimEnv {
     /// choose random starting point and initialize e. g. storages
     pub fn reset(&mut self)
     {
-        self.current_step = rand::thread_rng().gen_range(0..35040);
+        self.current_step = rand::thread_rng().gen_range(0..33000);
     }
 
     /// step cell one time step
