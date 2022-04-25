@@ -14,7 +14,7 @@ import plotly.graph_objs as go
 import numpy as np
 import logging
 
-# %%
+# %% Logging
 FORMAT = ("%(levelname)s %(name)s %(asctime)-15s "
           "%(filename)s:%(lineno)d %(message)s")
 logging.basicConfig(format=FORMAT)
@@ -99,7 +99,7 @@ controller = CtrlSmartSimple(capacity, batchSize, epsStart, epsMin, epsDecay,
 # controller.loadStats()
 # controller.loadMemory()
 
-# %%
+# %% Training environment
 
 env = EnSySimEnv(SLP.to_dict('list'), HWP, Weather.to_dict('list'),
                  Solar.to_dict('list'))
@@ -147,18 +147,21 @@ env_status = EnvStatus(visualise)
 
 controller.report_done(env_status.listen_to_controllers)
 
-
 chpSystem.controller = controller
 
 cell.add_chp_thermal(chpSystem)
 
 env.add_cell(cell)
 
-episodes = 10000
+# %% Training
+episodes = 1500
 i = 0
 steps = 0
+controller.Training = True
 
+controller.reset()
 if visualise:
+    display(controller.costVis)
     display(controller.trainVis)
     display(env_status.envVis)
 while i < episodes:
@@ -168,36 +171,43 @@ while i < episodes:
     else:
 
         i += 1
-        if i < 365:
-            env_status.epoch_duration[i] = steps
-        if i > 365:
-            env_status.epoch_duration[:-1] = env_status.epoch_duration[1:]
-            env_status.epoch_duration[-1] = steps
-        with env_status.envVis.batch_update():
-            env_status.envVis.data[0].y = env_status.epoch_duration
+
+        if visualise:
+            if i < trainHistSize:
+                env_status.epoch_duration[i] = steps
+            if i > trainHistSize:
+                env_status.epoch_duration[:-1] = env_status.epoch_duration[1:]
+                env_status.epoch_duration[-1] = steps
+                env_status.xEpochs += 1
+            with env_status.envVis.batch_update():
+                env_status.envVis.data[0].y = env_status.epoch_duration
+                env_status.envVis.data[0].x = env_status.xEpochs
 
         env.reset()
+        controller.reset()
         env_status.done = False
         steps = 0
 
 # %%
+# Evaluation
 
+# controller.load()
+controller.Training = False
+controller.Epsilon = 0.
 
-# %%
+# chpSystem.controller = controller
+# cell.add_chp_thermal(chpSystem)
 
-
-
-# %%
 # run the simulation
-# simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
-#          Solar.to_dict('list'))
+simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
+         Solar.to_dict('list'))
 
-# simulate
+# %%
 
 if visualise:
-    display(controller.trainVis)
+    display(controller.costVis)
 
-for i in range(25):
+for i in range(1):
 
     simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
              Solar.to_dict('list'))
@@ -211,12 +221,14 @@ for i in range(25):
 
 
 # %%
+# Cell history
 plots.cellPowerBalance(cell, time)
 
 # %%
 plots.cellEnergyBalance(cell, time)
 
 # %%
+# CHP history
 chpSystem = cell.get_thermal_chp_system()
 chp_gen_e = np.array(chpSystem.chp.gen_e.get_memory())
 CHPstate = chp_gen_e > 0.
@@ -226,12 +238,13 @@ fig.add_trace(go.Scatter(x=time, y=CHPstate,
                                'width': 1},
                          name="CHP state")
               )
-fig.update_layout(height=600, width=600,
+fig.update_layout(height=300, width=1000,
                   title_text="CHP operation")
 fig.update_xaxes(title_text="Time")
 fig.update_yaxes(title_text="On/Off")
 
 # %%
+# boiler history
 chpSystem = cell.get_thermal_chp_system()
 boiler_gen_t = np.array(chpSystem.boiler.gen_t.get_memory())
 boile_state = boiler_gen_t > 0.
@@ -241,12 +254,13 @@ fig.add_trace(go.Scatter(x=time, y=boile_state,
                                'width': 1},
                          name="boiler state")
               )
-fig.update_layout(height=600, width=600,
+fig.update_layout(height=300, width=1000,
                   title_text="boiler operation")
 fig.update_xaxes(title_text="Time")
 fig.update_yaxes(title_text="On/Off")
 # %%
-
+# storage history
+chpSystem = cell.get_thermal_chp_system()
 plots.chargeState(chpSystem.storage, time)
 
 # %%
