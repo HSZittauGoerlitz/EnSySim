@@ -105,8 +105,8 @@ class CtrlSmartSimple(CtrlTemplate):
         if (nHL1 < 1) or (nHL2 < 1):
             raise ValueError("Number of Neurons must be a positive integer")
 
-        self.stateSize = 4
-        # All possible actions: CHP, Boiler
+        self.stateSize = 7
+        # All possible actions: (CHP, Boiler)
         self.ACTIONS = [(False, False), (True, False),
                         (False, True), (True, True)]
         self.actionSize = len(self.ACTIONS)
@@ -116,6 +116,8 @@ class CtrlSmartSimple(CtrlTemplate):
 
         self.mean = 0.
         self.std = 1.
+
+        self.Training = True
 
         # Training parameter (exploration)
         self.EpsilonStart = max(epsStart, 1.)
@@ -155,9 +157,11 @@ class CtrlSmartSimple(CtrlTemplate):
         self.trainHistSize = max(trainHistSize, 1)
         self.cEpoch = 0.
         if self.visualise:
+            self._initCostVis()
             self._initTrainVis()
         else:
             self.cHist = np.zeros(self.trainHistSize)
+            self.epsHist = np.zeros(self.trainHistSize)
 
         # System Parameter
         self.MaxPower_e = MaxPower_e
@@ -178,29 +182,40 @@ class CtrlSmartSimple(CtrlTemplate):
     def report_done(self, callback):
         self._observers.append(callback)
 
-    def _getCosts(self, state):
+    def _getCosts(self, state, aIdx):
+
         # check fulfilment of thermal demand -> stop criterion
-        eDemand_t = state[1] - state[2]  # gen - load
-        if eDemand_t < -0.1 * self.MaxPower_t:
-            return (self.cMax, 1.)
-        elif eDemand_t > 0.1 * self.MaxPower_t:
+        eDemand_t = state[4] - state[3]  # gen - load
+        if eDemand_t != 0.:
             return (self.cMax, 1.)
 
-        # check electrical autarky and fuel demand
-        costs = 0.
-        # eDemand_e = state[1] - state[2]  # electrical: gen - load
-        # if eDemand_e < 0.:
-        #     costs = min(1., abs(eDemand_e) / self.MaxPower_e) * 0.5 * self.cMax
+        # if eDemand_t < -0.01 * self.MaxPower_t:
+        #     return (self.cMax, 1.)
+        # elif eDemand_t > 0.01 * self.MaxPower_t:
+        #     return (self.cMax, 1.)
 
-        storage = state[0]
-        if storage < 0.2 or storage > 0.8:
-            costs += 0.1 * self.cMax
+        costs = -0.25  # bonus for time step
 
+        # hint for storage state
+        storage = state[1]
         if storage < 0.1 or storage > 0.9:
             costs += 0.3 * self.cMax
 
         if storage < 0.05 or storage > 0.95:
             costs += 0.5 * self.cMax
+
+        boiler = state[6]
+        # prefer chp over boiler
+        if boiler == 1:
+            costs += 0.5 * self.cMax
+
+        # add consistency
+        chp = state[5]
+        if chp == 0 and self.lastState[5] == 0:
+            costs -= 0.1
+
+        if chp == self.lastState[5]:
+            costs -= 0.1
 
         return (costs, 0.)
 
@@ -213,7 +228,7 @@ class CtrlSmartSimple(CtrlTemplate):
         with torch.no_grad():
             return self.targetModel(torch.FloatTensor(state))
 
-    def _initTrainVis(self):
+    def _initCostVis(self):
         self.VisWin = 50
         self.trainHistSize = max(self.trainHistSize, self.VisWin+1)
         self.xEpochs = np.arange(self.trainHistSize)
@@ -225,7 +240,7 @@ class CtrlSmartSimple(CtrlTemplate):
         fig = go.Figure()
         fig.update_xaxes(title_text="Number of Epoch")
         fig.update_yaxes(title_text="Costs",
-                         range=[0., self.batchSize * self.cMax * 2.0])
+                         range=[-20., 5.])
 
         lineCostsEnd = go.Scatter({"x": self.xEpochs,
                                    "y": self.cHist,
@@ -270,6 +285,32 @@ class CtrlSmartSimple(CtrlTemplate):
         fig.add_trace(lineCostsEndM)
         fig.add_trace(lineCostsStdU)
         fig.add_trace(lineCostsStdL)
+        # create widget
+        self.costVis = go.FigureWidget(fig)
+
+    def _initTrainVis(self):
+        self.VisWin = 50
+        self.trainHistSize = max(self.trainHistSize, self.VisWin+1)
+        self.xEpochs = np.arange(self.trainHistSize)
+        self.epsHist = np.zeros(self.trainHistSize)
+
+        fig = go.Figure()
+        fig.update_xaxes(title_text="Number of Epoch")
+        fig.update_yaxes(title_text="Exploration Rate",
+                         range=[0., 1.])
+
+        lineEps = go.Scatter({"x": self.xEpochs,
+                              "y": self.epsHist,
+                              "name": "exploration",
+                              "uid": "uid_rEndLine",
+                              "yaxis": "y1",
+                              "line": {"color": "#000000",
+                                       "width": 1
+                                       }
+                              })
+
+        fig.add_trace(lineEps)
+
         # create widget
         self.trainVis = go.FigureWidget(fig)
 
@@ -381,6 +422,14 @@ class CtrlSmartSimple(CtrlTemplate):
 
         return (loss, Qbounds)
 
+    def reset(self):
+        self.StorageStateGrad = 0
+        self.ThermalDemandGrad = 0
+
+        self.lastState = np.zeros(self.stateSize)
+
+        self.done = False
+
     def save(self, loc='./', fModel='SmartCtrlModel', fStats='SmartCtrlStats'):
         self.saveModel(loc, fModel)
         self.saveStats(loc, fStats)
@@ -392,75 +441,107 @@ class CtrlSmartSimple(CtrlTemplate):
         np.savez(loc + fName, mean=self.mean, std=self.std)
 
     def step(self, StorageState, CellState, Ambient):
+
         # prepare boundary conditions
         gen_e, load_e, gen_t, load_t, contrib_e, contrib_t, fuel = CellState
         Eg, solEl, solAz, Tout, Tmean = Ambient
-        state = np.array([StorageState,
-                         gen_t, load_t, Tmean], dtype=np.float32)
 
-        # get Costs and init done
-        costs, self.done = self._getCosts(state)
-        self.cEpoch += costs
-        # handle Batch / Epoch
-        # since the system is not time limited, one batch is defined as one day
-        self.Batch += 1
-        print(self.done)
-        print(self._done)
-        if self.done: # Batch >= 96:  # transitions per epoch
-            if self.Epoch < self.trainHistSize:
-                self.cHist[self.Epoch] = self.cEpoch
-                if self.visualise:
-                    idx = max(self.Epoch - self.VisWin, 0)
-                    idxEnd = max(self.Epoch, self.VisWin)
-                    self.cMean[idx] = self.cHist[idx:idxEnd].mean()
-                    cStd = self.cHist[idx:idxEnd].std()
-                    self.cStdU[idx] = self.cMean[idx] + cStd
-                    self.cStdL[idx] = self.cMean[idx] - cStd
-            else:
-                self.cHist[:-1] = self.cHist[1:]
-                self.cHist[-1] = self.cEpoch
-                if self.visualise:
-                    self.xEpochs[:-1] = self.xEpochs[1:]
-                    self.xEpochs[-1] = self.Epoch
-                    self.cHist[:-1] = self.cHist[1:]
-                    self.cHist[-1] = self.cEpoch
-                    idxStart = self.trainHistSize - self.VisWin
-                    self.cMean[:-1] = self.cMean[1:]
-                    self.cMean[-1] = self.cHist[idxStart:].mean()
-                    cStd = self.cHist[idxStart:].std()
-                    self.cStdU[:-1] = self.cStdU[1:]
-                    self.cStdU[-1] = self.cMean[-1] + cStd
-                    self.cStdL[:-1] = self.cStdL[1:]
-                    self.cStdL[-1] = self.cMean[-1] - cStd
+        load_t = load_t / self.MaxPower_t
+        gen_t = gen_t / self.MaxPower_t
 
-            self.Epoch += 1
-            self.Batch = 0
-            self.done = False
-            self.cEpoch = 0.
+        if np.all((self.lastState == 0)):
+            self.lastState[1] = StorageState
+            self.lastState[3] = load_t
 
-            if self.visualise:
-                with self.trainVis.batch_update():
-                    self.trainVis.data[0].x = self.xEpochs
-                    self.trainVis.data[1].x = self.xEpochs[self.VisWin:]
-                    self.trainVis.data[2].x = self.xEpochs[self.VisWin:]
-                    self.trainVis.data[3].x = self.xEpochs[self.VisWin:]
-                    self.trainVis.data[0].y = self.cHist
-                    self.trainVis.data[1].y = self.cMean
-                    self.trainVis.data[2].y = self.cStdU
-                    self.trainVis.data[3].y = self.cStdL
+        self.StorageStateGrad = (StorageState - self.lastState[1]) / 0.25  # t
+        self.ThermalDemandGrad = (load_t - self.lastState[3]) / 0.25
 
-        # build replay memory
-        self.remember(self.lastState, self.lastAction, costs, state, self.done)
-        # train model
-        self.replay(True)
+        Chp, Boiler = self.ACTIONS[self.lastAction]
+
+        state = np.array([self.StorageStateGrad,
+                          StorageState,
+                          self.ThermalDemandGrad,
+                          load_t,
+                          gen_t,
+                          Chp,
+                          Boiler], dtype=np.float32)
 
         aIdx = self.act(state)
         Chp, Boiler = self.ACTIONS[aIdx]
 
+        if self.Training:
+
+            # get Costs and init done
+            costs, self.done = self._getCosts(state, aIdx)
+            self.cEpoch += costs
+            # handle Batch / Epoch
+            # since the system is not time limited, one batch is defined as
+            # half a day
+            self.Batch += 1
+            if self.Batch >= 12 / 0.25:
+                self.done = True
+
+            if self.done:  # Batch >= 96:  # transitions per epoch
+                if self.Epoch < self.trainHistSize:
+                    self.cHist[self.Epoch] = self.cEpoch
+                    self.epsHist[self.Epoch] = self.Epsilon
+                    if self.visualise:
+                        idx = max(self.Epoch - self.VisWin, 0)
+                        idxEnd = max(self.Epoch, self.VisWin)
+                        self.cMean[idx] = self.cHist[idx:idxEnd].mean()
+                        cStd = self.cHist[idx:idxEnd].std()
+                        self.cStdU[idx] = self.cMean[idx] + cStd
+                        self.cStdL[idx] = self.cMean[idx] - cStd
+                else:
+                    self.cHist[:-1] = self.cHist[1:]
+                    self.cHist[-1] = self.cEpoch
+                    self.epsHist[:-1] = self.epsHist[1:]
+                    self.epsHist[-1] = self.Epsilon
+                    if self.visualise:
+                        self.xEpochs[:-1] = self.xEpochs[1:]
+                        self.xEpochs[-1] = self.Epoch
+                        # self.cHist[:-1] = self.cHist[1:]
+                        # self.cHist[-1] = self.cEpoch
+                        idxStart = self.trainHistSize - self.VisWin
+                        self.cMean[:-1] = self.cMean[1:]
+                        self.cMean[-1] = self.cHist[idxStart:].mean()
+                        cStd = self.cHist[idxStart:].std()
+                        self.cStdU[:-1] = self.cStdU[1:]
+                        self.cStdU[-1] = self.cMean[-1] + cStd
+                        self.cStdL[:-1] = self.cStdL[1:]
+                        self.cStdL[-1] = self.cMean[-1] - cStd
+
+                self.Epoch += 1
+                self.Batch = 0
+                self.cEpoch = 0.
+
+                if self.visualise:
+                    with self.costVis.batch_update():
+                        self.costVis.data[0].x = self.xEpochs
+                        self.costVis.data[1].x = self.xEpochs[self.VisWin:]
+                        self.costVis.data[2].x = self.xEpochs[self.VisWin:]
+                        self.costVis.data[3].x = self.xEpochs[self.VisWin:]
+                        self.costVis.data[0].y = self.cHist
+                        self.costVis.data[1].y = self.cMean
+                        self.costVis.data[2].y = self.cStdU
+                        self.costVis.data[3].y = self.cStdL
+                        self.trainVis.data[0].x = self.xEpochs
+                        self.trainVis.data[0].y = self.epsHist
+
+            # build replay memory
+            self.remember(self.lastState,
+                          self.lastAction,
+                          costs,
+                          state,
+                          self.done)
+            # train model
+            self.replay(True)
+
         self.lastAction = aIdx
         self.lastState = state.copy()
 
-        return (Chp, Boiler)
+        # print(state, aIdx, costs, self.done)
+        return (Chp, Boiler, bool(self.done))
 
     def updateStateStats(self, weight=True):
         state = torch.cat(Transition(*zip(*self.memory.memory))
