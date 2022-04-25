@@ -201,7 +201,7 @@ def cellPowerBalance(cell, time, retFig=False):
                              legendgroup='Thermal'
                              ),
                   row=2, col=1)
-    fig.update_layout(height=1000, width=1000,
+    fig.update_layout(height=600, width=1000,
                       title_text="Cell Power Balance")
     # add axis labels
     fig.update_xaxes(title_text="Time", row=2, col=1)
@@ -319,7 +319,7 @@ def chargeState(storage, time, retFig=False):
                              name="charge",
                              )
                   )
-    fig.update_layout(height=500, width=1000,
+    fig.update_layout(height=300, width=1000,
                       title_text="Storage with max. capacity of {:.2f}kWh"
                                  .format(np.round(storage.cap * 1e-3, 2)))
     fig.update_xaxes(title_text="Time")
