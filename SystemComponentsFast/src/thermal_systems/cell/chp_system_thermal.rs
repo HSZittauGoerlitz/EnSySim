@@ -137,7 +137,7 @@ impl CellChpSystemThermal {
         match &self.controller {
             None => self.control(),
             Some(ctrl) => {
-                let chp_boiler_state: (bool, bool);
+                let chp_boiler_state: (bool, bool, bool);
                 let gil = Python::acquire_gil();
                 let py = gil.python();
                 let storage_state = self.storage
@@ -153,6 +153,11 @@ impl CellChpSystemThermal {
                     .unwrap();
                 self.chp_state = chp_boiler_state.0;
                 self.boiler_state = chp_boiler_state.1;
+                let done = chp_boiler_state.2;
+
+                if done {
+                    self.storage.initialize_random()
+                }
             },
         }
 
