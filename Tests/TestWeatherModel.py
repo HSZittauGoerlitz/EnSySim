@@ -46,7 +46,7 @@ def plotReferenceTemperatures(refTime, Tref, Tsum, Twin):
                              name="Winter extreme"
                              ))
 
-    fig.update_layout(height=1300, width=2400,
+    fig.update_layout(height=650, width=1200,
                       title_text='Reference curves for region {}'
                                  .format(region))
     # add axis labels
@@ -71,7 +71,7 @@ def plotArrayTemperatures(time, nTestCases, region):
                                        'width': 1},
                                  name="T_{}".format(i+1)
                                  ))
-    fig.update_layout(height=1300, width=2400,
+    fig.update_layout(height=650, width=1200,
                       title_text='Simulated temperature curves for region {}'
                                  .format(region))
     # add axis labels
