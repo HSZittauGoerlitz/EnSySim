@@ -203,7 +203,7 @@ def _loadAllTRYfiles(loc):
             for col in sub_data.weather_data.columns:
                 data[(refType, col)] = sub_data.loc[:, ('weather_data', col)]
 
-    data[('doy', '')] = data[('date_time', '')].dt.day_of_year
+    data[('doy', '')] = data[('date_time', '')].dt.dayofyear
     data.columns = pd.MultiIndex.from_tuples(data.columns)
 
     return data
