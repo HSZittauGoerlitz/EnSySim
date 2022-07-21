@@ -15,8 +15,9 @@ REF_TRANSLATION = {"Jahr": "reference",
 # %% helper functions
 def _checkLocation(loc):
     loc.replace('\\', '/')
-    if loc[-1] != '/':
-        loc += '/'
+    loc.replace(os.sep, '/')
+    if loc[-1] != os.sep:
+        loc += os.sep
 
     return loc
 
@@ -99,9 +100,7 @@ def _getNormedOutsideTemperature(data, region, loc):
     Returns:
         float - Normed outside temperature
     """
-    loc = ('.' + os.sep +
-           os.sep.join(os.path.realpath(__file__).split(os.sep)[2:-1]) +
-           os.sep)
+
     with open(loc + 'TnormOut.json', 'r') as ToutFile:
         ToutData = json.load(ToutFile)
 
@@ -267,7 +266,7 @@ def importData(loc, script_loc):
     loc = _checkLocation(loc)
     script_loc = _checkLocation(script_loc)
 
-    for content in os.listdir(loc):
+    for content in os.listdir(script_loc + loc):
         if os.path.isdir(loc + content):
             data = _loadAllTRYfiles(loc + content + os.sep)
             T = _getNormedOutsideTemperature(data, content, script_loc)
@@ -275,9 +274,8 @@ def importData(loc, script_loc):
 
 
 # %%
-dat_loc = "./BoundaryConditions/Weather/TRWdata_raw"
-script_loc = ('.' + os.sep +
-              os.sep.join(os.path.realpath(__file__).split(os.sep)[2:-1]))
+dat_loc = "TRWdata_raw"
+script_loc = os.path.realpath(__file__).replace(os.path.basename(__file__), '')
 
 importData(dat_loc, script_loc)
 
