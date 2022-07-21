@@ -87,7 +87,7 @@ MaxFuelDemand = ((chpSystem.chp.pow_e + chpSystem.chp.pow_t) /
 controller = CtrlSmart(capacity, batchSize, epsStart, epsMin, epsDecay,
                        cMax, targetUpdate, nHL1, nHL2, trainHistSize,
                        MaxPower_e, MaxPower_t, MaxFuelDemand, visualise)
-controller.loadStats()
+#controller.loadStats()
 chpSystem.controller = controller
 cell.add_chp_thermal(chpSystem)
 
@@ -99,9 +99,15 @@ if visualise:
 
 while True:
 
+    simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
+             Solar.to_dict('list'))
+
+# %%
 
 # Recommendation: Upate stats weighted
 # and save controller for further use / training
+controller.updateStats()
+controller.saveStats()
 
 # %%
 plots.cellPowerBalance(cell, time)

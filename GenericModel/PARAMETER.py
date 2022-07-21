@@ -1,5 +1,11 @@
-# Building data for now
-# TODO: Add source
+import copy
+
+# Building data for today, taken from
+# Bettgenhäuser, K., Offermann, M., Sandau, F., und Gerhardt, N.,
+# „Systemischer Vergleich von Wärmeversorgungstechniken in einem regenerativen
+# Energiesystem“, Umweltbundesamt, Endbericht, Climate Change 33/2016, Apr.
+# 2016.
+
 FSH = {'type': 'FSH'}
 REH = {'type': 'REH'}
 SAH = {'type': 'SAH'}
@@ -21,3 +27,8 @@ PBTYPES_NOW['FSH'] = FSH
 PBTYPES_NOW['REH'] = REH
 PBTYPES_NOW['SAH'] = SAH
 PBTYPES_NOW['BAH'] = BAH
+
+# Building data for 2030 based on %-decrease in heating demand
+PBTYPES_2030 = copy.deepcopy(PBTYPES_NOW)
+for key in PBTYPES_2030.keys():
+    PBTYPES_2030[key]['Modern'] = [1] * len(PBTYPES_2030[key]['Modern'])

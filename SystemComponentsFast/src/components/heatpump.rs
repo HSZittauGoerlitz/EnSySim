@@ -200,6 +200,11 @@ impl Heatpump {
             self.state = 0.;
         }
 
+        // check for minimal working temperature
+        if t_out < &self.t_min_working {
+            self.state = 0.;
+        }
+
         // calculate power output
         let gen_t;
         let con_e;

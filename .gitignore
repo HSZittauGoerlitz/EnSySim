@@ -13,3 +13,6 @@
 
 *.npz
 *.pt
+*.data
+
+wandb/*
