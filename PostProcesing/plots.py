@@ -26,10 +26,13 @@ def arbitraryBalance(generation, load, time, unitPrefix,
     """
     # calculate resulting energy course
     dt = time.diff().dt.seconds / 3600.  # time difference in h
-    energy_gen = generation.cumsum()
-    energy_gen[1:] *= dt[1:]
-    energy_load = load.cumsum()
-    energy_load[1:] *= dt[1:]
+    # assume first time step length is equal to first known step
+    energy_gen = generation * 0.
+    energy_gen[0] = generation[0] * dt[1]
+    energy_gen[1:] = (generation[1:] * dt[1:]).cumsum()
+    energy_load = load * 0.
+    energy_load[0] = load[0] * dt[1]
+    energy_load[1:] = (load[1:] * dt[1:]).cumsum()
 
     # Create Figure
     fig = make_subplots(rows=2, cols=1,
@@ -81,13 +84,13 @@ def arbitraryBalance(generation, load, time, unitPrefix,
                              showlegend=False
                              ),
                   row=2, col=1)
-    fig.update_layout(height=600, width=600,
+    fig.update_layout(height=1000, width=1000,
                       title_text=title)
     # add axis labels
     fig.update_xaxes(title_text="Time", row=2, col=1)
     fig.update_yaxes(title_text="Power [{}W]".format(unitPrefix),
                      row=1, col=1)
-    fig.update_yaxes(title_text="Energy [{}W]".format(unitPrefix),
+    fig.update_yaxes(title_text="Energy [{}Wh]".format(unitPrefix),
                      row=2, col=1)
     if retFig:
         return fig
@@ -121,7 +124,7 @@ def buildingTemperature(building, time, T, retFig=False):
                              name="outside",
                              )
                   )
-    fig.update_layout(height=600, width=600,
+    fig.update_layout(height=1000, width=1000,
                       title_text="Building Temperature Course")
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Temperature [degC]")
@@ -198,7 +201,7 @@ def cellPowerBalance(cell, time, retFig=False):
                              legendgroup='Thermal'
                              ),
                   row=2, col=1)
-    fig.update_layout(height=600, width=600,
+    fig.update_layout(height=1000, width=1000,
                       title_text="Cell Power Balance")
     # add axis labels
     fig.update_xaxes(title_text="Time", row=2, col=1)
@@ -226,14 +229,15 @@ def cellEnergyBalance(cell, time):
     load_e = np.array(cell.load_e.get_memory()) * 1e-6
     load_t = np.array(cell.load_t.get_memory()) * 1e-6
     # calculate energy
-    gen_e = gen_e.cumsum()
-    gen_e[1:] *= dt[1:]
-    gen_t = gen_t.cumsum()
-    gen_t[1:] *= dt[1:]
-    load_e = load_e.cumsum()
-    load_e[1:] *= dt[1:]
-    load_t = load_t.cumsum()
-    load_t[1:] *= dt[1:]
+    # assume first time step length is equal to first known step
+    gen_e[0] = gen_e[0] * dt[1]
+    gen_e[1:] = (gen_e[1:] * dt[1:]).cumsum()
+    gen_t[0] = gen_t[0] * dt[1]
+    gen_t[1:] = (gen_t[1:] * dt[1:]).cumsum()
+    load_e[0] = load_e[0] * dt[1]
+    load_e[1:] = (load_e[1:] * dt[1:]).cumsum()
+    load_t[0] = load_t[0] * dt[1]
+    load_t[1:] = (load_t[1:] * dt[1:]).cumsum()
     # calculate balance
     bal_e = gen_e - load_e
     bal_t = gen_t - load_t
@@ -285,7 +289,7 @@ def cellEnergyBalance(cell, time):
                              legendgroup='Thermal'
                              ),
                   row=2, col=1)
-    fig.update_layout(height=600, width=600,
+    fig.update_layout(height=1000, width=1000,
                       title_text="Cell Energy Balance")
     # add axis labels
     fig.update_xaxes(title_text="Time", row=2, col=1)
@@ -315,7 +319,7 @@ def chargeState(storage, time, retFig=False):
                              name="charge",
                              )
                   )
-    fig.update_layout(height=600, width=600,
+    fig.update_layout(height=500, width=1000,
                       title_text="Storage with max. capacity of {:.2f}kWh"
                                  .format(np.round(storage.cap * 1e-3, 2)))
     fig.update_xaxes(title_text="Time")
@@ -343,10 +347,77 @@ def runningState(utility, time, retFig=False):
                              name="charge",
                              )
                   )
-    fig.update_layout(height=600, width=600,
+    fig.update_layout(height=1000, width=1000,
                       title_text="On/Off states of Utility")
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="State")
+    if retFig:
+        return fig
+    else:  # show figure
+        fig.show()
+
+
+def heatpumpSystemOperation(heatpump_system, time, retFig=False):
+    """Create plot for checking heatpump operation
+
+    Arguments:
+        heatpump_system {heatpump_system} -- object consisting of heatpump 
+                                             and storage and boiler
+        time {lis of arrays} -- Time (abscissae) values to plot
+    Keyword Arguments:
+        retFig {bool} -- When True figure is not showed, but returned
+                         (default: {False})
+    """
+    unitPrefix = "K"
+
+    fig = make_subplots(rows=3, cols=1,
+                        shared_xaxes=True,
+                        vertical_spacing=0.02)
+    # first electrical consumption and thermal generation
+    gen_t_hp = np.array(heatpump_system.heatpump.gen_t.get_memory())*1e-3
+    con_e = np.array(heatpump_system.heatpump.con_e.get_memory())*1e-3
+    gen_t_b = np.array(heatpump_system.boiler.gen_t.get_memory())*1e-3
+    charge = np.array(heatpump_system.storage.charge_hist.get_memory())*1e-3
+
+    fig.add_trace(go.Scatter(x=time,
+                             y=con_e,
+                             line={'color': COL_CON,
+                                   'width': 1},
+                             name="electric consumption hp",
+                             ),
+                  row=1, col=1)
+    fig.add_trace(go.Scatter(x=time,
+                             y=gen_t_hp,
+                             line={'color': COL_GEN,
+                                   'width': 1},
+                             name="thermal generation hp",
+                             ),
+                  row=2, col=1)
+    fig.add_trace(go.Scatter(x=time,
+                             y=gen_t_b,
+                             line={'color': COL_CON,
+                                   'width': 1},
+                             name="thermal generation boiler",
+                             ),
+                  row=2, col=1)
+    fig.add_trace(go.Scatter(x=time,
+                             y=charge,
+                             line={'color': COL_BAL,
+                                   'width': 1},
+                             name="thermal energy storage",
+                             ),
+                  row=3, col=1)
+
+    fig.update_layout(height=1000, width=1000,
+                      title_text="Operation of Heatpumpsystem")
+    # add axis labels
+    fig.update_xaxes(title_text="Time", row=3, col=1)
+    fig.update_yaxes(title_text="Electrical Consumption [{}W]".format(unitPrefix),
+                     row=1, col=1)
+    fig.update_yaxes(title_text="Thermal Generation [{}W]".format(unitPrefix),
+                     row=2, col=1)
+    fig.update_yaxes(title_text="Stored Energy [{}Wh]".format(unitPrefix),
+                     row=3, col=1)
     if retFig:
         return fig
     else:  # show figure
@@ -394,7 +465,7 @@ def compareCurves(time, values, names,
                                  )
                       )
 
-    fig.update_layout(height=600, width=600, title_text=title)
+    fig.update_layout(height=1000, width=1000, title_text=title)
     fig.update_xaxes(title_text=xLabel)
     fig.update_yaxes(title_text=yLabel)
     if retFig:

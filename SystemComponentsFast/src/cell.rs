@@ -44,7 +44,6 @@ impl ThermalSystem {
     }
 }
 
-
 #[pyclass]
 #[derive(Clone)]
 pub struct Cell {
@@ -241,6 +240,17 @@ impl Cell {
         }
     }
 
+    fn get_thermal_chp_system(&self) -> Option<chp_system_thermal::
+                                        CellChpSystemThermal>
+    {
+        match &self.thermal_system {
+            Some(ThermalSystem::ChpSystem(system)) => {
+                Some(system.clone())
+            },
+            _ => None,
+        }
+    }
+
     fn replace_building(&mut self, building_pos: usize,
                         building: building::Building)
     {
@@ -291,7 +301,8 @@ impl Cell {
             *env_data.get("E diffuse [W/m^2]").unwrap(),
             *sol_data.get("elevation [degree]").unwrap(),
             *sol_data.get("azimuth [degree]").unwrap(),
-            *env_data.get("T [degC]").unwrap()
+            *env_data.get("T [degC]").unwrap(),
+            *env_data.get("T mean [degC]").unwrap()
         );
 
         let t_out_n = self.t_out_n;
@@ -351,7 +362,7 @@ impl Cell {
                    (delta < std::f32::consts::FRAC_PI_2) {
                     irradiations[idx] += i_b * (h.sin()*tilt.cos() +
                                                 h.cos()*delta.cos()*tilt.sin()
-                                                );
+                                                ) / h.sin();
                    }
             }
         }
