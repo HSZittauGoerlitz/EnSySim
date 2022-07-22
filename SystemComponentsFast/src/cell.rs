@@ -5,6 +5,7 @@ use log::error;
 
 use crate::{building, sep_bsl_agent, save_e, save_t};
 use crate::components::pv;
+use crate::components::wind;
 use crate::misc::{hist_memory};
 use crate::misc::ambient::AmbientParameters;
 use crate::misc::cell_manager::CellManager;
@@ -65,6 +66,8 @@ pub struct Cell {
     pub t_out_n: f32,
     #[pyo3(get)]
     pv: Option<pv::PV>,
+    #[pyo3(get)]
+    wind: Option<wind::Wind>,
     thermal_system: Option<ThermalSystem>,
     state: CellManager,
     #[pyo3(get)]
@@ -116,6 +119,7 @@ impl Cell {
               eg: eg,
               t_out_n: t_out_n,
               pv: None,
+              wind: None,
               thermal_system: None,
               state: CellManager::new(),
               gen_e: gen_e,
@@ -151,6 +155,14 @@ impl Cell {
             None => {self.pv = Some(pv);},
             Some(_cell_pv) => error!("Cell already has a \
                                      PV plant, nothing is added"),
+        }
+    }
+
+    fn add_wind_turbine(&mut self, wind: wind::Wind) {
+        match &self.wind {
+            None => {self.wind = Some(wind);},
+            Some(_cell_wind) => error!("Cell already has a \
+                                        wind turbine, nothing is added")
         }
     }
 
@@ -301,6 +313,7 @@ impl Cell {
             *env_data.get("E diffuse [W/m^2]").unwrap(),
             *sol_data.get("elevation [degree]").unwrap(),
             *sol_data.get("azimuth [degree]").unwrap(),
+            *env_data.get("wind speed [m/s]").unwrap(),
             *env_data.get("T [degC]").unwrap(),
             *env_data.get("T mean [degC]").unwrap()
         );
@@ -341,6 +354,14 @@ impl Cell {
         }
     }
 
+    fn get_wind_generation(&mut self, ws: &f32) -> f32 {
+        match &mut self.wind {
+            None => 0.,
+            Some(cell_wind) => {
+                cell_wind.step(ws)
+            }
+        }
+    }
     /// Calculate area specific solar irradiation for windows facing
     /// south, west, north and east
     fn get_specific_solar_gains(&mut self,  amb: &mut AmbientParameters) {
@@ -435,6 +456,7 @@ impl Cell {
 
         // calculate generation systems
         electrical_generation += self.get_pv_generation(&amb.irradiation_glob);
+        electrical_generation += self.get_wind_generation(&amb.wind_speed);
         let (ts_e, ts_t_gen, ts_fuel);
         match &mut self.thermal_system {
             None =>

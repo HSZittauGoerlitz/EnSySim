@@ -15,8 +15,9 @@ REF_TRANSLATION = {"Jahr": "reference",
 # %% helper functions
 def _checkLocation(loc):
     loc.replace('\\', '/')
-    if loc[-1] != '/':
-        loc += '/'
+    loc.replace(os.sep, '/')
+    if loc[-1] != os.sep:
+        loc += os.sep
 
     return loc
 
@@ -99,9 +100,7 @@ def _getNormedOutsideTemperature(data, region, loc):
     Returns:
         float - Normed outside temperature
     """
-    loc = ('.' + os.sep +
-           os.sep.join(os.path.realpath(__file__).split(os.sep)[2:-1]) +
-           os.sep)
+
     with open(loc + 'TnormOut.json', 'r') as ToutFile:
         ToutData = json.load(ToutFile)
 
@@ -125,15 +124,16 @@ def _getRefYear(file_name):
     return int(file_name.split('_')[0][-4:])
 
 
-def _getTRY_Data_T_Eg(file_name, loc):
-    """ Get the temperature and global radiation values (Eg) for given
-    DWD measurement file. The global radiation is calculated as sum of
+def _getTRY_Data_T_Eg_Ws(file_name, loc):
+    """ Get the temperature, global radiation and wind speed values (Eg) for
+    given DWD measurement file. The global radiation is calculated as sum of
     direct and diffuse sun light (Columns B and D).
 
     The temperature is taken directly as [degC]
     The radiation data is taken directly as [W/m^2]
     The global radiation value is calculated as [kWh/m^2 ]
     (time integral of radiation data)
+    The wind speed is taken directly as [m/s]
 
     Also the separate radiation data columns will be kept, since they are
     useful regarding the thermal house model.
@@ -143,7 +143,7 @@ def _getTRY_Data_T_Eg(file_name, loc):
         loc {str} -- Location of TRY data file
 
     Returns:
-        pd DataFrame -- Ref. year data (T, Eg) for given TRY file
+        pd DataFrame -- Ref. year data (T, Eg, Ws) for given TRY file
     """
     refYear = _getRefYear(file_name)
 
@@ -166,6 +166,7 @@ def _getTRY_Data_T_Eg(file_name, loc):
     data[('weather_data', 'E direct [W/m^2]')] = data.B
     data[('weather_data', 'Eg [W/m^2]')] = (data.B + data.D)
     data[('weather_data', 'T [degC]')] = data.t
+    data[('weather_data', 'Ws [m/s]')] = data.WG
 
     # clean up
     data.drop(columns=header, inplace=True)
@@ -196,7 +197,7 @@ def _loadAllTRYfiles(loc):
         content = content.split('.')
         if content[-1] == "dat":
             refType = REF_TRANSLATION[content[-2].split('_')[-1]]
-            sub_data = _getTRY_Data_T_Eg(file_name, loc)
+            sub_data = _getTRY_Data_T_Eg_Ws(file_name, loc)
             # time course is taken from reference year
             if refType == 'reference':
                 data[('date_time', '')] = sub_data.date_time
@@ -204,7 +205,7 @@ def _loadAllTRYfiles(loc):
             for col in sub_data.weather_data.columns:
                 data[(refType, col)] = sub_data.loc[:, ('weather_data', col)]
 
-    data[('doy', '')] = data[('date_time', '')].dt.day_of_year
+    data[('doy', '')] = data[('date_time', '')].dt.dayofyear
     data.columns = pd.MultiIndex.from_tuples(data.columns)
 
     return data
@@ -218,6 +219,7 @@ def _saveData(data, ToutNorm, name, save_loc):
             - date_time / doy for the reference year
             - Eg (global irradiation in W/m^2)
             - T (Air temperature in degC)
+            - Ws (wind speed 10m above ground in m/s)
         2. Key: Standard
             - Eg (yearly global radiation in kWh/m^2)
             - T (Normed outside temperature)
@@ -267,17 +269,17 @@ def importData(loc, script_loc):
     loc = _checkLocation(loc)
     script_loc = _checkLocation(script_loc)
 
-    for content in os.listdir(loc):
-        if os.path.isdir(loc + content):
-            data = _loadAllTRYfiles(loc + content + os.sep)
+    for content in os.listdir(script_loc + loc):
+        print(content)
+        if os.path.isdir(script_loc + loc + content):
+            data = _loadAllTRYfiles(script_loc + loc + content + os.sep)
             T = _getNormedOutsideTemperature(data, content, script_loc)
             _saveData(data, T, content, script_loc)
 
 
 # %%
-dat_loc = "./BoundaryConditions/Weather/TRWdata_raw"
-script_loc = ('.' + os.sep +
-              os.sep.join(os.path.realpath(__file__).split(os.sep)[2:-1]))
+dat_loc = "TRWdata_raw"
+script_loc = os.path.realpath(__file__).replace(os.path.basename(__file__), '')
 
 importData(dat_loc, script_loc)
 
