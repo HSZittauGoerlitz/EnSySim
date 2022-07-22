@@ -29,6 +29,7 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<components::boiler::Boiler>()?;
     m.add_class::<components::chp::CHP>()?;
     m.add_class::<components::pv::PV>()?;
+    m.add_class::<components::wind::Wind>()?;
     m.add_class::<thermal_systems::building
                   ::heatpump_system::BuildingHeatpumpSystem>()?;
     m.add_class::<thermal_systems::building
@@ -69,11 +70,12 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
     let slp_bslc = slp_data.get("BSLc").unwrap();
     let hot_water_data = hot_water_data.as_array();
     // Get Environment data and create object
-    let mut amb = misc::ambient::AmbientParameters::new(0., 0., 0., 0., 0., 0.);
+    let mut amb = misc::ambient::AmbientParameters::new(0., 0., 0., 0., 0., 0., 0.);
     let t = env_data.get("T [degC]").unwrap();
     let e_global = env_data.get("Eg [W/m^2]").unwrap();
     let e_diffuse = env_data.get("E diffuse [W/m^2]").unwrap();
     let e_direct = env_data.get("E direct [W/m^2]").unwrap();
+    let ws = env_data.get("Ws [m/s]").unwrap();
     let e_elevation = sol_data.get("elevation [degree]").unwrap();
     let e_azimuth = sol_data.get("azimuth [degree]").unwrap();
 
@@ -99,6 +101,7 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
         amb.irradiation_dir = e_direct[step];
         amb.solar_elevation = e_elevation[step];
         amb.solar_azimuth = e_azimuth[step];
+        amb.wind_speed = ws[step];
         main_cell.step(&slp, &hot_water_data[step], &cell_t_out_n, &mut amb);
     }
 }
