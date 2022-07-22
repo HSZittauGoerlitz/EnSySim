@@ -206,7 +206,7 @@ def _getSimTime(startDate, endDate):
 
 
 def _getWeather(simData, region):
-    """Calculate temperature and irradiation curve for
+    """Calculate temperature, irradiation and wind curve for
         given simulation time and region
 
     Test reference year data of DWD consist out of:
@@ -435,7 +435,7 @@ def getSimData(startDate, endDate, region):
 
     Returns:
         int / np float (arrays): nSteps, time, SLP_PHH, SLP_BSLa, SLP_BSLc,
-                                 HWP, T, Eg
+                                 HWP, T, Eg, Ws
     """
     data = getSimData_df(startDate, endDate, region)
 
