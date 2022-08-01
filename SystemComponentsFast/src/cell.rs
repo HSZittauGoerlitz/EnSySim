@@ -5,6 +5,7 @@ use log::error;
 
 use crate::{building, sep_bsl_agent, save_e, save_t};
 use crate::components::pv;
+use crate::components::solarthermal;
 use crate::components::wind;
 use crate::misc::{hist_memory};
 use crate::misc::ambient::AmbientParameters;
@@ -67,6 +68,8 @@ pub struct Cell {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     #[pyo3(get)]
+    solarthermal: Option<solarthermal::Solarthermal>,
+    #[pyo3(get)]
     wind: Option<wind::Wind>,
     thermal_system: Option<ThermalSystem>,
     state: CellManager,
@@ -119,6 +122,7 @@ impl Cell {
               eg: eg,
               t_out_n: t_out_n,
               pv: None,
+              solarthermal: None,
               wind: None,
               thermal_system: None,
               state: CellManager::new(),
@@ -157,6 +161,13 @@ impl Cell {
                                      PV plant, nothing is added"),
         }
     }
+
+    fn add_solarthermal(&mut self, solarthermal: solarthermal::Solarthermal) {
+        match &self.solarthermal {
+            None => {self.solarthermal = Some(solarthermal);},
+            Some(_cell_solarthermal) => error!("Cell already has a \
+                                     Solarthermal plant, nothing is added"),
+        }
 
     fn add_wind_turbine(&mut self, wind: wind::Wind) {
         match &self.wind {
@@ -354,6 +365,15 @@ impl Cell {
         }
     }
 
+    fn get_solarthermal_generation(&mut self, eg: &f32) -> f32 {
+        match &mut self.solarthermal {
+            None => 0.,
+            Some(cell_solarthermal) => {
+                 cell_solarthermal.step(eg)
+            },
+        }
+    }
+
     fn get_wind_generation(&mut self, ws: &f32) -> f32 {
         match &mut self.wind {
             None => 0.,
@@ -454,9 +474,12 @@ impl Cell {
                 electrical_load += sub_load_e;
         });
 
-        // calculate generation systems
+        // calculate electrical generation systems
         electrical_generation += self.get_pv_generation(&amb.irradiation_glob);
         electrical_generation += self.get_wind_generation(&amb.wind_speed);
+
+        // calculate thermal generation systems
+        thermal_generation += self.get_solarthermal_generation(&amb.irradiation_glob);
         let (ts_e, ts_t_gen, ts_fuel);
         match &mut self.thermal_system {
             None =>
