@@ -27,7 +27,7 @@ impl PV {
     ///                 demand completely
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(eg: f32, coc: f32, demand: f32, hist: usize) -> Self {
+    pub fn new_house(eg: f32, coc: f32, demand: f32, hist: usize) -> Self {
         let mut rng = rand::thread_rng();
 
         let a = rng.gen_range(0.8..=1.2) * coc * 1e3/eg * demand;
@@ -48,6 +48,7 @@ impl PV {
     }
 }
 
+    pub fn new_cell()
 /// PV plant
 impl PV {
     fn save_hist(&mut self, power_e: &f32) {
