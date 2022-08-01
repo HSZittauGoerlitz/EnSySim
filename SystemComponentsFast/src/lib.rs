@@ -1,7 +1,6 @@
-#![feature(int_roundings)]
-
 // external
 use std::collections::HashMap;
+use num_integer::Integer;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use numpy::PyReadonlyArrayDyn;
@@ -93,7 +92,7 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
 
         // Environment
         amb.t_out = t[step];
-        let idx_day = step.div_floor(96);
+        let idx_day = step.div_floor(&96);
         let slice_day = &t[idx_day*96..idx_day*96+95];
         
         amb.t_mean_day = slice_day.iter().sum::<f32>() / slice_day.len() as f32;
