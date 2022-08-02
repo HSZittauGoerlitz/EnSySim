@@ -6,14 +6,14 @@ use crate::misc::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct PV {
+pub struct PVCell {
     a: f32,  // Effective Area of PV plant [m^2]
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
 }
 
 #[pymethods]
-impl PV {
+impl PVCell {
     ///  Create PV plant with specific Area
     ///
     /// # Arguments
@@ -21,12 +21,6 @@ impl PV {
     /// # For building:
     /// * eg (f32): Mean annual global irradiation
     ///             for simulated region [kWh/m^2]
-    /// * coc (f32): Sum of all agents Coefficient of Consumer
-    ///              of building corresponding to this PV plant
-    /// * demand (f32): Factor to describe the demand of agent(s)
-    ///                 to cover their electrical energy demand with PV
-    ///                 E.g demand = 1 means agent likes to cover his
-    ///                 demand completely
     /// * hist (usize): Size of history memory (0 for no memory)
     ///
     /// # For cell:
@@ -38,11 +32,7 @@ impl PV {
 
 
     #[new]
-    pub fn new(eg: f32, coc: f32, demand: f32, hist: usize) -> Self {
-        let mut rng = rand::thread_rng();
-
-        let a = rng.gen_range(0.8..=1.2) * coc * 1e3/eg * demand;
-
+    pub fn new(eg: f32, a: f32, hist: usize) -> Self {
 
         let gen_e;
 
@@ -52,14 +42,13 @@ impl PV {
             gen_e = None;
         }
 
-        let pv = PV {a: a,
+        let pvcell = PVCell {a: a,
                      gen_e: gen_e,
                     };
-        pv
-    }
+        PVCell}
 }
 
-impl PV {
+impl PVCell {
     ///PV plant
     fn save_hist(&mut self, power_e: &f32) {
         match &mut self.gen_e {

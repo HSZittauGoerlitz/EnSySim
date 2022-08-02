@@ -35,7 +35,7 @@ impl Solarthermal {
 
         let a = rng.gen_range(0.8..=1.2) * coc * 1e3/eg * demand;
 
-        let efficiency: f32 = rng.gen_range(0.8..=0.9)
+        let efficiency: f32 = rng.gen_range(0.8..=0.9);
 
         let gen_t;
 

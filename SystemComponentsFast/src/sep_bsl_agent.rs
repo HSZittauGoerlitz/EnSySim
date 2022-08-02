@@ -5,7 +5,7 @@ use rand::Rng;
 use rand_distr::{Distribution, FisherF, Gamma};
 
 use crate::save_e;
-use crate::components::pv;
+use crate::components::{pv, pvsubclasstest};
 use crate::misc::hist_memory;
 
 #[pyclass]
@@ -86,7 +86,7 @@ impl SepBSLagent {
     /// * hist (usize): Size of history memory for pv plant (0 for no memory)
     fn add_dimensioned_pv(&mut self, eg: f32, hist: usize) {
         match &self.pv {
-            None => {self.pv = Some(pv::PV::new(eg, self.coc,
+            None => {self.pv = Some(pvsubclasstest::BuildingPV(eg, self.coc,
                                                 self.demand_apv, hist)
                                     );
                      },

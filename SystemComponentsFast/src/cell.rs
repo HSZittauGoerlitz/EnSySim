@@ -168,6 +168,7 @@ impl Cell {
             Some(_cell_solarthermal) => error!("Cell already has a \
                                      Solarthermal plant, nothing is added"),
         }
+    }
 
     fn add_wind_turbine(&mut self, wind: wind::Wind) {
         match &self.wind {

@@ -6,14 +6,14 @@ use crate::misc::hist_memory;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct PV {
+pub struct PVBuilding {
     a: f32,  // Effective Area of PV plant [m^2]
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
 }
 
 #[pymethods]
-impl PV {
+impl PVBuilding {
     ///  Create PV plant with specific Area
     ///
     /// # Arguments
@@ -52,14 +52,14 @@ impl PV {
             gen_e = None;
         }
 
-        let pv = PV {a: a,
+        let pvbuilding = PVBuilding {a: a,
                      gen_e: gen_e,
                     };
-        pv
+        pvbuilding
     }
 }
 
-impl PV {
+impl PVBuilding {
     ///PV plant
     fn save_hist(&mut self, power_e: &f32) {
         match &mut self.gen_e {

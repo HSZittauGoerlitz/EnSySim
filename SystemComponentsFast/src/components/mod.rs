@@ -6,3 +6,4 @@ pub mod heatpump;
 pub mod pv;
 pub mod solarthermal;
 pub mod wind;
+pub mod pvsubclasstest;

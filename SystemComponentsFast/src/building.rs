@@ -305,7 +305,7 @@ impl Building {
             sum_apv_demand /= n_agents as f32;
         }
 
-        self.add_pv(pv::PV::new(eg, sum_coc,
+        self.add_pv(pv::PV::building_pv(eg, sum_coc,
                                 sum_apv_demand,
                                 hist)
                     );
