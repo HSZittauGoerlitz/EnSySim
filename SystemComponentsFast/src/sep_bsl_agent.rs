@@ -5,7 +5,7 @@ use rand::Rng;
 use rand_distr::{Distribution, FisherF, Gamma};
 
 use crate::save_e;
-use crate::components::{pvtraittest};
+use crate::components::{pv};
 use crate::misc::hist_memory;
 
 #[pyclass]
@@ -17,7 +17,7 @@ pub struct SepBSLagent {
     #[pyo3(get)]
     demand_apv: f32,
     #[pyo3(get)]
-    pv: Option<pvtraittest::PV>,
+    pv: Option<pv::PV>,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
@@ -68,7 +68,7 @@ impl SepBSLagent {
         agent
     }
 
-    fn add_pv(&mut self, pv: pvtraittest::PV) {
+    fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
             Some(_sep_bsl_pv) => error!("Separate BSL agent already \
@@ -85,8 +85,6 @@ impl SepBSLagent {
     ///             for simulated region [kWh/m^2]
     /// * hist (usize): Size of history memory for pv plant (0 for no memory)
     fn add_dimensioned_pv(&mut self, eg: f32, hist: usize) {
-        match &self.pv {
-            None => {self.pv = Some(pvtraittest::PV::new(hist));},
             Some(_sep_bsl_pv) => error!("Separate BSL agent already \
                                         has a PV plant, nothing is added"),
         }
