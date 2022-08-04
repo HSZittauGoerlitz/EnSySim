@@ -85,6 +85,10 @@ impl SepBSLagent {
     ///             for simulated region [kWh/m^2]
     /// * hist (usize): Size of history memory for pv plant (0 for no memory)
     fn add_dimensioned_pv(&mut self, eg: f32, hist: usize) {
+        match & self.pv {
+            None => {self.pv = Some(pv::PV::new(hist));
+                     self.pv.as_mut().unwrap().size_building_pv(eg, self.coc, self.demand_apv);
+                    },
             Some(_sep_bsl_pv) => error!("Separate BSL agent already \
                                         has a PV plant, nothing is added"),
         }
