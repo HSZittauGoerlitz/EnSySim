@@ -5,13 +5,45 @@ use rand::Rng;
 use crate::misc::hist_memory;
 
 #[pyclass]
-#[derive(Clone)]  //#Why is this here? Clone of what? IAG
+#[derive(Clone)]  
 pub struct PV {
+    a: f32,
+    pvtype: u8,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
 }
 
 #[pymethods]
+impl PV {
+    ///  Create PV plant with specific Area
+    ///
+    /// * hist (usize): Size of history memory (0 for no memory)
+    ///
+    ///
+
+
+    #[new]
+    pub fn new(hist: usize) -> Self {
+
+
+        let gen_e;
+
+        if hist > 0 {
+            gen_e = Some(hist_memory::HistMemory::new(hist));
+        } else {
+            gen_e = None;
+        }
+
+        let pv = PV {
+            a: -1.0,
+            pvtype: 0,
+            gen_e: gen_e,
+            };
+
+        pv   
+    }
+}
+
 impl PV {
     ///PV plant
     fn save_hist(&mut self, power_e: &f32) {
@@ -40,14 +72,9 @@ impl PV {
         return power_e;
     }
 
-}
-
-#[py::class(base=PV)]
-struct BuildingPV {
-   a: f32,  // Effective Area of PV plant [m^2]
-}
-
-impl BuildingPV {
+    /// Implement PV type, type 1 for Building PV and type 2 for Cell PV
+    ///
+    ///
     ///  Create PV plant with specific Area
     ///
     /// # Arguments
@@ -67,66 +94,26 @@ impl BuildingPV {
     /// * a: Effective Area of PV plant [m^2]
     /// * hist (usize): Size of history memory (0 for no memory)
     ///
-    ///
-    ///
-    #[new]
-    pub fn  new(eg: f32, coc: f32, demand: f32, hist: usize) -> Self {
+
+    pub fn DesignBuildingPV(&mut self, eg: f32, coc: f32, demand: f32) {
         let mut rng = rand::thread_rng();
 
         let a = rng.gen_range(0.8..=1.2) * coc * 1e3/eg * demand;
 
-        let gen_e;
+        self.a = a;
 
-        if hist > 0 {
-            gen_e = Some(hist_memory::HistMemory::new(hist));
-        } else {
-            gen_e = None;
-        }
-
-        let pv = PV { gen_e: gen_e,
-                    BuildingPV { a:a,
-                    }
-                    };
-        pv
+        self.pvtype = 1;
     }
-}
 
-#[py::class(base=PV)]
-struct CellPV {
-   a: f32
-}
-
-impl CellPV {
-    ///  Create PV plant with specific Area
+    /// Create PV plant with specific Area in a cell
     ///
     /// # Arguments
     ///
-    /// # For building:
-    /// * eg (f32): Mean annual global irradiation
-    ///             for simulated region [kWh/m^2]
-    /// * hist (usize): Size of history memory (0 for no memory)
-    ///
-    /// # For cell:
     /// * a: Effective Area of PV plant [m^2]
-    /// * hist (usize): Size of history memory (0 for no memory)
     ///
-    ///
-    ///
-    #[new]
-    pub fn  new(a: f32, eg:  f32; hist: usize) -> Self {
-        let gen_e;
+    pub fn DesignCellPV(&mut self, a: f32) {
+        self.a = a;
 
-        if hist > 0 {
-            gen_e = Some(hist_memory::HistMemory::new(hist));
-        } else {
-            gen_e = None;
-        }
-
-        let pv = PV { gen_e: gen_e,
-            CellPV { a:a,
-            }
-            };
-pv
-        pv
+        self.pvtype = 2;
     }
 }
