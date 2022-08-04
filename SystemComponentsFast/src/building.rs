@@ -310,7 +310,7 @@ impl Building {
         self.add_pv(pv);
         
         match &mut self.pv {
-            Some(pv) => pv.DesignBuildingPV(eg, sum_coc, sum_apv_demand),
+            Some(pv) => pv.size_building_pv(eg, sum_coc, sum_apv_demand),
                 None => error!("Missing PV component!")
         }
     }
