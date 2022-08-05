@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use log::error;
 
 use crate::{building, sep_bsl_agent, save_e, save_t};
-use crate::components::pvtraittest;
+use crate::components::pv;
 use crate::components::solarthermal;
 use crate::components::wind;
 use crate::misc::{hist_memory};
@@ -66,7 +66,7 @@ pub struct Cell {
     #[pyo3(get)]
     pub t_out_n: f32,
     #[pyo3(get)]
-    pv: Option<pvtraittest::PV>,
+    pv: Option<pv::PV>,
     #[pyo3(get)]
     solarthermal: Option<solarthermal::Solarthermal>,
     #[pyo3(get)]
@@ -154,7 +154,7 @@ impl Cell {
         }
     }
 
-    fn add_pv(&mut self, pv: pvtraittest::PV) {
+    fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
             Some(_cell_pv) => error!("Cell already has a \

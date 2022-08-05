@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use log::error;
 
 use crate::{agent, save_e, save_t};
-use crate::components::{controller, pvtraittest};
+use crate::components::{controller, pv};
 use crate::misc::hist_memory;
 
 use crate::thermal_systems::building::{heatpump_system, chp_system};
@@ -99,7 +99,7 @@ pub struct Building {
     #[pyo3(get)]
     controller: controller::Controller,
     #[pyo3(get)]
-    pv: Option<pvtraittest::PV>,
+    pv: Option<pv::PV>,
     heating_system: Option<HeatingSystem>,
     heat_building: fn(&mut Building, &f32, &f32, &f32) -> (f32, f32, f32),
     #[pyo3(get)]
@@ -243,7 +243,7 @@ impl Building {
         }
     }
 
-    fn add_pv(&mut self, pv: pvtraittest::PV) {
+    fn add_pv(&mut self, pv: pv::PV) {
         match &self.pv {
             None => {self.pv = Some(pv);},
             Some(_building_pv) => error!("Building already has a \
@@ -305,7 +305,7 @@ impl Building {
             sum_apv_demand /= n_agents as f32;
         }
 
-        let pv = pvtraittest::PV::new(hist);
+        let pv = pv::PV::new(hist);
 
         self.add_pv(pv);
         

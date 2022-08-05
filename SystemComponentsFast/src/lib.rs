@@ -1,11 +1,10 @@
-#![feature(int_roundings)]
-
 
 // external
 use std::collections::HashMap;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use numpy::PyReadonlyArrayDyn;
+use num_integer::Integer;
 // local
 // Entities
 #[macro_use]
@@ -30,7 +29,7 @@ fn SystemComponentsFast(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<sep_bsl_agent::SepBSLagent>()?;
     m.add_class::<components::boiler::Boiler>()?;
     m.add_class::<components::chp::CHP>()?;
-    m.add_class::<components::pvtraittest::PV>()?;
+    m.add_class::<components::pv::PV>()?;
     m.add_class::<components::wind::Wind>()?;
     m.add_class::<thermal_systems::building
                   ::heatpump_system::BuildingHeatpumpSystem>()?;
@@ -94,7 +93,7 @@ fn simulate(main_cell: &mut cell::Cell, steps: usize,
 
         // Environment
         amb.t_out = t[step];
-        let idx_day = step.div_floor(96);
+        let idx_day = step.div_floor(&96);
         let slice_day = &t[idx_day*96..idx_day*96+95];
         
         amb.t_mean_day = slice_day.iter().sum::<f32>() / slice_day.len() as f32;
