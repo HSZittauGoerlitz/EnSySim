@@ -42,35 +42,6 @@ impl PV {
 
         pv   
     }
-}
-
-impl PV {
-    ///PV plant
-    fn save_hist(&mut self, power_e: &f32) {
-        match &mut self.gen_e {
-            None => {},
-            Some(gen_e) => {
-                gen_e.save(*power_e)
-            },
-        }
-    }
-
-    /// Calculate current electrical power
-    ///
-    /// # Arguments
-    /// * eg (&f32): Current irradiation on PV module [W/m^2]
-    ///
-    /// # Returns
-    /// * f32: Resulting electrical power [W]
-    pub fn step(&mut self, eg: &f32) -> f32 {
-        // calculate electrical power generated
-        let power_e = self.a * eg;
-
-        // save data
-        self.save_hist(&power_e);
-
-        return power_e;
-    }
 
     /// Implement PV type, type 1 for Building PV and type 2 for Cell PV
     ///
@@ -115,5 +86,34 @@ impl PV {
         self.a = a;
 
         self.pvtype = 2;
+    }
+}
+
+impl PV {
+    ///PV plant
+    fn save_hist(&mut self, power_e: &f32) {
+        match &mut self.gen_e {
+            None => {},
+            Some(gen_e) => {
+                gen_e.save(*power_e)
+            },
+        }
+    }
+
+    /// Calculate current electrical power
+    ///
+    /// # Arguments
+    /// * eg (&f32): Current irradiation on PV module [W/m^2]
+    ///
+    /// # Returns
+    /// * f32: Resulting electrical power [W]
+    pub fn step(&mut self, eg: &f32) -> f32 {
+        // calculate electrical power generated
+        let power_e = self.a * eg;
+
+        // save data
+        self.save_hist(&power_e);
+
+        return power_e;
     }
 }
