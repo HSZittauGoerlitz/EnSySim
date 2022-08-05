@@ -1,6 +1,10 @@
 
+
+=======
+
 // external
 use std::collections::HashMap;
+use num_integer::Integer;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use numpy::PyReadonlyArrayDyn;
