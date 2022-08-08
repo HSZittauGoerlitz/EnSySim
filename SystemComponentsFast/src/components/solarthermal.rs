@@ -8,8 +8,9 @@ use crate::misc::hist_memory;
 #[derive(Clone)]
 pub struct Solarthermal {
     a: f32,  // Effective Area of solarthermal plant [m^2]
+    efficiency: f32, // simple effiency factor, TODO: curve
     #[pyo3(get)]
-    gen_e: Option<hist_memory::HistMemory>,
+    gen_t: Option<hist_memory::HistMemory>,
 }
 
 #[pymethods]
@@ -26,23 +27,27 @@ impl Solarthermal {
     ///                 E.g demand = 1 means agent likes to cover his
     ///                 demand completely
     /// * hist (usize): Size of history memory (0 for no memory)
+
+    /// TODO: change from electrical to thermal scaling
     #[new]
     pub fn new(eg: f32, coc: f32, demand: f32, hist: usize) -> Self {
         let mut rng = rand::thread_rng();
 
         let a = rng.gen_range(0.8..=1.2) * coc * 1e3/eg * demand;
 
+        let efficiency: f32 = rng.gen_range(0.8..=0.9);
 
-        let gen_e;
+        let gen_t;
 
         if hist > 0 {
-            gen_e = Some(hist_memory::HistMemory::new(hist));
+            gen_t = Some(hist_memory::HistMemory::new(hist));
         } else {
-            gen_e = None;
+            gen_t = None;
         }
 
         let solarthermal = Solarthermal {a: a,
-                     gen_e: gen_e,
+                     efficiency: efficiency,
+                     gen_t: gen_t,
                     };
         solarthermal
     }
@@ -50,11 +55,11 @@ impl Solarthermal {
 
 /// Solarthermal plant
 impl Solarthermal {
-    fn save_hist(&mut self, power_e: &f32) {
-        match &mut self.gen_e {
+    fn save_hist(&mut self, power_t: &f32) {
+        match &mut self.gen_t {
             None => {},
-            Some(gen_e) => {
-                gen_e.save(*power_e)
+            Some(gen_t) => {
+                gen_t.save(*power_t)
             },
         }
     }
@@ -62,13 +67,15 @@ impl Solarthermal {
     /// Calculate current thermal power
     ///
     /// # Arguments
-    /// * eg (&f32): Current irradiation on PV module [W/m^2]
+    /// * eg (&f32): Current irradiation on solarthermal module [W/m^2]
     ///
     /// # Returns
     /// * f32: Resulting thermal power [W]
+
+    /// TODO: Check type of irradiation to be used, depending on panel
     pub fn step(&mut self, eg: &f32) -> f32 {
         // calculate electrical power generated
-        let power_t = self.a * eg;
+        let power_t = self.a * eg * self.efficiency;
 
         // save data
         self.save_hist(&power_t);
