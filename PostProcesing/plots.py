@@ -1,6 +1,7 @@
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objs as go
+from random import random
 
 
 COL_GEN = 'rgb(27,198,47)'  # color for generation
@@ -361,7 +362,7 @@ def heatpumpSystemOperation(heatpump_system, time, retFig=False):
     """Create plot for checking heatpump operation
 
     Arguments:
-        heatpump_system {heatpump_system} -- object consisting of heatpump 
+        heatpump_system {heatpump_system} -- object consisting of heatpump
                                              and storage and boiler
         time {lis of arrays} -- Time (abscissae) values to plot
     Keyword Arguments:
@@ -425,12 +426,12 @@ def heatpumpSystemOperation(heatpump_system, time, retFig=False):
 
 
 def compareCurves(time, values, names,
-                  xLabel='Time', yLabel='', title='', retFig=False):
+                xLabel='Time', yLabel='', title='', retFig=False):
     """Create comparison plot for given curves
 
     Arguments:
         time {list of arrays} -- Time (abscissae) values to plot,
-                                 either one for all or each separate
+                                either one for all or each separate
         values {list of arrays} -- Ordinate values of curves to plot
         names {list of str} -- Name for each curve
 
@@ -439,7 +440,7 @@ def compareCurves(time, values, names,
         yLabel {str} -- Label for y axis (default: {''})
         title {str} -- Plot title (default: {''})
         retFig {bool} -- When True figure is not showed, but returned
-                         (default: {False})
+                              (default: {False})
     """
     nCurves = len(values)
 
@@ -449,21 +450,21 @@ def compareCurves(time, values, names,
         idxTimeMul = 0
     else:
         raise ValueError("Number of x-arrays must be one or equal to number "
-                         "of given curves.")
+                              "of given curves.")
 
     if len(names) != nCurves:
         raise ValueError("Number of namess must be equal to "
-                         "number of given curves.")
+                        "number of given curves.")
 
     fig = go.Figure()
 
     for i in range(nCurves):
         fig.add_trace(go.Scatter(x=time[i*idxTimeMul],
-                                 y=values[i],
-                                 line={'width': 1},
-                                 name=names[i],
-                                 )
-                      )
+                                y=values[i],
+                                line={'width': 1},
+                                name=names[i],
+                                )
+                    )
 
     fig.update_layout(height=1000, width=1000, title_text=title)
     fig.update_xaxes(title_text=xLabel)
@@ -472,3 +473,58 @@ def compareCurves(time, values, names,
         return fig
     else:  # show figure
         fig.show()
+
+def EnergyGenerationChart(time, *data):
+    """Create comparison plot for energy generation in the given cell
+
+    Arguments:
+        time {list of arrays} -- Time (abscissae) values to plot,
+                                either one for all or each separate
+        data* {name and energy generation data} -- First the name of the
+        energy generation type in str and then the corresponding data 
+        array.
+
+    """
+    # create figure
+    fig = go.Figure()
+
+    # create dictionary with {'EnergyName':EnergyGenerationArray} as the {key:value} pairs
+    dataset = dict()
+    datatype = True
+
+    for arg in data:
+        if datatype:
+            Name = arg
+            datatype = False
+            continue
+        if not datatype:
+            dataset[Name] = arg
+            datatype = True
+
+    # add each different energy traces to the figure
+    for EnergyType in dataset:
+        # random colour generation
+        col1 = 255*random()
+        col2 = 255*random()
+        col3 = 255*random()
+        col = 'rgb('+str(col1)+','+str(col2)+','+str(col3)+')'
+
+        # add the trace witgh that colour to the figure
+        fig.add_trace(go.Scatter(
+        x=time, y=dataset[EnergyType],
+        hoverinfo='x+y',
+        mode='lines',
+        line=dict(width=1, color=col), 
+        name=EnergyType,
+        stackgroup='one'))
+                        
+    # add graph name and size
+    fig.update_layout(height=600, width=600,
+                    title_text="Energy generation chart")
+    # add axis labels
+    fig.update_xaxes(title_text="Time")
+    fig.update_yaxes(title_text="Electrical Power [W]")
+
+    # show figure
+    fig.show()
+    
