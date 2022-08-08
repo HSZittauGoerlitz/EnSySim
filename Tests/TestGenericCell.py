@@ -6,7 +6,7 @@ from BoundaryConditions.Simulation.SimulationData import getSimData
 from Controller.Cell.CHP_SystemThermal import CtrlDefault
 from GenericModel.Design import _check_pBTypes, generateGenericCell
 from GenericModel.PARAMETER import PBTYPES_NOW as pBTypes
-from SystemComponentsFast import simulate, CellChpSystemThermal
+from SystemComponentsFast import simulate, CellChpSystemThermal, Wind, PV
 from PostProcesing import plots
 from plotly.subplots import make_subplots
 import plotly.graph_objs as go
@@ -69,6 +69,14 @@ chpSystem.controller = None#controller
 # add chp system to cell
 cell.add_chp_thermal(chpSystem)
 
+# add wind turbine
+windTurbine = Wind(160., 80., 4., 30., 0.4, nSteps)
+cell.add_wind_turbine(windTurbine)
+
+# add PV plant
+pvPlant = PV(nSteps)
+pvPlant.size_cell_pv(100.)
+cell.add_pv(pvPlant)
 # %%
 # run the simulation
 simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
