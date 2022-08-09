@@ -24,7 +24,7 @@ logging.getLogger().setLevel(logging.WARNING)
 # Parameter
 # time
 start = '01.01.2020'
-end = '01.05.2020'
+end = '01.01.2021'
 # agents
 nSepBSLagents = 100
 pAgricultureBSLsep = 0.7
@@ -62,7 +62,7 @@ chpSystem = CellChpSystemThermal(demand, 0.75, 2*demand, 0.,
                                  0.98, 0.98, nSteps)
 chpSystem.controller = controller
 cell.add_chp_thermal(chpSystem)
-#Add the wind turbine
+# Add the wind turbine
 windTurbine = Wind(160., 80., 4., 30., 0.4, nSteps)
 cell.add_wind_turbine(windTurbine)
 
@@ -77,11 +77,27 @@ plots.cellPowerBalance(cell, time)
 plots.cellEnergyBalance(cell, time)
 
 # %%
-# Generate graph for energy generation chart of different energy types (PV, CHP, wind...).
+# Generate graph and stacked graph for energy generation chart of
+# different energy types (PV, CHP, wind...).
 
 PVgen_e = dataCollection.getCellsPVgeneration(cell)
 CHPgen_e = dataCollection.getCellsCHPgeneration(cell)
 WINDgen_e = cell.wind.gen_e.get_memory()
 
+
 plots.EnergyGenerationChart(time, 'PV generation', PVgen_e, 'CHP generation',
-                             CHPgen_e, 'Wind turbine generation', WINDgen_e)
+                            CHPgen_e, 'Wind turbine generation', WINDgen_e)
+
+# This second graph graph is meant to show the generation stacked
+# across the year.
+
+stackedPVgen_e = dataCollection.stackedArray(PVgen_e)
+stackedCHPgen_e = dataCollection.stackedArray(CHPgen_e)
+stackedWINDgen_e = dataCollection.stackedArray(WINDgen_e)
+
+plots.EnergyGenerationChart(time, 'PV generation (stacked)',
+                            stackedPVgen_e,
+                            'CHP generation (stacked)',
+                            stackedCHPgen_e,
+                            'Wind turbine generation (stacked)',
+                            stackedWINDgen_e)

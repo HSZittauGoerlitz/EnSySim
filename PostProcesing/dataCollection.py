@@ -213,3 +213,18 @@ def getBuildingsThermalBalance(cell, subCells=True):
             load = np.array(building.load_t.get_memory())
 
     return (gen, load)
+
+
+def stackedArray(array):
+    # Meant to stack quantity in a data array with time steps from the 
+    # simulation
+
+    data_list = list()
+    total = 0
+    for time_step in array:
+        total += time_step
+        data_list.append(total)
+
+    stacked_array = np.array(data_list)
+
+    return stacked_array
