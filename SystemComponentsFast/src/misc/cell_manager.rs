@@ -34,6 +34,17 @@ impl CellManager{
         )
     }
 
+    pub fn reset(&mut self)
+    {
+        self.generation_e = 0.;
+        self.load_e = 0.;
+        self.generation_t = 0.;
+        self.load_t = 0.;
+        self.contribution_e = 0.;
+        self.contribution_t = 0.;
+        self.fuel_used = 0.;
+    }
+
     pub fn update(&mut self, generation_e: &f32, load_e: &f32,
                   generation_t: &f32, load_t: &f32,
                   cont_e: &f32, cont_t: &f32, fuel_used: &f32)
