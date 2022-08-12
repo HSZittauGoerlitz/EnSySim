@@ -8,9 +8,9 @@ use crate::misc::hist_memory;
 #[derive(Clone)]
 pub struct CHP {
     #[pyo3(get)]
-    pow_e: f32,  // electrical power of chp plant [W]
+    pub pow_e: f32,  // electrical power of chp plant [W]
     #[pyo3(get)]
-    pow_t: f32,  // installed power of chp plant [W]
+    pub pow_t: f32,  // installed power of chp plant [W]
     #[pyo3(get)]
     efficiency: f32, // total efficiency of chp 0 .. 1
 
