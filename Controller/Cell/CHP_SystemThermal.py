@@ -99,35 +99,32 @@ class CtrlBaselines(CtrlTemplate):
         # check fulfilment of thermal demand -> stop criterion
         eDemand_t = state[4] - state[3]  # gen - load
         if eDemand_t != 0:
-            return (0, True)
+            return (self.reward, True)
 
         # if eDemand_t < -0.01 * self.MaxPower_t:
         #     return (self.reward, 1.)
         # elif eDemand_t > 0.01 * self.MaxPower_t:
         #     return (self.reward, 1.)
 
-        extra_rewards = 1.  # bonus for time step
+        extra_rewards = self.reward  # bonus for time step
 
-        # # hint for storage state
-        # storage = state[1]
-        # if storage > 0.1 or storage < 0.9:
-        #     extra_rewards += 0.05 * self.reward
+        # hint for storage state
+        storage = state[1]
+        if storage > 0.1 or storage < 0.9:
+            extra_rewards += 0.05 * self.reward
 
-        # if storage > 0.05 or storage < 0.95:
-        #     extra_rewards += 0.03 * self.reward
+        if storage > 0.05 or storage < 0.95:
+            extra_rewards += 0.03 * self.reward
 
-        # boiler = state[6]
-        # # prefer chp over boiler
-        # if boiler:
-        #     extra_rewards -= 0.03 * self.reward
+        boiler = state[6]
+        # prefer chp over boiler
+        if boiler:
+            extra_rewards -= 0.03 * self.reward
 
-        # # add consistency
-        # chp = state[5]
-        # # if chp == 0 and self.lastState[5] == 0:
-        # #     extra_rewards -= 0.1
-
-        # if chp != self.lastState[5]:
-        #     extra_rewards += 0.01 * self.reward
+        # add consistency
+        chp = state[5]
+        if chp == self.lastState[5]:
+            extra_rewards += 0.02 * self.reward
 
         return (extra_rewards, False)
 

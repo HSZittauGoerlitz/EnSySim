@@ -67,8 +67,8 @@ class EnSySimEnvPy(gym.Env):
                 np.finfo(np.float32).max,
                 1.,
                 np.finfo(np.float32).max,
-                np.finfo(np.float32).max,
-                np.finfo(np.float32).max,
+                1.,
+                1.,
                 1.,
                 1.,
             ],
@@ -102,7 +102,7 @@ class EnSySimEnvPy(gym.Env):
         region = "East"
 
         # prepare simulation data
-        nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
+        self.nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
 
         # generate cell
         cell = generateGenericCell(nBuildings, pAgents,
@@ -127,7 +127,7 @@ class EnSySimEnvPy(gym.Env):
         cell.add_chp_thermal(chpSystem)
 
         # rust env
-        self.env = EnSySimEnv(nSteps, SLP.to_dict('list'), HWP,
+        self.env = EnSySimEnv(self.nSteps, SLP.to_dict('list'), HWP,
                               Weather.to_dict('list'), Solar.to_dict('list'))
         self.env.add_cell(cell)
 
@@ -157,8 +157,13 @@ class EnSySimEnvPy(gym.Env):
 env = EnSySimEnvPy()
 
 # %%
-model = DQN("MlpPolicy", env, verbose=2)
-model.learn(total_timesteps=1000000)
+model = DQN("MlpPolicy",
+            env,
+            verbose=2,
+            learning_rate=0.00001,
+            #exploration_fraction=0.005
+            )
+model.learn(total_timesteps=env.nSteps*100)
 
 # observations = env.reset()
 # max_cycles = 500
