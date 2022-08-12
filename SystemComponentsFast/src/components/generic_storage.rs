@@ -10,7 +10,7 @@ pub struct GenericStorage {
     #[pyo3(get)]
     cap: f32,  // capacity of storage [Wh]
     #[pyo3(get)]
-    charge: f32,  // charging state of storage [Wh]
+    pub charge: f32,  // charging state of storage [Wh]
     #[pyo3(get)]
     charging_efficiency: f32,  // 0..1
     #[pyo3(get)]
@@ -92,9 +92,10 @@ impl GenericStorage {
         generic_storage
     }
 
+    // between 10% and 90%
     pub fn initialize_random(&mut self) {
         let mut rng = rand::thread_rng();
-        self.charge = rng.gen::<f32>() * self.cap;
+        self.charge = rng.gen::<f32>() * self.cap; // (rng.gen::<f32>() + 0.1) * 0.812 * self.cap;
     }
 
 }

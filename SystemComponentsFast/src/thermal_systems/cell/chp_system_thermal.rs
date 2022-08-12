@@ -155,8 +155,9 @@ impl CellChpSystemThermal {
                 self.boiler_state = chp_boiler_state.1;
                 let done = chp_boiler_state.2;
 
-                if done {
-                    self.storage.initialize_random()
+                if done == true {
+                    self.storage.initialize_random();
+                    return (0., 0., 0.)
                 }
             },
         }
