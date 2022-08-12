@@ -66,7 +66,7 @@ pub struct Cell {
     #[pyo3(get)]
     pv: Option<pv::PV>,
     thermal_system: Option<ThermalSystem>,
-    state: CellManager,
+    pub state: CellManager,
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
     #[pyo3(get)]
