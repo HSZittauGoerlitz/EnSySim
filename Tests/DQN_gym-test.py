@@ -2,270 +2,283 @@
 # To add a new markdown cell, type '# %% [markdown]'
 # %%
 # Imports
+from tkinter import NS
+from urllib.request import HTTPPasswordMgrWithPriorAuth
 from BoundaryConditions.Simulation.SimulationData import getSimData
-from Controller.Cell.CHP_SystemThermal import CtrlDefault
-from Controller.Cell.CHP_SystemThermal import CtrlSmartSimple
-from GenericModel.Design import _check_pBTypes, generateGenericCell
+from Controller.Cell.CHP_SystemThermal import CtrlBaselines
+from GenericModel.Design import generateGenericCell
 from GenericModel.PARAMETER import PBTYPES_NOW as pBTypes
 from SystemComponentsFast import simulate, CellChpSystemThermal, EnSySimEnv
 from PostProcesing import plots
-from plotly.subplots import make_subplots
 import plotly.graph_objs as go
 import numpy as np
 import logging
 
-# %% Logging
+from stable_baselines3 import DQN
+import gym
+from gym import spaces
+# debug pid
+import os
+print(os.getpid())
+# %%
+# Logging
 FORMAT = ("%(levelname)s %(name)s %(asctime)-15s "
           "%(filename)s:%(lineno)d %(message)s")
 logging.basicConfig(format=FORMAT)
 logging.getLogger().setLevel(logging.WARNING)
 
 # %%
-import os
-print(os.getpid())
-
-# %%
-# set parameters
-# time
-start = '01.01.2020'
-end = '01.01.2021'
-# seperate agents
-nSepBSLagents = 2
-pAgricultureBSLsep = 0
-# pHH buildings
-nBuildings = {'FSH': 0, 'REH': 0, 'SAH': 3, 'BAH': 24}
-pAgents = {'FSH': 0, 'REH': 0, 'SAH': 1, 'BAH': 0.9}
-pPHHagents = {'FSH': 0, 'REH': 0, 'SAH': 0.75, 'BAH': 1}
-pAgriculture = {'FSH': 0, 'REH': 0, 'SAH': 0.25, 'BAH': 0.0}
-# district heating and PV
-pDHN = {'FSH': 0, 'REH': 0, 'SAH': 1, 'BAH': 1}
-pPVplants = 0.2
-pHeatpumps = {'class_1': 0, 'class_2': 0,
-              'class_3': 0, 'class_4': 0.12,
-              'class_5': 0.27}
-pCHP = 0
-# buildings are imported
-# environment
-region = "East"
-
-# set controller to use it or set variable to None
-controller = CtrlDefault()
-
-# %%
-# prepare simulation
-nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
-
-# %%
-# generate cell
-cell = generateGenericCell(nBuildings, pAgents,
-                           pPHHagents, pAgriculture,
-                           pDHN, pPVplants, pHeatpumps, pCHP, pBTypes,
-                           nSepBSLagents, pAgricultureBSLsep,
-                           region, nSteps)
-
-# get dhn demand
-demand = cell.get_thermal_demand(True)
-# generate chp system with storage
-chpSystem = CellChpSystemThermal(demand, 0.35, 2*demand, 0.05,
-                                 0.98, 0.98, nSteps)
-# # configure controller
-# chpSystem.controller = None#controller
-# # add chp system to cell
-# cell.add_chp_thermal(chpSystem)
-
-# DQN parameters
-capacity = 96 * 3650
-batchSize = 48
-epsStart = 1
-epsMin = 0.01
-epsDecay = 500
-cMax = 1.
-targetUpdate = 100
-nHL1 = 24
-nHL2 = 12
-trainHistSize = 365
-
-visualise = True
-MaxPower_e = chpSystem.chp.pow_e
-MaxPower_t = chpSystem.chp.pow_t + chpSystem.boiler.pow_t
-MaxFuelDemand = ((chpSystem.chp.pow_e + chpSystem.chp.pow_t) /
-                 chpSystem.chp.efficiency +
-                 chpSystem.boiler.pow_t / chpSystem.boiler.efficiency)
-
-controller = CtrlSmartSimple(capacity, batchSize, epsStart, epsMin, epsDecay,
-                             cMax, targetUpdate, nHL1, nHL2, trainHistSize,
-                             MaxPower_e, MaxPower_t, MaxFuelDemand, visualise)
-
-# controller.loadStats()
-# controller.loadMemory()
-
-# %% Training environment
-
-env = EnSySimEnv(SLP.to_dict('list'), HWP, Weather.to_dict('list'),
-                 Solar.to_dict('list'))
 
 
-class EnvStatus:
-    def __init__(self, visualise=False) -> None:
-        self.done = False
-        if visualise:
-            self._initEnvVis()
+class EnSySimEnvPy(gym.Env):
+    metadata = {}
 
-    def listen_to_controllers(self, done):
-        self.done = done
+    def __init__(self) -> None:
 
-    def _initEnvVis(self):
+        # from class CtrlSmartSimple(CtrlTemplate): def __init__
+        # self.ACTIONS = [(False, False), (True, False),
+        #         (False, True), (True, True)]
+        self.action_space = spaces.Discrete(4)
 
-        VisWin = 50
-        trainHistSize = 365
-        max_episode_steps = 96
+        # from class CtrlSmartSimple(CtrlTemplate): def step
+        #
+        # state = np.array([self.StorageStateGrad,
+        #                   StorageState,
+        #                   self.ThermalDemandGrad,
+        #                   load_t,
+        #                   gen_t,
+        #                   Chp,
+        #                   Boiler], dtype=np.float32)
+        low = np.array(
+            [
+                -np.finfo(np.float32).max,
+                0.,
+                -np.finfo(np.float32).max,
+                0.,
+                0.,
+                0.,
+                0.,
 
-        trainHistSize = max(trainHistSize, VisWin+1)
-        self.epoch_duration = np.zeros(trainHistSize)
-        self.xEpochs = np.arange(trainHistSize)
+            ],
+            dtype=np.float32,
+        )
+        high = np.array(
+            [
+                np.finfo(np.float32).max,
+                1.,
+                np.finfo(np.float32).max,
+                np.finfo(np.float32).max,
+                np.finfo(np.float32).max,
+                1.,
+                1.,
+            ],
+            dtype=np.float32,
+        )
+        self.observation_space = spaces.Box(low, high, dtype=np.float32)
 
-        fig = go.Figure()
-        fig.update_xaxes(title_text="Number of Epoch")
-        fig.update_yaxes(title_text="Epoch duration",
-                         range=[0., max_episode_steps])
+        # set parameters for env
+        # time
+        start = '01.01.2020'
+        end = '01.01.2021'
+        # seperate agents
+        nSepBSLagents = 2
+        pAgricultureBSLsep = 0
+        # pHH buildings
+        nBuildings = {'FSH': 0, 'REH': 0, 'SAH': 3, 'BAH': 24}
+        pAgents = {'FSH': 0, 'REH': 0, 'SAH': 1, 'BAH': 0.9}
+        pPHHagents = {'FSH': 0, 'REH': 0, 'SAH': 0.75, 'BAH': 1}
+        pAgriculture = {'FSH': 0, 'REH': 0, 'SAH': 0.25, 'BAH': 0.0}
+        # portion of district heating for building types
+        pDHN = {'FSH': 0, 'REH': 0, 'SAH': 1, 'BAH': 1}
+        # portion of PV on buildings
+        pPVplants = 0.2
+        # portion of HP in buildings
+        pHeatpumps = {'class_1': 0, 'class_2': 0,
+                      'class_3': 0, 'class_4': 0.12,
+                      'class_5': 0.27}
+        # portion of CHP electrical generation in buildings on yearly load
+        pCHP = 0
+        # environment
+        region = "East"
 
-        lineEpochSteps = go.Scatter({"x": self.xEpochs,
-                                     "y": self.epoch_duration,
-                                     "name": "steps per epoch",
-                                     "uid": "uid_rEndLine",
-                                     "yaxis": "y1",
-                                     "line": {"color": "#000000",
-                                              "width": 1
-                                              }
-                                     })
-        fig.add_trace(lineEpochSteps)
-        # create widget
-        self.envVis = go.FigureWidget(fig)
+        # prepare simulation data
+        nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
 
+        # generate cell
+        cell = generateGenericCell(nBuildings, pAgents,
+                                   pPHHagents, pAgriculture,
+                                   pDHN, pPVplants, pHeatpumps, pCHP, pBTypes,
+                                   nSepBSLagents, pAgricultureBSLsep,
+                                   region, 0)
 
-env_status = EnvStatus(visualise)
+        # get dhn demand
+        demand = cell.get_thermal_demand(True)
+        # generate chp system with storage for heating network
+        chpSystem = CellChpSystemThermal(demand, 0.35, 2*demand, 0.05,
+                                         0.98, 0.98, 0)
 
-controller.report_done(env_status.listen_to_controllers)
+        # chp controller
+        MaxPower_e = chpSystem.chp.pow_e
+        MaxPower_t = chpSystem.chp.pow_t + chpSystem.boiler.pow_t
 
-chpSystem.controller = controller
+        self.controller = CtrlBaselines(MaxPower_e, MaxPower_t)
+        self.controller.feedbackConnection(self.listenToFeedback)
+        chpSystem.controller = self.controller
+        cell.add_chp_thermal(chpSystem)
 
-cell.add_chp_thermal(chpSystem)
+        # rust env
+        self.env = EnSySimEnv(nSteps, SLP.to_dict('list'), HWP,
+                              Weather.to_dict('list'), Solar.to_dict('list'))
+        self.env.add_cell(cell)
 
-env.add_cell(cell)
+    def reset(self):
+        self.env.reset()
 
-# %% Training
-episodes = 1500
-i = 0
-steps = 0
-controller.Training = True
+    def step(self, action):
+        # set action here directly
+        self.controller.action = action
+        # step env
+        self.env.step()
+        # controller reports feedback via callback
+        return self.observation, self.reward, self.done, self.info
 
-controller.reset()
-if visualise:
-    display(controller.costVis)
-    display(controller.trainVis)
-    display(env_status.envVis)
-while i < episodes:
-    if not env_status.done:
-        env.step()
-        steps += 1
-    else:
+    def render():
+        pass
 
-        i += 1
-
-        if visualise:
-            if i < trainHistSize:
-                env_status.epoch_duration[i] = steps
-            if i > trainHistSize:
-                env_status.epoch_duration[:-1] = env_status.epoch_duration[1:]
-                env_status.epoch_duration[-1] = steps
-                env_status.xEpochs += 1
-            with env_status.envVis.batch_update():
-                env_status.envVis.data[0].y = env_status.epoch_duration
-                env_status.envVis.data[0].x = env_status.xEpochs
-
-        env.reset()
-        controller.reset()
-        env_status.done = False
-        steps = 0
-
-# %%
-# Evaluation
-
-# controller.load()
-controller.Training = False
-controller.Epsilon = 0.
-
-# chpSystem.controller = controller
-# cell.add_chp_thermal(chpSystem)
-
-# run the simulation
-simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
-         Solar.to_dict('list'))
-
-# %%
-
-if visualise:
-    display(controller.costVis)
-
-for i in range(1):
-
-    simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
-             Solar.to_dict('list'))
-    # plots.cellPowerBalance(cell, time)
-    # plots.cellEnergyBalance(cell, time)
-    # plots.chargeState(cell.get_thermal_chp_system().storage, time)
-
-    # break
-
-    # cell.get_thermal_chp_system().storage.initialize_random()
+    def listenToFeedback(self, feedback):
+        self.observation = feedback[0]
+        self.reward = feedback[1]
+        self.done = feedback[2]
+        self.info = feedback[3]
 
 
 # %%
-# Cell history
-plots.cellPowerBalance(cell, time)
+# Training environment
+env = EnSySimEnvPy()
 
 # %%
-plots.cellEnergyBalance(cell, time)
+model = DQN("MlpPolicy", env, verbose=2)
+model.learn(total_timesteps=1000000)
+
+# observations = env.reset()
+# max_cycles = 500
+# for step in range(max_cycles):
+#     actions = {agent: policy(observations[agent], agent) for agent in env.agents}
+#     observations, rewards, dones, infos = parallel_env.step(actions)
+
+
 
 # %%
-# CHP history
-chpSystem = cell.get_thermal_chp_system()
-chp_gen_e = np.array(chpSystem.chp.gen_e.get_memory())
-CHPstate = chp_gen_e > 0.
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=time, y=CHPstate,
-                         line={'color': 'rgba(100, 149, 237, 0.5)',
-                               'width': 1},
-                         name="CHP state")
-              )
-fig.update_layout(height=300, width=1000,
-                  title_text="CHP operation")
-fig.update_xaxes(title_text="Time")
-fig.update_yaxes(title_text="On/Off")
+# Training
+# # %%
+# # Evaluation
 
-# %%
-# boiler history
-chpSystem = cell.get_thermal_chp_system()
-boiler_gen_t = np.array(chpSystem.boiler.gen_t.get_memory())
-boile_state = boiler_gen_t > 0.
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=time, y=boile_state,
-                         line={'color': 'rgba(100, 149, 237, 0.5)',
-                               'width': 1},
-                         name="boiler state")
-              )
-fig.update_layout(height=300, width=1000,
-                  title_text="boiler operation")
-fig.update_xaxes(title_text="Time")
-fig.update_yaxes(title_text="On/Off")
-# %%
-# storage history
-chpSystem = cell.get_thermal_chp_system()
-plots.chargeState(chpSystem.storage, time)
+# # controller.load()
+# controller.Training = False
+# controller.Epsilon = 0.
 
-# %%
+# # chpSystem.controller = controller
+# # cell.add_chp_thermal(chpSystem)
 
-# import pickle
-# time["load_t"] = cell.load_t.get_memory()
-# with open("timeseries_load_t.dat", 'wb') as filehandle:
-#     pickle.dump(time, filehandle)
+# # run the simulation
+# simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
+#          Solar.to_dict('list'))
+
+# # %%
+# # Cell history
+# plots.cellPowerBalance(cell, time)
+
+# # %%
+# plots.cellEnergyBalance(cell, time)
+
+# # %%
+# # CHP history
+# chpSystem = cell.get_thermal_chp_system()
+# chp_gen_e = np.array(chpSystem.chp.gen_e.get_memory())
+# CHPstate = chp_gen_e > 0.
+# fig = go.Figure()
+# fig.add_trace(go.Scatter(x=time, y=CHPstate,
+#                          line={'color': 'rgba(100, 149, 237, 0.5)',
+#                                'width': 1},
+#                          name="CHP state")
+#               )
+# fig.update_layout(height=300, width=1000,
+#                   title_text="CHP operation")
+# fig.update_xaxes(title_text="Time")
+# fig.update_yaxes(title_text="On/Off")
+
+# # %%
+# # boiler history
+# chpSystem = cell.get_thermal_chp_system()
+# boiler_gen_t = np.array(chpSystem.boiler.gen_t.get_memory())
+# boile_state = boiler_gen_t > 0.
+# fig = go.Figure()
+# fig.add_trace(go.Scatter(x=time, y=boile_state,
+#                          line={'color': 'rgba(100, 149, 237, 0.5)',
+#                                'width': 1},
+#                          name="boiler state")
+#               )
+# fig.update_layout(height=300, width=1000,
+#                   title_text="boiler operation")
+# fig.update_xaxes(title_text="Time")
+# fig.update_yaxes(title_text="On/Off")
+# # %%
+# # storage history
+# chpSystem = cell.get_thermal_chp_system()
+# plots.chargeState(chpSystem.storage, time)
+
+# # %%
+
+# # import pickle
+# # time["load_t"] = cell.load_t.get_memory()
+# # with open("timeseries_load_t.dat", 'wb') as filehandle:
+# #     pickle.dump(time, filehandle)
+
+# # %%
+# # histogram of chp
+# # get running times
+# chpSystem = cell.get_thermal_chp_system()
+# chp_gen_e = np.array(chpSystem.chp.gen_e.get_memory())
+# CHPstate = chp_gen_e > 0.
+
+# CHP_hist = []
+# state_hist = []
+# running_counter = 0
+# previuos_state = CHPstate[0]
+# for state in CHPstate:
+#     if state == previuos_state:
+#         running_counter += 1
+#     else:
+#         CHP_hist.append(running_counter)
+#         state_hist.append(previuos_state)
+#         running_counter = 1
+#     previuos_state = state
+# CHP_hist.append(running_counter)
+# state_hist.append(previuos_state)
+# if CHPstate[0] == CHPstate[-1]:
+#     CHP_hist[0] += CHP_hist[-1]
+#     CHP_hist.pop()
+#     state_hist.pop()
+
+# CHP_hist.pop(1)
+# state_hist.pop(1)
+# CHP_hist.pop(-1)
+# state_hist.pop(-1)
+
+# CHP_hist = np.array(CHP_hist) * 0.25
+# state_hist = np.array(state_hist)
+
+
+# import matplotlib.pyplot as plt
+# # graph
+# plt.hist([CHP_hist[state_hist], CHP_hist[np.invert(state_hist)]],
+#          bins=100,
+#          density=False,
+#          stacked=True,
+#          cumulative=False)
+# plt.title("Runtime Histogram")
+# plt.xlabel("Stunden ohne Zustandsänderung")
+# plt.ylabel("Häufigkeit")
+# plt.show()
+
+# # %%
