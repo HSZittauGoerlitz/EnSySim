@@ -8,6 +8,7 @@ from torch import nn, optim
 from typing import Tuple
 
 from traitlets.traitlets import Bool
+from CheckCostFunction import getCostInv
 
 from Controller.Tools import DQN_MLP, ReplayMemory, Transition
 
@@ -45,6 +46,126 @@ class CtrlDefault(CtrlTemplate):
             CHPstate = True
 
         return (CHPstate, BoilerState)
+
+
+class CtrlBaselines(CtrlTemplate):
+    def __init__(self, MaxPower_e: float, MaxPower_t: float):
+        self._env = []
+        self._feedback = []
+
+        self.action = 0
+        self.done = False
+
+        self.reward = 1.
+
+        # All possible actions: (CHP, Boiler)
+        self.ACTIONS = [(False, False), (True, False),
+                        (False, True), (True, True)]
+        self.actionSize = len(self.ACTIONS)
+        # size of observation vector
+        self.stateSize = 7
+
+        # System Parameter
+        self.MaxPower_e = MaxPower_e
+        self.MaxPower_t = MaxPower_t
+
+        self.lastAction = random.randrange(self.actionSize)  # or always 0?
+        self.lastState = np.zeros(self.stateSize)
+
+    # feedback: [observation, reward, done]
+    @property
+    def reportFeedback(self):
+        return self._feedback
+
+    @reportFeedback.setter
+    def reportFeedback(self, feedback):
+        self._feedback = feedback
+        for callback in self._env:
+            callback(self._feedback)
+
+    def feedbackConnection(self, callback):
+        self._env.append(callback)
+
+    def reset(self):
+        self.StorageStateGrad = 0.
+        self.ThermalDemandGrad = 0.
+
+        self.lastState = np.zeros(self.stateSize)  # randomize??
+        self.lastAction = 0
+        self.done = False
+
+    def _getRewards(self, state, aIdx):
+
+        # check fulfilment of thermal demand -> stop criterion
+        eDemand_t = state[4] - state[3]  # gen - load
+        if eDemand_t != 0:
+            return (0, True)
+
+        # if eDemand_t < -0.01 * self.MaxPower_t:
+        #     return (self.reward, 1.)
+        # elif eDemand_t > 0.01 * self.MaxPower_t:
+        #     return (self.reward, 1.)
+
+        extra_rewards = 1.  # bonus for time step
+
+        # # hint for storage state
+        # storage = state[1]
+        # if storage > 0.1 or storage < 0.9:
+        #     extra_rewards += 0.05 * self.reward
+
+        # if storage > 0.05 or storage < 0.95:
+        #     extra_rewards += 0.03 * self.reward
+
+        # boiler = state[6]
+        # # prefer chp over boiler
+        # if boiler:
+        #     extra_rewards -= 0.03 * self.reward
+
+        # # add consistency
+        # chp = state[5]
+        # # if chp == 0 and self.lastState[5] == 0:
+        # #     extra_rewards -= 0.1
+
+        # if chp != self.lastState[5]:
+        #     extra_rewards += 0.01 * self.reward
+
+        return (extra_rewards, False)
+
+    def step(self, StorageState, CellState, Ambient):
+        # prepare boundary conditions
+        gen_e, load_e, gen_t, load_t, contrib_e, contrib_t, fuel = CellState
+        Eg, solEl, solAz, Tout, Tmean = Ambient
+
+        load_t = load_t / self.MaxPower_t
+        gen_t = gen_t / self.MaxPower_t
+
+        if np.all((self.lastState == 0)):
+            self.lastState[1] = StorageState
+            self.lastState[3] = load_t
+
+        self.StorageStateGrad = (StorageState - self.lastState[1]) / 0.25  # t
+        self.ThermalDemandGrad = (load_t - self.lastState[3]) / 0.25
+
+        Chp, Boiler = self.ACTIONS[self.lastAction]
+
+        observation = np.array([self.StorageStateGrad,
+                                StorageState,
+                                self.ThermalDemandGrad,
+                                load_t,
+                                gen_t,
+                                Chp,
+                                Boiler], dtype=np.float32)
+
+        rewards, done = self._getRewards(observation, self.action)
+
+        self.lastAction = self.action.copy()
+        self.lastState = observation.copy()
+
+        self.reportFeedback = [observation, rewards, done, {}]
+
+        return (self.ACTIONS[self.action][0],
+                self.ACTIONS[self.action][1],
+                self.done)
 
 
 class CtrlSmartSimple(CtrlTemplate):
@@ -182,11 +303,18 @@ class CtrlSmartSimple(CtrlTemplate):
     def report_done(self, callback):
         self._observers.append(callback)
 
+    def getCostInv(w, y, cMax=0.01, mu=0.5):
+        e = np.abs(w-y)
+        omega = np.tanh(np.sqrt(0.95) / mu)
+
+        return np.tanh(e/omega)**2. * cMax
+
     def _getCosts(self, state, aIdx):
 
+        costs = 0
         # check fulfilment of thermal demand -> stop criterion
         eDemand_t = state[4] - state[3]  # gen - load
-        if eDemand_t != 0.:
+        if eDemand_t != 0:
             return (self.cMax, 1.)
 
         # if eDemand_t < -0.01 * self.MaxPower_t:
@@ -194,7 +322,7 @@ class CtrlSmartSimple(CtrlTemplate):
         # elif eDemand_t > 0.01 * self.MaxPower_t:
         #     return (self.cMax, 1.)
 
-        costs = -0.25  # bonus for time step
+        costs -= 0.25  # bonus for time step
 
         # hint for storage state
         storage = state[1]
@@ -206,16 +334,16 @@ class CtrlSmartSimple(CtrlTemplate):
 
         boiler = state[6]
         # prefer chp over boiler
-        if boiler == 1:
-            costs += 0.5 * self.cMax
+        if boiler:
+            costs += 0.25 * self.cMax
 
         # add consistency
         chp = state[5]
-        if chp == 0 and self.lastState[5] == 0:
-            costs -= 0.1
+        # if chp == 0 and self.lastState[5] == 0:
+        #     costs -= 0.1
 
-        if chp == self.lastState[5]:
-            costs -= 0.1
+        if chp != self.lastState[5]:
+            costs += 0.1 * self.cMax
 
         return (costs, 0.)
 
@@ -426,8 +554,8 @@ class CtrlSmartSimple(CtrlTemplate):
         self.StorageStateGrad = 0
         self.ThermalDemandGrad = 0
 
-        self.lastState = np.zeros(self.stateSize)
-
+        self.lastState = np.zeros(self.stateSize)  # randomize??
+        self.lastAction = 0
         self.done = False
 
     def save(self, loc='./', fModel='SmartCtrlModel', fStats='SmartCtrlStats'):
