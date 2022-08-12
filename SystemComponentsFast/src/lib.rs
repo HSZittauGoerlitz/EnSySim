@@ -135,7 +135,9 @@ pub fn test_generic_storage(
 pub struct EnSySimEnv {
     #[pyo3(get)]
     done: bool,
+    #[pyo3(get)]
     current_step: usize, // ?
+    max_episode_length: usize,
     main_cell: Option<cell::Cell>,
     slp_phh: Vec<f32>,
     slp_bsla: Vec<f32>,
@@ -152,9 +154,9 @@ pub struct EnSySimEnv {
     
 #[pymethods]
 impl EnSySimEnv {
-
     #[new]
-    pub fn new(slp_data: HashMap<&str, Vec<f32>>,
+    pub fn new(steps: usize,
+               slp_data: HashMap<&str, Vec<f32>>,
                hot_water_data: PyReadonlyArrayDyn<f32>,
                env_data: HashMap<&str, Vec<f32>>,
                sol_data: HashMap<&str, Vec<f32>>) -> Self {
@@ -172,10 +174,13 @@ impl EnSySimEnv {
         let e_direct = env_data.get("E direct [W/m^2]").unwrap();
         let e_elevation = sol_data.get("elevation [degree]").unwrap();
         let e_azimuth = sol_data.get("azimuth [degree]").unwrap();
-     
+
+        let current_step = rand::thread_rng().gen_range(0..steps-1);
+
         let env = EnSySimEnv{
                   done: false,
-                  current_step: 0,
+                  current_step: current_step,
+                  max_episode_length: steps,
                   main_cell: None,
                   slp_phh: slp_phh.to_vec(),
                   slp_bsla: slp_bsla.to_vec(),
@@ -200,11 +205,24 @@ impl EnSySimEnv {
         }
     }
 
+    fn get_main_cell(&self) -> Option<cell::Cell>
+    {
+        match &self.main_cell {
+            Some(cell) => {
+                Some(cell.clone())
+            },
+            _ => None,
+        }
+    }
 
     /// choose random starting point and initialize e. g. storages
     pub fn reset(&mut self)
     {
-        self.current_step = rand::thread_rng().gen_range(0..33000);
+        self.current_step = rand::thread_rng().gen_range(0..self.max_episode_length-1);
+        match &mut self.main_cell {
+            Some(cell) => cell.state.reset(),
+            None => error!("No cell to reset!"),
+        }
     }
 
     /// step cell one time step
@@ -247,6 +265,10 @@ impl EnSySimEnv {
                           &mut amb);
 
                 self.current_step += 1;
+                // roll around
+                if self.current_step == self.max_episode_length {
+                    self.current_step = 0;
+                }
             },
         }
     }
