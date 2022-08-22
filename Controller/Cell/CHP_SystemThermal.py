@@ -1007,7 +1007,7 @@ class CtrlSmart(CtrlTemplate):
     def step(self, StorageState, CellState, Ambient):
         # prepare boundary conditions
         gen_e, load_e, gen_t, load_t, contrib_e, contrib_t, fuel = CellState
-        Eg, solEl, solAz, Tout = Ambient
+        Eg, solEl, solAz, Tout, Tmean = Ambient
         state = np.array([StorageState, gen_e, load_e, gen_t, load_t,
                           contrib_e, contrib_t, fuel,
                           Eg, solEl, solAz, Tout], dtype=np.float32)
@@ -1073,7 +1073,7 @@ class CtrlSmart(CtrlTemplate):
         self.lastAction = aIdx
         self.lastState = state.copy()
 
-        return (Chp, Boiler)
+        return (Chp, Boiler, bool(done))
 
     def updateStateStats(self, weight=True):
         state = torch.cat(Transition(*zip(*self.memory.memory))

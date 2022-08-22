@@ -9,20 +9,20 @@ from SystemComponentsFast import simulate, CellChpSystemThermal
 from PostProcesing import plots
 import logging
 
-# %% 
+# %%
 # debugging
 import os
 
 print(os.getpid())
 
-# %% 
+# %%
 # logging
 FORMAT = ("%(levelname)s %(name)s %(asctime)-15s "
           "%(filename)s:%(lineno)d %(message)s")
 logging.basicConfig(format=FORMAT)
 logging.getLogger().setLevel(logging.WARNING)
 
-# %% 
+# %%
 # model parameters
 
 # time
@@ -47,7 +47,7 @@ pCHP = 0.1
 # environment
 region = "East"
 
-# %% 
+# %%
 # DQN parameters
 capacity = 96 * 300
 batchSize = 48
@@ -87,16 +87,17 @@ MaxFuelDemand = ((chpSystem.chp.pow_e + chpSystem.chp.pow_t) /
 controller = CtrlSmart(capacity, batchSize, epsStart, epsMin, epsDecay,
                        cMax, targetUpdate, nHL1, nHL2, trainHistSize,
                        MaxPower_e, MaxPower_t, MaxFuelDemand, visualise)
-#controller.loadStats()
+# controller.loadStats()
 chpSystem.controller = controller
 cell.add_chp_thermal(chpSystem)
 
 
-# %%
-# simulate
+# %% Init Visualisation
 if visualise:
-    display(controller.trainVis)
+    controller.trainVis.show()
 
+
+# %% Simulation
 while True:
 
     simulate(cell, nSteps, SLP.to_dict('list'), HWP, Weather.to_dict('list'),
