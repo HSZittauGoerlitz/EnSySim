@@ -131,10 +131,10 @@ impl CellTmsSystemThermal {
         // charge/discharge for storage
         if self.tms_engine_charging_state != 0. {
             let (storage_diff, _) =
-            self.pressure_tanks.step(&pow_e);
+            self.pressure_tanks.step(&(pow_e*self.tms_engine_charging_state));
         } else if self.tms_engine_discharging_state != 0. {
             let (storage_diff, _) =
-            self.pressure_tanks.step(&-pow_e);
+            self.pressure_tanks.step(&-con_e*self.tms_engine_discharging_state);
         } else {
             let (storage_diff, _) =
             self.pressure_tanks.step(&0.);

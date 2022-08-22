@@ -140,10 +140,10 @@ impl TMSEngine {
 
         // charge
         if self.charging_state != 0. {
-            cons_e = self.pow_e*self.charging_state;
-            cons_t = self.pow_t*self.charging_state;
-            pow_e = self.pow_e*self.charging_state*self.compression_efficiency;
-            pow_t = self.pow_t*self.charging_state*self.compression_efficiency;
+            cons_e = self.pow_e*self.charging_state/self.compression_efficiency;
+            cons_t = self.pow_t*self.charging_state/self.compression_efficiency;
+            pow_e = self.pow_e*self.charging_state;
+            pow_t = self.pow_t*self.charging_state;
         }
 
         // discharge
