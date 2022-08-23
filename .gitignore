@@ -6,6 +6,7 @@
 .vscode/.ropeproject/config.py
 **/target
 .vscode/*
+!.vscode/launch.json
 !.vscode/tasks.json
 
 /SystemComponentsFast/build_cmd/*
