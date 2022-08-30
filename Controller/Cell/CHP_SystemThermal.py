@@ -153,9 +153,9 @@ class CtrlBaselines(CtrlTemplate):
                                 Chp,
                                 Boiler], dtype=np.float32)
 
-        rewards, done = self._getRewards(observation, self.action)
+        rewards, done = self._getRewards(observation, self.lastAction)
 
-        self.lastAction = self.action.copy()
+        self.lastAction = self.action
         self.lastState = observation.copy()
 
         self.reportFeedback = [observation, rewards, done, {}]

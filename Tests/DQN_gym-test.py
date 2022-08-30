@@ -12,6 +12,7 @@ from SystemComponentsFast import simulate, CellChpSystemThermal, EnSySimEnv
 from PostProcesing import plots
 import plotly.graph_objs as go
 import numpy as np
+import random
 import logging
 
 from stable_baselines3 import DQN
@@ -132,7 +133,17 @@ class EnSySimEnvPy(gym.Env):
         self.env.add_cell(cell)
 
     def reset(self):
+        # reset env
         self.env.reset()
+        # take some random action to produce initial observation
+        action = random.randrange(self.controller.actionSize)
+        # set action here directly
+        self.controller.action = action
+        # step env
+        self.env.step()
+        # return initial observation
+
+        return self.observation
 
     def step(self, action):
         # set action here directly
@@ -163,13 +174,14 @@ model = DQN("MlpPolicy",
             learning_rate=0.00001,
             #exploration_fraction=0.005
             )
-model.learn(total_timesteps=env.nSteps*100)
+model.learn(total_timesteps=1000000)
+
 
 # observations = env.reset()
 # max_cycles = 500
 # for step in range(max_cycles):
-#     actions = {agent: policy(observations[agent], agent) for agent in env.agents}
-#     observations, rewards, dones, infos = parallel_env.step(actions)
+    # actions = {agent: policy(observations[agent], agent) for agent in env.cell.agents}
+    # observations, rewards, dones, infos = parallel_env.step(actions)
 
 
 
