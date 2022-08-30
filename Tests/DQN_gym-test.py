@@ -16,6 +16,8 @@ import random
 import logging
 
 from stable_baselines3 import DQN
+from stable_baselines3.common.evaluation import evaluate_policy
+#from wandb.integration.sb3 import WandbCallback
 import gym
 from gym import spaces
 # debug pid
@@ -142,7 +144,8 @@ class EnSySimEnvPy(gym.Env):
         # step env
         self.env.step()
         # return initial observation
-
+        if self.done:
+            print("mist")
         return self.observation
 
     def step(self, action):
@@ -168,13 +171,27 @@ class EnSySimEnvPy(gym.Env):
 env = EnSySimEnvPy()
 
 # %%
+# train agent
 model = DQN("MlpPolicy",
             env,
             verbose=2,
-            learning_rate=0.00001,
+            #learning_rate=0.00001,
             #exploration_fraction=0.005
             )
-model.learn(total_timesteps=1000000)
+model.learn(total_timesteps=100000)
+
+# %%
+# Evaluate the agent
+mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=100)
+print(mean_reward, std_reward)
+# %%
+
+observation = env.reset()
+done = False
+while not done:
+    action = model.predict(observation)
+    (observation, reward, done, info) = env.step(action[0])
+    print(observation, action)
 
 
 # observations = env.reset()
