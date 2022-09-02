@@ -95,7 +95,7 @@ impl GenericStorage {
     // between 10% and 90%
     pub fn initialize_random(&mut self) {
         let mut rng = rand::thread_rng();
-        self.charge = rng.gen::<f32>() * self.cap; // (rng.gen::<f32>() + 0.1) * 0.812 * self.cap;
+        self.charge = (rng.gen::<f32>() * 0.3 + 0.5) * self.cap; // (rng.gen::<f32>() + 0.1) * 0.812 * self.cap;
     }
 
 }
