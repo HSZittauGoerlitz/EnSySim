@@ -17,7 +17,10 @@ import logging
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.evaluation import evaluate_policy
-#from wandb.integration.sb3 import WandbCallback
+from stable_baselines3.common.monitor import Monitor
+import wandb
+from wandb.integration.sb3 import WandbCallback
+
 import gym
 from gym import spaces
 # debug pid
@@ -171,14 +174,35 @@ class EnSySimEnvPy(gym.Env):
 env = EnSySimEnvPy()
 
 # %%
+
+config = {
+    "policy type": "MlpPolicy",
+    "total_timesteps": 30000,
+    "env_name": "EnSySim-baselines", 
+  #"learning_rate": 0.001,
+  #"epochs": 100,
+  #"batch_size": 128
+}
+# Optional
+run = wandb.init(project="nero", entity="hszg-ipm-mtpa", config=config,
+                 sync_tensorboard=True)
+
+
+
 # train agent
 model = DQN("MlpPolicy",
             env,
-            verbose=2,
+            verbose=1,
+            tensorboard_log=f"runs/{run.id}",
             #learning_rate=0.00001,
             #exploration_fraction=0.005
             )
-model.learn(total_timesteps=100000)
+
+wandb.watch(model, log_freq=100)
+
+model.learn(total_timesteps=config["total_timesteps"], callback=WandbCallback(verbose=2))
+
+run.finish()
 
 # %%
 # Evaluate the agent
