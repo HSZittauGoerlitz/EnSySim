@@ -138,6 +138,7 @@ pub struct EnSySimEnv {
     #[pyo3(get)]
     current_step: usize, // ?
     max_episode_length: usize,
+    #[pyo3(get)]
     main_cell: Option<cell::Cell>,
     slp_phh: Vec<f32>,
     slp_bsla: Vec<f32>,
