@@ -17,7 +17,10 @@ import logging
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.evaluation import evaluate_policy
-#from wandb.integration.sb3 import WandbCallback
+from stable_baselines3.common.monitor import Monitor
+import wandb
+from wandb.integration.sb3 import WandbCallback
+
 import gym
 from gym import spaces
 # debug pid
@@ -36,7 +39,7 @@ logging.getLogger().setLevel(logging.WARNING)
 class EnSySimEnvPy(gym.Env):
     metadata = {}
 
-    def __init__(self, hist=False) -> None:
+    def __init__(self) -> None:
 
         # from class CtrlSmartSimple(CtrlTemplate): def __init__
         # self.ACTIONS = [(False, False), (True, False),
@@ -57,7 +60,8 @@ class EnSySimEnvPy(gym.Env):
                 -np.finfo(np.float32).max,
                 0.,
                 -np.finfo(np.float32).max,
-                -1,
+                0.,
+                0.,
                 0.,
                 0.,
 
@@ -69,7 +73,8 @@ class EnSySimEnvPy(gym.Env):
                 np.finfo(np.float32).max,
                 1.,
                 np.finfo(np.float32).max,
-                1,
+                1.,
+                1.,
                 1.,
                 1.,
             ],
@@ -103,25 +108,20 @@ class EnSySimEnvPy(gym.Env):
         region = "East"
 
         # prepare simulation data
-        self.nSteps, self.time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
-
-        if hist:
-            hist = self.nSteps
-        else:
-            hist = 0
+        self.nSteps, time, SLP, HWP, Weather, Solar = getSimData(start, end, region)
 
         # generate cell
-        self.cell = generateGenericCell(nBuildings, pAgents,
-                                        pPHHagents, pAgriculture,
-                                        pDHN, pPVplants, pHeatpumps, pCHP,
-                                        pBTypes, nSepBSLagents,
-                                        pAgricultureBSLsep, region, hist)
+        cell = generateGenericCell(nBuildings, pAgents,
+                                   pPHHagents, pAgriculture,
+                                   pDHN, pPVplants, pHeatpumps, pCHP, pBTypes,
+                                   nSepBSLagents, pAgricultureBSLsep,
+                                   region, 0)
 
         # get dhn demand
-        demand = self.cell.get_thermal_demand(True)
+        demand = cell.get_thermal_demand(True)
         # generate chp system with storage for heating network
         chpSystem = CellChpSystemThermal(demand, 0.35, 2*demand, 0.05,
-                                         0.98, 0.98, hist)
+                                         0.98, 0.98, 0)
 
         # chp controller
         MaxPower_e = chpSystem.chp.pow_e
@@ -130,26 +130,25 @@ class EnSySimEnvPy(gym.Env):
         self.controller = CtrlBaselines(MaxPower_e, MaxPower_t)
         self.controller.feedbackConnection(self.listenToFeedback)
         chpSystem.controller = self.controller
-        self.cell.add_chp_thermal(chpSystem)
+        cell.add_chp_thermal(chpSystem)
 
         # rust env
         self.env = EnSySimEnv(self.nSteps, SLP.to_dict('list'), HWP,
                               Weather.to_dict('list'), Solar.to_dict('list'))
-        self.env.add_cell(self.cell)
+        self.env.add_cell(cell)
 
     def reset(self):
         # reset env
         self.env.reset()
         # take some random action to produce initial observation
-        action = 0 # random.randrange(self.controller.actionSize)
+        action = random.randrange(self.controller.actionSize)
         # set action here directly
         self.controller.action = action
         # step env
         self.env.step()
         # return initial observation
         if self.done:
-            self.observation = self.reset()
-            print("mist!")
+            print("mist")
         return self.observation
 
     def step(self, action):
@@ -169,86 +168,55 @@ class EnSySimEnvPy(gym.Env):
         self.done = feedback[2]
         self.info = feedback[3]
 
-    def getData(self):
-        self.cell = self.env.main_cell
 
 # %%
 # Training environment
 env = EnSySimEnvPy()
 
 # %%
+
+config = {
+    "policy type": "MlpPolicy",
+    "total_timesteps": 30000,
+    "env_name": "EnSySim-baselines", 
+  #"learning_rate": 0.001,
+  #"epochs": 100,
+  #"batch_size": 128
+}
+# Optional
+run = wandb.init(project="nero", entity="hszg-ipm-mtpa", config=config,
+                 sync_tensorboard=True)
+
+
+
 # train agent
 model = DQN("MlpPolicy",
             env,
-            verbose=2,
-            learning_starts=10000,
-            buffer_size=100000,
+            verbose=1,
+            tensorboard_log=f"runs/{run.id}",
             #learning_rate=0.00001,
-            exploration_fraction=0.05,
+            #exploration_fraction=0.005
             )
-model.learn(total_timesteps=500000)
-model.save("DQN_gym-test")
-# %%
-# Evaluate the agent
-mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
-print(mean_reward, std_reward)
+
+wandb.watch(model, log_freq=100)
+
+model.learn(total_timesteps=config["total_timesteps"], callback=WandbCallback(verbose=2))
+
+run.finish()
 
 # %%
-# with hist
-env = EnSySimEnvPy(True)
-# load model
-model = DQN.load("DQN_gym-test", env=env)
+# Evaluate the agent
+mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=100)
+print(mean_reward, std_reward)
 # %%
-# demo
+
 observation = env.reset()
-print(observation)
 done = False
 while not done:
     action = model.predict(observation)
     (observation, reward, done, info) = env.step(action[0])
-    print(observation)
-    print(action)
-    print(done)
+    print(observation, action)
 
-env.getData()
-
-# %%
-plots.cellPowerBalance(env.cell, env.time)
-
-# %%
-plots.cellEnergyBalance(env.cell, env.time)
-
-# %%
-chpSystem = env.cell.get_thermal_chp_system()
-chp_gen_e = np.array(chpSystem.chp.gen_e.get_memory())
-CHPstate = chp_gen_e > 0.
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=env.time, y=CHPstate,
-                         line={'color': 'rgba(100, 149, 237, 0.5)',
-                               'width': 1},
-                         name="CHP state")
-                )
-fig.update_layout(height=600, width=600,
-                  title_text="CHP operation")
-fig.update_xaxes(title_text="Time")
-fig.update_yaxes(title_text="On/Off")
-
-chpSystem = env.cell.get_thermal_chp_system()
-boiler_gen_t = np.array(chpSystem.boiler.gen_t.get_memory())
-boilerState = boiler_gen_t > 0.
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=env.time, y=boilerState,
-                         line={'color': 'rgba(100, 149, 237, 0.5)',
-                               'width': 1},
-                         name="boiler state")
-                )
-fig.update_layout(height=600, width=600,
-                  title_text="boiler operation")
-fig.update_xaxes(title_text="Time")
-fig.update_yaxes(title_text="On/Off")
-# %%
-
-plots.chargeState(chpSystem.storage, env.time)
 
 # observations = env.reset()
 # max_cycles = 500
