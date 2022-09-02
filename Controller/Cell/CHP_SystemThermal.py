@@ -63,7 +63,7 @@ class CtrlBaselines(CtrlTemplate):
                         (False, True), (True, True)]
         self.actionSize = len(self.ACTIONS)
         # size of observation vector
-        self.stateSize = 7
+        self.stateSize = 6
 
         # System Parameter
         self.MaxPower_e = MaxPower_e
@@ -94,11 +94,11 @@ class CtrlBaselines(CtrlTemplate):
         self.lastAction = 0
         self.done = False
 
-    def _getRewards(self, state, aIdx):
+    def _getRewards(self, state, gen_t):
 
         # check fulfilment of thermal demand -> stop criterion
-        eDemand_t = state[4] - state[3]  # gen - load
-        if eDemand_t != 0:
+        eDemand_t = gen_t - state[3]  # gen - load
+        if abs(eDemand_t) > 0.001:
             return (self.reward, True)
 
         # if eDemand_t < -0.01 * self.MaxPower_t:
@@ -106,25 +106,25 @@ class CtrlBaselines(CtrlTemplate):
         # elif eDemand_t > 0.01 * self.MaxPower_t:
         #     return (self.reward, 1.)
 
-        extra_rewards = self.reward  # bonus for time step
+        extra_rewards = 0. # self.reward  # bonus for time step
 
         # hint for storage state
         storage = state[1]
         if storage > 0.1 or storage < 0.9:
-            extra_rewards += 0.05 * self.reward
+            extra_rewards += 0.01 * self.reward
 
         if storage > 0.05 or storage < 0.95:
-            extra_rewards += 0.03 * self.reward
+            extra_rewards += 0.01 * self.reward
 
-        boiler = state[6]
+        boiler = state[5]
         # prefer chp over boiler
         if boiler:
-            extra_rewards -= 0.03 * self.reward
+            extra_rewards -= 0.1 * self.reward
 
         # add consistency
-        chp = state[5]
-        if chp == self.lastState[5]:
-            extra_rewards += 0.02 * self.reward
+        chp = state[4]
+        if chp == self.lastState[4]:
+            extra_rewards += 0.1 * self.reward
 
         return (extra_rewards, False)
 
@@ -133,9 +133,11 @@ class CtrlBaselines(CtrlTemplate):
         gen_e, load_e, gen_t, load_t, contrib_e, contrib_t, fuel = CellState
         Eg, solEl, solAz, Tout, Tmean = Ambient
 
+        # neccessary?
         load_t = load_t / self.MaxPower_t
         gen_t = gen_t / self.MaxPower_t
 
+        # because of 0 initalization
         if np.all((self.lastState == 0)):
             self.lastState[1] = StorageState
             self.lastState[3] = load_t
@@ -149,11 +151,10 @@ class CtrlBaselines(CtrlTemplate):
                                 StorageState,
                                 self.ThermalDemandGrad,
                                 load_t,
-                                gen_t,
                                 Chp,
                                 Boiler], dtype=np.float32)
 
-        rewards, done = self._getRewards(observation, self.lastAction)
+        rewards, done = self._getRewards(observation, gen_t)
 
         self.lastAction = self.action
         self.lastState = observation.copy()
