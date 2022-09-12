@@ -113,21 +113,19 @@ plots.chargeState(chpSystem.storage, time)
 
 PVgen_e = getCellsPVgeneration(cell)
 CHPgen_e = getCellsCHPgeneration(cell)
-WINDgen_e = cell.wind.gen_e.get_memory()
+Windgen_e = cell.wind.gen_e.get_memory()
 
 plots.EnergyGenerationChart(time, 'PV generation', PVgen_e, 'CHP generation',
-                            CHPgen_e, 'Wind turbine generation', WINDgen_e)
+                            CHPgen_e, 'Wind turbine generation', Windgen_e)
 
 # This second graph graph is meant to show the generation stacked
 # across the year.
 
 stackedPVgen_e = stackedArray(PVgen_e)
 stackedCHPgen_e = stackedArray(CHPgen_e)
-stackedWINDgen_e = stackedArray(WINDgen_e)
+stackedWINDgen_e = stackedArray(Windgen_e)
 
-plots.EnergyGenerationChart(time, 'PV generation (stacked)',
-                            stackedPVgen_e,
-                            'CHP generation (stacked)',
-                            stackedCHPgen_e,
-                            'Wind turbine generation (stacked)',
-                            stackedWINDgen_e)
+plots.EnergyGenerationChart(time,
+                            'PV generation (stacked)', stackedPVgen_e,
+                            'CHP generation (stacked)', stackedCHPgen_e,
+                            'Wind generation (stacked)', stackedWINDgen_e)
