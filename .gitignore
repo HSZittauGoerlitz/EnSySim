@@ -17,3 +17,6 @@
 *.data
 
 wandb/*
+videos/*
+models/*
+runs/*
