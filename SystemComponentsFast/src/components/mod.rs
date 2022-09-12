@@ -7,5 +7,3 @@ pub mod pv;
 pub mod wind;
 pub mod tms_engine;
 pub mod solarthermal;
-pub mod wind;
-
