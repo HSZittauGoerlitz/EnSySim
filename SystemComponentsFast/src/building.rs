@@ -305,10 +305,14 @@ impl Building {
             sum_apv_demand /= n_agents as f32;
         }
 
-        self.add_pv(pv::PV::new(eg, sum_coc,
-                                sum_apv_demand,
-                                hist)
-                    );
+        let pv = pv::PV::new(hist);
+
+        self.add_pv(pv);
+        
+        match &mut self.pv {
+            Some(pv) => pv.size_building_pv(eg, sum_coc, sum_apv_demand),
+                None => error!("Missing PV component!")
+        }
     }
 
     fn add_dimensioned_heatpump(&mut self,
