@@ -17,7 +17,14 @@ import logging
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.evaluation import evaluate_policy
+
 #from wandb.integration.sb3 import WandbCallback
+
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
+import wandb
+from wandb.integration.sb3 import WandbCallback
+
 import gym
 from gym import spaces
 # debug pid
@@ -112,7 +119,7 @@ class EnSySimEnvPy(gym.Env):
 
         # generate cell
         self.cell = generateGenericCell(nBuildings, pAgents,
-                                        pPHHagents, pAgriculture,
+                                   pPHHagents, pAgriculture,
                                         pDHN, pPVplants, pHeatpumps, pCHP,
                                         pBTypes, nSepBSLagents,
                                         pAgricultureBSLsep, region, hist)
@@ -177,6 +184,32 @@ class EnSySimEnvPy(gym.Env):
 env = EnSySimEnvPy()
 
 # %%
+
+wandb.tensorboard.patch(root_logdir="/")
+# %%
+
+config = {
+    "policy type": "MlpPolicy",
+    "total_timesteps": 1000,
+    "env_name": "CartPole-v1", 
+  #"learning_rate": 0.001,
+  #"epochs": 100,
+  #"batch_size": 128
+}
+# create env
+# wandb.tensorboard.patch(root_logdir="/")
+# see for symlink fix>
+# https://www.scivision.dev/windows-symbolic-link-permission-enable/
+run = wandb.init(project="nero", entity="hszg-ipm-mtpa", config=config, sync_tensorboard=True)
+
+def make_env_wb():
+    env = gym.make(config['env_name'])
+    env = Monitor(env)
+    return env
+
+env = DummyVecEnv([make_env_wb])
+env = VecVideoRecorder(env, 'videos', record_video_trigger=lambda x: x % 2000 == 0, video_length=200)
+
 # train agent
 model = DQN("MlpPolicy",
             env,
@@ -186,8 +219,16 @@ model = DQN("MlpPolicy",
             #learning_rate=0.00001,
             exploration_fraction=0.05,
             )
+<<<<<<< Updated upstream
 model.learn(total_timesteps=500000)
 model.save("DQN_gym-test")
+=======
+# model.tensorboard_log = "logs/"
+wandb.watch(model.q_net)
+model.learn(total_timesteps=config["total_timesteps"], callback=WandbCallback(gradient_save_freq=100,  verbose=2, model_save_path=f"models/{run.id}"))
+
+run.finish()
+
 # %%
 # Evaluate the agent
 mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
