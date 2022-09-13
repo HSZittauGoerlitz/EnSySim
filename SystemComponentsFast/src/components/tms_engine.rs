@@ -18,6 +18,11 @@ pub struct TMSEngine {
     #[pyo3(get)]
     pub decompression_efficiency: f32, // total decompression efficiency of tms 0 .. 1
 
+    #[pyo3(get)]
+    pub min_compression_load: f32, // min load of tms 0 .. 1
+    #[pyo3(get)]
+    pub min_decompression_load: f32, // min load of tms 0 .. 1
+
     charging_state: f32,  // partial load charge state percentage from 0 to 1
     discharging_state: f32, // partial load discharge state percentage from 0 to 1
 
@@ -68,6 +73,8 @@ impl TMSEngine {
              discharging_state,
              compression_efficiency,
              decompression_efficiency,
+             min_compression_load: 0.4,
+             min_decompression_load: 0.4,
              gen_e,
              gen_t,
              con_e,

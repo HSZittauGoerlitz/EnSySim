@@ -8,7 +8,7 @@ use crate::misc::hist_memory;
 #[derive(Clone)]
 pub struct GenericStorage {
     #[pyo3(get)]
-    cap: f32,  // capacity of storage [Wh]
+    pub cap: f32,  // capacity of storage [Wh]
     #[pyo3(get)]
     charge: f32,  // charging state of storage [Wh]
     #[pyo3(get)]

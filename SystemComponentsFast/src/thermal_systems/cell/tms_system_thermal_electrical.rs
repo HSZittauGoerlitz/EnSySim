@@ -24,8 +24,8 @@ pub struct CellTmsSystemThermalElectrical {
     // Controller variables
     #[pyo3(get, set)]
     controller: Option<PyObject>,
-    boiler_state: bool,
-    chp_state: bool,
+    boiler_state: f32,
+    chp_state: f32,
     tms_engine_charging_state: f32,
     tms_engine_discharging_state: f32,
 
@@ -93,8 +93,8 @@ impl CellTmsSystemThermalElectrical {
                        tms_engine,
                        pressure_tanks,
                        controller: None,
-                       boiler_state: false,
-                       chp_state: false,
+                       boiler_state: 0.,
+                       chp_state: 0.,
                        tms_engine_charging_state: 0.,
                        tms_engine_discharging_state: 0.,
                        gen_e,
@@ -105,55 +105,67 @@ impl CellTmsSystemThermalElectrical {
 
 impl CellTmsSystemThermalElectrical {
     // Control Parameter
+
+    const TIME_STEP: f32 = 0.25;  // h
+
     const STORAGE_LEVEL_HH: f32 = 0.95;
     const STORAGE_LEVEL_H: f32 = 0.3;
     const STORAGE_LEVEL_L: f32 = 0.2;
     const STORAGE_LEVEL_LL: f32 = 0.05;
 
     fn control(&mut self, thermal_demand: &f32, cell_pow_e_balance: &f32) {
+        // This is design for autarchy!!!
         let storage_state = self.pressure_tanks.get_relative_charge();
-        let cell_pow_t_balance = self.chp.pow_t + self.boiler.pow_t - thermal_demand;
 
         if storage_state <= CellTmsSystemThermalElectrical::STORAGE_LEVEL_LL {
-            self.boiler_state = true;
-            self.chp_state = true;
+            self.boiler_state = 1.;
+            self.chp_state = 1.;
         }
         else if (storage_state <= CellTmsSystemThermalElectrical::STORAGE_LEVEL_L) &
-                !self.chp_state {
-            self.boiler_state = false;
-            self.chp_state = true;
+                (self.chp_state == 0.) {
+            self.boiler_state = 0.;
+            self.chp_state = 1.;
         }
         else if (storage_state >= CellTmsSystemThermalElectrical::STORAGE_LEVEL_H) &
-                self.boiler_state {
-            self.boiler_state = false;
-            self.chp_state = true;
+                (self.boiler_state != 0.) {
+            self.boiler_state = 0.;
+            self.chp_state = 1.;
         }
         else if storage_state >= CellTmsSystemThermalElectrical::STORAGE_LEVEL_HH {
-            self.chp_state = false;
-            self.boiler_state = false;
+            self.chp_state = 0.;
+            self.boiler_state = 0.;
         }
         
-        if self.chp_state & self.boiler_state {
-            let cell_pow_t_balance = self.chp.pow_t + self.boiler.pow_t - thermal_demand;
-        } else if self.chp_state & !self.boiler_state {
-            let cell_pow_t_balance = self.chp.pow_t - thermal_demand;
-        } else if !self.chp_state & self.boiler_state {
-            let cell_pow_t_balance = self.boiler.pow_t - thermal_demand;
-        } else if !self.chp_state & !self.boiler_state {
-            let cell_pow_t_balance = -thermal_demand;
+        let mut balance_t = self.chp_state * self.chp.pow_t + self.boiler_state * 
+                             self.boiler.pow_t - thermal_demand;
+
+        // check if there's enough electricity for running tms (charge)
+        if cell_pow_e_balance > &(self.tms_engine.pow_t / self.tms_engine.compression_efficiency * self.tms_engine.min_compression_load) {
+            // check for thermal capacity of whole system
+            let capacity = self.pressure_tanks.cap -
+                           (balance_t * CellTmsSystemThermalElectrical::TIME_STEP +
+                           self.pressure_tanks.get_absolute_charge());
+            // calculate max load with maximum engine power and cap 1
+            let max_load = ((capacity / CellTmsSystemThermalElectrical::TIME_STEP) /
+                                 (cell_pow_e_balance * self.tms_engine.compression_efficiency).max(self.tms_engine.pow_t)
+                                ).max(1.);
+            if self.tms_engine.min_compression_load < max_load {
+                self.tms_engine_charging_state = max_load;
+                self.tms_engine_discharging_state = 0.;
+               }
         }
-
-        let engine_nominal_full_pow_charge = (self.tms_engine.pow_e + self.tms_engine.pow_t)/self.tms_engine.compression_efficiency;
-        let engine_nominal_full_pow_discharge = (self.tms_engine.pow_e + self.tms_engine.pow_t)/self.tms_engine.decompression_efficiency;
-        let total_cell_balance = cell_pow_e_balance + cell_pow_t_balance;
-
-        if (total_cell_balance > 0.) & (total_cell_balance > engine_nominal_full_pow_charge) {
-            self.tms_engine_charging_state = 1.;
-            self.tms_engine_discharging_state = 0.;
-        } else if (total_cell_balance < 0.) & (-total_cell_balance > engine_nominal_full_pow_discharge) {
-            self.tms_engine_charging_state = 0.;
-            self.tms_engine_discharging_state = 1.;
-        } else {
+        
+        // check if there's enough thermal energy to supply electricity (discharge)
+        else if cell_pow_e_balance < &0. {
+            balance_t += self.pressure_tanks.get_absolute_charge() / CellTmsSystemThermalElectrical::TIME_STEP;
+            // 
+            if balance_t > (self.tms_engine.pow_e / self.tms_engine.decompression_efficiency * self.tms_engine.min_decompression_load) {
+                let max_load = (-cell_pow_e_balance / (balance_t*self.tms_engine.decompression_efficiency).max(self.tms_engine.pow_e)).max(1.);
+                self.tms_engine_discharging_state = max_load;
+                self.tms_engine_charging_state = 0.
+            }
+        }
+        else {
             self.tms_engine_charging_state = 0.;
             self.tms_engine_discharging_state = 0.;
         }
@@ -168,9 +180,11 @@ impl CellTmsSystemThermalElectrical {
     /// # Returns
     /// * (f32, f32): Resulting electrical and thermal power
     ///               and fuel used by system [W]
-    pub fn step(&mut self, thermal_demand: &f32, cell_pow_e_balance: &f32, cell_state: &CellManager,
+    pub fn step(&mut self, thermal_demand: &f32,
+                cell_pow_e_balance: &f32,
+                cell_state: &CellManager,
                 amb: &AmbientParameters)
-    -> (f32, f32, f32)
+                -> (f32, f32, f32)
     {
         match &self.controller {
             None => self.control(thermal_demand, cell_pow_e_balance),
@@ -178,42 +192,36 @@ impl CellTmsSystemThermalElectrical {
             },
         }
 
-        let (pow_e, chp_t, chp_fuel) = self.chp.step(&self.chp_state);
-        let (boiler_t, boiler_fuel) = self.boiler.step(&self.boiler_state);
-        
-        let cell_pow_t_balance = chp_t + boiler_t - thermal_demand;
-        let pow_t = chp_t + boiler_t;
+        let mut bool_state_chp = true;
+        let mut bool_state_boiler = true;
+
+        if self.chp_state == 0. {
+            bool_state_chp = false;
+        }
+        if self.boiler_state == 0. {
+            bool_state_boiler = false;
+        }
+
+        let (chp_e, chp_t, chp_fuel) = self.chp.step(&bool_state_chp);
+        let (boiler_t, boiler_fuel) = self.boiler.step(&bool_state_boiler);
 
         //////////////////////////////////
         let (eng_pow_e, eng_pow_t, eng_con_e, eng_con_t) = self.tms_engine.step(&self.tms_engine_charging_state, &self.tms_engine_discharging_state);
 
         // call storage step -> check if all energy could be processed
+        
+        let cell_pow_t_balance = chp_t + boiler_t - thermal_demand;
+        let pow_t = chp_t + boiler_t + eng_pow_t - eng_con_t;
+        let pow_e = chp_e + eng_pow_e - eng_con_e;
 
         // charge/discharge for storage
-
-        let mut storage_diff = 0.;
-
-        if self.tms_engine_charging_state != 0. {
-            let (storage_diff, _) =
-            self.pressure_tanks.step(&((eng_pow_e + eng_pow_t)*self.tms_engine_charging_state));
-        } else if self.tms_engine_discharging_state != 0. {
-            let (storage_diff, _) =
-            self.pressure_tanks.step(&-((eng_con_e + eng_con_t)*self.tms_engine_discharging_state));
-        } else {
-            let (storage_diff, _) =
-            self.pressure_tanks.step(&0.);
-        }
-
-        // calculate thermal/electrical energy generation proportion for each part
-        let prop_e = eng_pow_e/(eng_pow_e + eng_pow_t);
-        let prop_t = 1. - prop_e;
-
+        let (storage_diff, _) = self.pressure_tanks.step(&(pow_t - thermal_demand));
 
         // save production data
         self.save_hist(&pow_e, &pow_t);
 
         // return supply data
-        return (cell_pow_e_balance + storage_diff*prop_e, cell_pow_t_balance + storage_diff*prop_t, chp_fuel + boiler_fuel);
+        return (pow_e, thermal_demand + storage_diff, chp_fuel + boiler_fuel);
     }
 
     fn save_hist(&mut self, pow_e: &f32, pow_t: &f32) {
