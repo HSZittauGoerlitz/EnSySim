@@ -489,6 +489,6 @@ def generateGenericCell(nBuildings, pAgents, pPHHagents,
     # init sep BSL agents
     addSepBSLAgents(cell, nSepBSLAgents, pAgricultureBSLsep, pPVplants, hist)
 
-    addCHPtoCellBuildings(cell, pCHP)
+    addCHPtoCellBuildings(cell, pCHP, hist)
 
     return cell
