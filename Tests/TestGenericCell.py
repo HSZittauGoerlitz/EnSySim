@@ -6,7 +6,7 @@ from BoundaryConditions.Simulation.SimulationData import getSimData
 from Controller.Cell.CHP_SystemThermal import CtrlDefault
 from GenericModel.Design import _check_pBTypes, generateGenericCell
 from GenericModel.PARAMETER import PBTYPES_NOW as pBTypes
-from PostProcesing.dataCollection import getCellsCHPgeneration, getCellsPVgeneration, stackedArray
+from PostProcesing.dataCollection import getCellsCHPgeneration, getCellsPVgeneration, cumulativeArray
 from SystemComponentsFast import simulate, CellChpSystemThermal, Wind, PV
 from PostProcesing import plots
 from plotly.subplots import make_subplots
@@ -104,7 +104,6 @@ fig.update_layout(height=600, width=600,
 fig.update_xaxes(title_text="Time")
 fig.update_yaxes(title_text="On/Off")
 # %%
-
 plots.chargeState(chpSystem.storage, time)
 
 # %%
@@ -121,11 +120,14 @@ plots.EnergyGenerationChart(time, 'PV generation', PVgen_e, 'CHP generation',
 # This second graph graph is meant to show the generation stacked
 # across the year.
 
-stackedPVgen_e = stackedArray(PVgen_e)
-stackedCHPgen_e = stackedArray(CHPgen_e)
-stackedWINDgen_e = stackedArray(Windgen_e)
+stackedPVgen_e = cumulativeArray(PVgen_e)
+stackedCHPgen_e = cumulativeArray(CHPgen_e)
+stackedWINDgen_e = cumulativeArray(Windgen_e)
 
 plots.EnergyGenerationChart(time,
                             'PV generation (stacked)', stackedPVgen_e,
                             'CHP generation (stacked)', stackedCHPgen_e,
                             'Wind generation (stacked)', stackedWINDgen_e)
+
+#%%
+plots.runningState(cell.get_thermal_chp_system(), time)

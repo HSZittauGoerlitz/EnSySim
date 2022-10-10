@@ -348,7 +348,7 @@ def runningState(utility, time, retFig=False):
                              name="charge",
                              )
                   )
-    fig.update_layout(height=1000, width=1000,
+    fig.update_layout(height=500, width=1000,
                       title_text="On/Off states of Utility")
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="State")
@@ -450,21 +450,21 @@ def compareCurves(time, values, names,
         idxTimeMul = 0
     else:
         raise ValueError("Number of x-arrays must be one or equal to number "
-                              "of given curves.")
+                         "of given curves.")
 
     if len(names) != nCurves:
-        raise ValueError("Number of namess must be equal to "
-                        "number of given curves.")
+        raise ValueError("Number of names must be equal to "
+                         "number of given curves.")
 
     fig = go.Figure()
 
     for i in range(nCurves):
         fig.add_trace(go.Scatter(x=time[i*idxTimeMul],
-                                y=values[i],
-                                line={'width': 1},
-                                name=names[i],
-                                )
-                    )
+                                 y=values[i],
+                                 line={'width': 1},
+                                 name=names[i],
+                                 )
+                      )
 
     fig.update_layout(height=1000, width=1000, title_text=title)
     fig.update_xaxes(title_text=xLabel)
@@ -474,6 +474,7 @@ def compareCurves(time, values, names,
     else:  # show figure
         fig.show()
 
+
 def EnergyGenerationChart(time, *data):
     """Create comparison plot for energy generation in the given cell
 
@@ -481,24 +482,25 @@ def EnergyGenerationChart(time, *data):
         time {list of arrays} -- Time (abscissae) values to plot,
                                 either one for all or each separate
         data* {name and energy generation data} -- First the name of the
-        energy generation type in str and then the corresponding data 
+        energy generation type in str and then the corresponding data
         array.
 
     """
     # create figure
     fig = go.Figure()
 
-    # create dictionary with {'EnergyName':EnergyGenerationArray} as the {key:value} pairs
+    # create dictionary with {'EnergyName':EnergyGenerationArray}
+    # as the {key:value} pairs
     dataset = dict()
     datatype = True
 
     for arg in data:
         if datatype:
-            Name = arg
+            name = arg
             datatype = False
             continue
         if not datatype:
-            dataset[Name] = arg
+            dataset[name] = arg
             datatype = True
 
     # add each different energy traces to the figure
@@ -509,22 +511,21 @@ def EnergyGenerationChart(time, *data):
         col3 = 255*random()
         col = 'rgb('+str(col1)+','+str(col2)+','+str(col3)+')'
 
-        # add the trace witgh that colour to the figure
+        # add the trace with that color to the figure
         fig.add_trace(go.Scatter(
-        x=time, y=dataset[EnergyType],
-        hoverinfo='x+y',
-        mode='lines',
-        line=dict(width=1, color=col), 
-        name=EnergyType,
-        stackgroup='one'))
-                        
+                      x=time, y=dataset[EnergyType],
+                      hoverinfo='x+y',
+                      mode='lines',
+                      line=dict(width=1, color=col),
+                      name=EnergyType,
+                      stackgroup='one'))
+
     # add graph name and size
-    fig.update_layout(height=600, width=600,
-                    title_text="Energy generation chart")
+    fig.update_layout(height=500, width=1000,
+                      title_text="Energy generation chart")
     # add axis labels
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Electrical Power [W]")
 
     # show figure
     fig.show()
-    

@@ -215,8 +215,8 @@ def getBuildingsThermalBalance(cell, subCells=True):
     return (gen, load)
 
 
-def stackedArray(array):
-    # Meant to stack quantity in a data array with time steps from the 
+def cumulativeArray(array):
+    # Meant to stack quantity in a data array with time steps from the
     # simulation
 
     data_list = list()
