@@ -215,14 +215,16 @@ def getBuildingsThermalBalance(cell, subCells=True):
     return (gen, load)
 
 
-def cumulativeArray(array):
+def cumulativeEnergy(array):
     # Meant to stack quantity in a data array with time steps from the
     # simulation
 
+    time_step = 0.25
+
     data_list = list()
     total = 0
-    for time_step in array:
-        total += time_step
+    for power_value in array:
+        total += power_value * time_step
         data_list.append(total)
 
     stacked_array = np.array(data_list)
