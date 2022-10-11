@@ -7,7 +7,15 @@ from random import random
 COL_GEN = 'rgb(27,198,47)'  # color for generation
 COL_CON = 'rgb(255,84,79)'  # color for consumption
 COL_BAL = 'rgba(0,0,0,0.5)'  # color for balance
+COL_Wind = 'rgba(51,51,255)'
+COL_PV = 'rgba(255,153,0)'
+COL_cell_CHP = 'rgba(102,255,102)'
+COL_building_CHP = 'rgba(0,204,153)'
 
+unitColors = {'wind': COL_Wind,
+              'PV': COL_PV,
+              'cell CHP': COL_cell_CHP,
+              'building CHP': COL_building_CHP}
 
 def arbitraryBalance(generation, load, time, unitPrefix,
                      title="", retFig=False):
@@ -475,7 +483,7 @@ def compareCurves(time, values, names,
         fig.show()
 
 
-def EnergyGenerationChart(time, *data):
+def EnergyGenerationChart(time, unit, *data):
     """Create comparison plot for energy generation in the given cell
 
     Arguments:
@@ -505,18 +513,13 @@ def EnergyGenerationChart(time, *data):
 
     # add each different energy traces to the figure
     for EnergyType in dataset:
-        # random colour generation
-        col1 = 255*random()
-        col2 = 255*random()
-        col3 = 255*random()
-        col = 'rgb('+str(col1)+','+str(col2)+','+str(col3)+')'
 
         # add the trace with that color to the figure
         fig.add_trace(go.Scatter(
-                      x=time, y=dataset[EnergyType],
+                      x=time, y=np.array(dataset[EnergyType])*1e-6,
                       hoverinfo='x+y',
                       mode='lines',
-                      line=dict(width=1, color=col),
+                      line=dict(width=1, color=unitColors[EnergyType]),
                       name=EnergyType,
                       stackgroup='one'))
 
@@ -525,7 +528,7 @@ def EnergyGenerationChart(time, *data):
                       title_text="Energy generation chart")
     # add axis labels
     fig.update_xaxes(title_text="Time")
-    fig.update_yaxes(title_text="Electrical Power [W]")
+    fig.update_yaxes(title_text=unit)
 
     # show figure
     fig.show()

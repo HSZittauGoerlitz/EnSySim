@@ -6,7 +6,7 @@ from BoundaryConditions.Simulation.SimulationData import getSimData
 from Controller.Cell.CHP_SystemThermal import CtrlDefault
 from GenericModel.Design import _check_pBTypes, generateGenericCell
 from GenericModel.PARAMETER import PBTYPES_NOW as pBTypes
-from PostProcesing.dataCollection import getCellsCHPgeneration, getCellsPVgeneration, cumulativeArray
+from PostProcesing.dataCollection import getCellsCHPgeneration, getCellsPVgeneration, cumulativeEnergy
 from SystemComponentsFast import simulate, CellChpSystemThermal, Wind, PV
 from PostProcesing import plots
 from plotly.subplots import make_subplots
@@ -32,7 +32,7 @@ end = '01.01.2021'
 nSepBSLagents = 100
 pAgricultureBSLsep = 0.7
 # pHH buildings
-nBuildings = {'FSH': 634, 'REH': 338, 'SAH': 20, 'BAH': 8}
+nBuildings = {'FSH': 634*4, 'REH': 338*4, 'SAH': 20*4, 'BAH': 8*4}
 pAgents = {'FSH': 0.9, 'REH': 0.9, 'SAH': 0.85, 'BAH': 0.75}
 pPHHagents = {'FSH': 0.8, 'REH': 0.8, 'SAH': 0.6, 'BAH': 0.9}
 pAgriculture = {'FSH': 0.2, 'REH': 0.2, 'SAH': 0.0, 'BAH': 0.0}
@@ -118,20 +118,27 @@ PVgen_e = getCellsPVgeneration(cell)
 CHPgen_e = getCellsCHPgeneration(cell)
 Windgen_e = cell.wind.gen_e.get_memory()
 
-plots.EnergyGenerationChart(time, 'PV generation', PVgen_e, 'CHP generation',
-                            CHPgen_e, 'Wind turbine generation', Windgen_e)
+unit = "Electrical Power [MW]"
+plots.EnergyGenerationChart(time, unit,
+                            'PV', PVgen_e,
+                            'building CHP', CHPgen_e,
+                            'cell CHP', chp_gen_e,
+                            'wind', Windgen_e)
 
 # This second graph graph is meant to show the generation stacked
 # across the year.
 
-stackedPVgen_e = cumulativeArray(PVgen_e)
-stackedCHPgen_e = cumulativeArray(CHPgen_e)
-stackedWINDgen_e = cumulativeArray(Windgen_e)
+stackedPVgen_e = cumulativeEnergy(PVgen_e)
+stackedCHPgen_e = cumulativeEnergy(CHPgen_e)
+stackedWINDgen_e = cumulativeEnergy(Windgen_e)
+stacked_chp_gen_e = cumulativeEnergy(chp_gen_e)
 
-plots.EnergyGenerationChart(time,
-                            'PV generation (stacked)', stackedPVgen_e,
-                            'CHP generation (stacked)', stackedCHPgen_e,
-                            'Wind generation (stacked)', stackedWINDgen_e)
+unit = "Electrical Energy [MWh]"
+plots.EnergyGenerationChart(time, unit,
+                            'PV', stackedPVgen_e,
+                            'building CHP', stackedCHPgen_e,
+                            'cell CHP', stacked_chp_gen_e,
+                            'wind', stackedWINDgen_e)
 
 #%%
 plots.runningState(cell.get_thermal_chp_system(), time)
