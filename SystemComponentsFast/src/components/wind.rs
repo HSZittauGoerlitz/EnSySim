@@ -10,6 +10,7 @@ pub struct Wind {
     area: f32,  // effective rotor area
     efficiency: f32, // simple effiency factor, TODO: curve
     min_ws: f32, // minimum wind speed where electricity production starts
+    opt_ws: f32, // optimal working point at hub height
     max_ws: f32, // maximum wind speed
     #[pyo3(get)]
     gen_e: Option<hist_memory::HistMemory>,
@@ -23,7 +24,7 @@ impl Wind {
     /// * ?
     /// * hist (usize): Size of history memory (0 for no memory)
     #[new]
-    pub fn new(height: f32, radius: f32, min_ws: f32, max_ws: f32, 
+    pub fn new(height: f32, radius: f32, min_ws: f32, opt_ws: f32, max_ws: f32, 
                efficiency: f32, hist: usize) -> Self {
         
         let pi = std::f32::consts::PI;
@@ -41,6 +42,7 @@ impl Wind {
                         area: area,
                         efficiency: efficiency,
                         min_ws: min_ws,
+                        opt_ws: opt_ws,
                         max_ws: max_ws,
                         gen_e: gen_e,
                         };
@@ -72,7 +74,7 @@ impl Wind {
         // ToDo: could be parameter
         let z0 = 0.1; // [m] roughness length for agricultural land with a few buildings and 8 m high hedges seperated by approx. 500 m
         // https://wind-data.ch/tools/profile.php?h=10&v=5&z0=0.1&abfrage=Refresh
-        let ws_hub = ws * (self.height / z0).ln() / (10. / z0).ln();
+        let mut ws_hub = ws * (self.height / z0).ln() / (10. / z0).ln();
 
         // calculate electrical power generated
         // https://rechneronline.de/wind-power/
@@ -82,6 +84,9 @@ impl Wind {
             power_e = 0.;
         }
         else {
+            if ws_hub > self.opt_ws {
+                ws_hub = self.opt_ws;
+            }
             power_e = self.area * air_density * ws_hub.powf(3.) * self.efficiency;
         }
 

@@ -26,11 +26,13 @@ logging.getLogger().setLevel(logging.WARNING)
 # time
 start = '01.01.2020'
 end = '01.01.2021'
+
+# data for Flächenländer:
 # seperate agents
 nSepBSLagents = 100
 pAgricultureBSLsep = 0.7
 # pHH buildings
-nBuildings = {'FSH': 505, 'REH': 1010, 'SAH': 680, 'BAH': 100}
+nBuildings = {'FSH': 634, 'REH': 338, 'SAH': 20, 'BAH': 8}
 pAgents = {'FSH': 0.9, 'REH': 0.9, 'SAH': 0.85, 'BAH': 0.75}
 pPHHagents = {'FSH': 0.8, 'REH': 0.8, 'SAH': 0.6, 'BAH': 0.9}
 pAgriculture = {'FSH': 0.2, 'REH': 0.2, 'SAH': 0.0, 'BAH': 0.0}
@@ -61,17 +63,19 @@ cell = generateGenericCell(nBuildings, pAgents,
                            region, nSteps)
 
 # get dhn demand
-demand = cell.get_thermal_demand(True)
+demand_th = cell.get_thermal_demand(True)
 # generate chp system with storage
-chpSystem = CellChpSystemThermal(demand, 0.35, 2*demand, 0.05,
+chpSystem = CellChpSystemThermal(demand_th, 0.35, 2*demand_th, 0.05,
                                  0.98, 0.98, nSteps)
 # configure controller
 chpSystem.controller = None#controller
 # add chp system to cell
 cell.add_chp_thermal(chpSystem)
 
+# get electrical demand
+demand_el = cell.get_electrical_demand()
 # add wind turbine
-windTurbine = Wind(160., 80., 4., 30., 0.4, nSteps)
+windTurbine = Wind(105., 90., 4., 12., 30., 0.115, nSteps)
 cell.add_wind_turbine(windTurbine)
 
 # add PV plant
