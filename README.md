@@ -20,3 +20,6 @@ __At this point I'm explaining the toolchain used by us. Of course you are free 
 
 # Debugging:
 [https://daveceddia.com/debug-electron-native-rust-with-vscode/]
+
+# Funding information
+![Funding information](Funding_logos.png)
