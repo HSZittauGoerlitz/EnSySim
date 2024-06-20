@@ -9,7 +9,7 @@ pub struct CellManager {
     fuel_used: f32 // fuel used by cell systems
 }
 
-/// An Object wich handles the complete cell state. This is comparable to a
+/// An Object which handles the complete cell state. This is comparable to a
 /// Gateway, which collects and distributes all information needed for
 /// control tasks and comparable.
 impl CellManager{

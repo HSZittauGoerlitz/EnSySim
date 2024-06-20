@@ -10,13 +10,16 @@ use crate::components::wind;
 use crate::misc::{hist_memory};
 use crate::misc::ambient::AmbientParameters;
 use crate::misc::cell_manager::CellManager;
-use crate::thermal_systems::cell::{chp_system_thermal, theresa_system};
+use crate::thermal_systems::cell::{chp_system_thermal,
+                                   theresa_system,
+                                   tms_system_thermal_electrical};
 
 
 #[derive(Clone)]
 enum ThermalSystem {
     ChpSystem(chp_system_thermal::CellChpSystemThermal),
     TheresaSystem(theresa_system::TheresaSystem),
+    TMSSystem(tms_system_thermal_electrical::CellTmsSystemThermalElectrical),
 }
 
 impl ThermalSystem {
@@ -31,16 +34,25 @@ impl ThermalSystem {
     /// # Returns
     /// * (f32, f32, f32): Resulting electrical and thermal power
     ///                    and fuel used by system [W]
-    fn step(&mut self, thermal_demand: &f32, cell_state: &CellManager,
+    fn step(&mut self,
+            thermal_demand: &f32,
+            electrical_balance: &f32,
+            cell_state: &CellManager,
             amb: &AmbientParameters)
     -> (f32, f32, f32)
     {
         match self {
-            ThermalSystem::ChpSystem(system) => system.step(thermal_demand,
-                                                            cell_state,
-                                                            amb),
-            ThermalSystem::TheresaSystem(system) =>
-                system.step(thermal_demand),
+            ThermalSystem::ChpSystem(system)
+                =>system.step(thermal_demand,
+                              cell_state,
+                              amb),
+            ThermalSystem::TheresaSystem(system)
+                => system.step(thermal_demand),
+            ThermalSystem::TMSSystem(system)
+                => system.step(thermal_demand,
+                               electrical_balance,
+                               cell_state,
+                               amb),
             //_ => (0., 0., 0.)
         }
     }
@@ -99,7 +111,10 @@ impl Cell {
             panic!("Mean annual global irradiation is a negative number")
         }
 
-        let (gen_e, gen_t, load_e, load_t);
+        let (gen_e,
+             gen_t,
+             load_e,
+             load_t);
 
         if hist > 0 {
             gen_e = Some(hist_memory::HistMemory::new(hist));
@@ -150,6 +165,18 @@ impl Cell {
         match &self.thermal_system {
             None => self.thermal_system =
                         Some(ThermalSystem::ChpSystem(chp_system)),
+            Some(_) => error!("Cell already has thermal system")
+        }
+    }
+
+    fn add_tms_thermal_electrical(&mut self,
+                                  tms_system: tms_system_thermal_electrical::
+                                  CellTmsSystemThermalElectrical)
+    {
+        // only one thermal system per cell
+        match &self.thermal_system {
+            None => self.thermal_system =
+                        Some(ThermalSystem::TMSSystem(tms_system)),
             Some(_) => error!("Cell already has thermal system")
         }
     }
@@ -269,6 +296,17 @@ impl Cell {
     {
         match &self.thermal_system {
             Some(ThermalSystem::ChpSystem(system)) => {
+                Some(system.clone())
+            },
+            _ => None,
+        }
+    }
+
+    fn get_thermal_tms_system(&self) -> Option<tms_system_thermal_electrical::
+                                        CellTmsSystemThermalElectrical>
+    {
+        match &self.thermal_system {
+            Some(ThermalSystem::TMSSystem(system)) => {
                 Some(system.clone())
             },
             _ => None,
@@ -494,6 +532,8 @@ impl Cell {
                 let ts_e_t_f =
                     system.step(&((thermal_load -
                                     thermal_generation).max(0.)),
+                                &(electrical_load - 
+                                    electrical_generation),
                                 &self.state, amb
                                 );
                 // unpack tuple, since unpacking without let is buggy

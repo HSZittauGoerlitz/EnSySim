@@ -8,7 +8,7 @@ use crate::misc::hist_memory;
 #[derive(Clone)]
 pub struct Boiler {
     #[pyo3(get)]
-    pow_t: f32,  // installed power of boiler [W]
+    pub pow_t: f32,  // installed power of boiler [W]
     state: bool,  // on/off switch for boiler
 
     #[pyo3(get)]
